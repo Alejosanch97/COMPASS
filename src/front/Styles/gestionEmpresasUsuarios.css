@@ -1,0 +1,597 @@
+
+/* =========================================================================
+   GESTIÓN DE EMPRESAS Y USUARIOS - ATLAS
+   VERSIÓN FINAL CON PREFIJO ÚNICO (geu-*) Y ANCHO SEGURO SIN CORTES
+   ========================================================================= */
+
+/* ── CONTENEDOR RAÍZ ÚNICO ────────────────────────────────────────────── */
+.geu-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    animation: geuFadeIn 0.5s ease-out;
+}
+
+/* ── CARD ÚNICA (Reemplaza .info-card global) ─────────────────────────── */
+.geu-card {
+    background: #ffffff;
+    border-radius: 30px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    padding: 32px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.geu-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1e293b;
+    font-weight: 800;
+}
+
+/* ── SUB-NAVEGACIÓN (Empresas/Usuarios) ──────────────────────────────── */
+.geu-subnav {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.geu-subnav-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    background: #f1f5f9;
+    color: #1e293b;
+    transition: all 0.25s ease;
+    font-size: 0.95rem;
+}
+
+.geu-subnav-btn.active {
+    background: #1e293b;
+    color: white;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.18);
+}
+
+/* ── HEADER DE CADA CARD (Título + Acciones) ──────────────────────────── */
+.geu-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 18px;
+    width: 100%;
+}
+
+.geu-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ── BOTÓN PRINCIPAL DORADO ───────────────────────────────────────────── */
+.geu-btn-primary {
+    background: #c5a059;
+    color: #1e293b;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(197, 160, 89, 0.25);
+}
+
+.geu-btn-primary:hover {
+    background: #b08d4a;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(176, 141, 74, 0.3);
+}
+
+/* ── INPUTS / FILTROS DE BÚSQUEDA ─────────────────────────────────────── */
+.geu-search {
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    color: #334155;
+    background: #fafbfc;
+    transition: border-color 0.2s;
+    min-width: 220px;
+}
+
+.geu-search:focus {
+    outline: none;
+    border-color: #c5a059;
+    background: white;
+}
+
+.geu-select {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    color: #334155;
+    background: #fafbfc;
+    cursor: pointer;
+}
+
+/* ── TABLA MAESTRA (Fluida al 100% y auto-ajustable) ─────────────────── */
+.geu-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto;
+    border-radius: 18px;
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.geu-table {
+    width: 100% !important;
+    min-width: 100%;          /* Toma todo el ancho de la card elásticamente */
+    border-collapse: collapse;
+    table-layout: auto;       /* El navegador calcula inteligentemente los anchos */
+}
+
+.geu-table thead tr {
+    background: #f8fafc;
+}
+
+.geu-table th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    border-bottom: 2px solid #eef2f6;
+    white-space: nowrap;
+}
+
+.geu-table td {
+    padding: 13px 16px;
+    font-size: 0.86rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.geu-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.geu-table tbody tr:hover {
+    background: #fafbfc;
+}
+
+/* Forzar protección de columnas críticas (Evita que se aplasten o corten) */
+.geu-table th:last-child, 
+.geu-table td:last-child {
+    width: 1%;               /* Fuerza a la columna de acciones a usar solo su contenido */
+    white-space: nowrap;
+}
+
+.geu-table td:has(.geu-pill),
+.geu-table td:has(.geu-tag) {
+    white-space: nowrap;     /* Protege celdas que contienen estados o keys */
+}
+
+/* ── ACCIONES EN CELDA ───────────────────────────────────────────────── */
+.geu-actions {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+    align-items: center;
+}
+
+.geu-icon-btn {
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
+    padding: 7px 11px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;          /* Impide que el botón se encoja bajo cualquier circunstancia */
+}
+
+.geu-icon-btn:hover {
+    background: #eef2f6;
+    transform: translateY(-1px);
+}
+
+.geu-icon-btn.edit:hover { background: #eff6ff; }
+.geu-icon-btn.delete:hover { background: #fef2f2; }
+
+/* ── BADGES Y PILLS ───────────────────────────────────────────────────── */
+.geu-tag {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #1e293b;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.geu-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.geu-pill.admin { background: #fdf8ee; color: #c5a059; }
+.geu-pill.docente { background: #f0fdf4; color: #16a34a; }
+.geu-pill.directivo { background: #eff6ff; color: #2563eb; }
+.geu-pill.activo { background: #f0fdf4; color: #16a34a; }
+.geu-pill.inactivo { background: #fef2f2; color: #dc2626; }
+
+/* ── MODALES ──────────────────────────────────────────────────────────── */
+.geu-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    animation: geuFadeIn 0.25s ease-out;
+    padding: 20px;
+}
+
+.geu-modal {
+    background: white;
+    border-radius: 28px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+    animation: geuSlideUp 0.3s ease-out;
+    overflow: hidden;
+}
+
+.geu-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 26px 28px 18px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.geu-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1e293b;
+    font-weight: 900;
+}
+
+.geu-modal-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.geu-modal-close {
+    background: #f8fafc;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #64748b;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.geu-modal-close:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.geu-modal-body {
+    padding: 24px 28px 28px;
+}
+
+/* ── FORMULARIOS DENTRO DE MODALES ────────────────────────────────────── */
+.geu-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.geu-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.geu-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.geu-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 0.9rem;
+    color: #334155;
+    background: #fafbfc;
+    transition: all 0.25s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+    min-height: 45px;
+}
+
+.geu-input:focus {
+    outline: none;
+    border-color: #c5a059;
+    background: white;
+    box-shadow: 0 8px 20px rgba(197, 160, 89, 0.08);
+}
+
+.geu-input:disabled {
+    opacity: 0.6;
+}
+
+.geu-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.geu-btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: #1e293b;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 6px;
+}
+
+.geu-btn-submit:hover:not(:disabled) {
+    background: #c5a059;
+    color: #1e293b;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(197, 160, 89, 0.25);
+}
+
+.geu-btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── LOADER INTERMEDIO ────────────────────────────────────────────────── */
+.geu-loader-wrap {
+    text-align: center;
+    padding: 40px;
+}
+
+.geu-loader {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f1f5f9;
+    border-top-color: #c5a059;
+    border-radius: 50%;
+    animation: geuSpin 0.8s linear infinite;
+    margin: 0 auto;
+    display: inline-block;
+}
+
+/* ── COMPLEMENTOS EX-INLINE STYLE ─────────────────────────────────────── */
+.geu-modal-header-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.geu-email-cell {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.geu-empty-row td {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+}
+
+.geu-hint-box {
+    background: #fdf8ee;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: #92660f;
+    line-height: 1.5;
+}
+
+/* ── TABLA MAESTRA (Fluida al 100% y auto-ajustable) ─────────────────── */
+.geu-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto;
+    border-radius: 18px;
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.geu-table {
+    width: 100% !important;
+    min-width: 100%;          
+    border-collapse: collapse;
+    table-layout: auto;       
+}
+
+.geu-table thead tr {
+    background: #f8fafc;
+}
+
+.geu-table th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    border-bottom: 2px solid #eef2f6;
+    white-space: nowrap;
+}
+
+.geu-table td {
+    padding: 13px 16px;
+    font-size: 0.86rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.geu-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.geu-table tbody tr:hover {
+    background: #fafbfc;
+}
+
+/* ── CONFIGURACIÓN EXCLUSIVA PARA LA TABLA DE EMPRESAS ──────────────── */
+/* Esto SOLO se aplicará a empresas. Usuarios se queda intacto y original */
+.geu-table-empresas th:nth-child(4),
+.geu-table-empresas td:nth-child(4) {
+    min-width: 275px; /* Un tamaño controlado para que no quede gigante pero iguale el ancho */
+}
+
+/* Forzar protección de columnas críticas (Evita que se aplasten o corten) */
+.geu-table th:last-child, 
+.geu-table td:last-child {
+    width: 1%;               
+    white-space: nowrap;
+}
+
+.geu-table td:has(.geu-pill),
+.geu-table td:has(.geu-tag) {
+    white-space: nowrap;     
+}
+
+/* Fuerza al botón a empujar el espacio libre a su izquierda y alinearse a la derecha */
+.geu-btn-right {
+    margin-left: auto;
+}
+
+/* Opcional: Asegura que el contenedor mantenga el ancho total en pantallas grandes */
+.geu-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%; /* Garantiza que use todo el ancho horizontal disponible */
+}
+
+/* =========================================================================
+   GESTIÓN DE EMPRESAS Y USUARIOS - ATLAS
+   VERSIÓN FINAL CON PREFIJO ÚNICO (geu-*) Y ANCHO SEGURO SIN CORTES
+   ========================================================================= */
+
+/* ── CONTENEDOR RAÍZ ÚNICO ────────────────────────────────────────────── */
+.geu-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    
+    /* Forzar ancho completo e ignorar restricciones */
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    animation: geuFadeIn 0.5s ease-out;
+
+    /* SOLUCIÓN AL DASHBOARD-GRID: Rompe las 4 columnas globales y usa todo el ancho */
+    grid-column: 1 / -1 !important; 
+    
+    /* Por si el contenedor padre usara Flexbox en vez de Grid */
+    flex: 1 1 100% !important; 
+}
+
+/* ── CARD ÚNICA (Reemplaza .info-card global) ─────────────────────────── */
+.geu-card {
+    background: #ffffff;
+    border-radius: 30px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    padding: 32px;
+    
+    /* Asegurar que la tarjeta se expanda al 100% de la página */
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+/* ── ANIMACIONES SÍNCRONAS ────────────────────────────────────────────── */
+@keyframes geuFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes geuSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes geuSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── MEDIA QUERIES RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .geu-card { padding: 22px; }
+    .geu-card-header { flex-direction: column; align-items: stretch; }
+    .geu-header-actions { flex-direction: column; align-items: stretch; }
+    .geu-search { min-width: 0; width: 100%; }
+}
+
+@media (max-width: 768px) {
+    .geu-form-row { grid-template-columns: 1fr; }
+    .geu-table { font-size: 0.78rem; }
+    .geu-table th, .geu-table td { padding: 9px 11px; }
+    .geu-modal { border-radius: 20px; }
+    .geu-modal-header, .geu-modal-body { padding: 18px; }
+}
+
