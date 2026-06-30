@@ -1,0 +1,945 @@
+/* =========================================
+   FASE AUDITAR - PROTOCOLO ACADÉMICO ATLAS
+   ========================================= */
+
+.auditar-container {
+    animation: fadeIn 0.6s ease-out;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative; /* Para la píldora flotante */
+}
+
+/* 1. PÍLDORA DE ESTADO FLOTANTE (Sincronización) */
+.sync-status-pill-floating {
+    position: fixed;
+    top: 25px;
+    right: 30px;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 9999;
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: slideInRight 0.4s ease-out;
+}
+
+.sync-icon {
+    display: inline-block;
+    animation: spin 2s linear infinite;
+}
+
+/* Encabezado de la página */
+.fase-header-section {
+    margin-bottom: 35px;
+    text-align: left;
+}
+
+.fase-header-section h1 {
+    font-size: 2.4rem;
+    color: var(--atlas-blue-dark);
+    margin: 0;
+    font-weight: 900;
+}
+
+.fase-header-section p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin-top: 5px;
+}
+
+/* 2. ROADMAP (RUTA HACIA LA CERTIFICACIÓN) */
+.atlas-roadmap-container {
+    background: var(--atlas-white);
+    padding: 40px 30px;
+    border-radius: 28px;
+    margin-bottom: 40px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+}
+
+.roadmap-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--atlas-gold);
+    font-weight: 800;
+    margin-bottom: 35px;
+    text-align: center;
+}
+
+.roadmap-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.roadmap-steps::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
+.step-item {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 140px;
+}
+
+.step-num {
+    width: 45px;
+    height: 45px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    border: 4px solid var(--atlas-white);
+    transition: all 0.4s ease;
+}
+
+.step-item.active .step-num {
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+    box-shadow: 0 0 20px rgba(197, 160, 89, 0.4);
+    transform: scale(1.1);
+}
+
+.step-item.done .step-num {
+    background: var(--atlas-success);
+    color: white;
+}
+
+.step-item p {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.step-item.active p { color: var(--atlas-blue-dark); }
+
+/* 3. DISEÑO DE CAPAS (A1 Y A2 EQUILIBRADOS) */
+.auditar-layers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.layer-card {
+    background: var(--atlas-white);
+    border-radius: 30px;
+    padding: 40px;
+    border: 1px solid #eef2f6;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.layer-card.main-entry {
+    border-top: 6px solid var(--atlas-gold);
+    background: linear-gradient(to bottom right, #ffffff, #fdfbf7);
+}
+
+.layer-card.side-entry {
+    border-top: 6px solid var(--atlas-blue-mid);
+}
+
+.layer-card.locked {
+    opacity: 0.7;
+    filter: grayscale(0.8);
+    cursor: not-allowed;
+}
+
+.layer-badge {
+    position: absolute;
+    top: -15px;
+    right: 30px;
+    background: var(--atlas-blue-dark);
+    color: var(--atlas-gold);
+    padding: 8px 18px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.9rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.layer-card h3 {
+    font-size: 1.35rem;
+    color: var(--atlas-blue-dark);
+    margin-bottom: 18px;
+    font-weight: 800;
+}
+
+.intro-p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--atlas-text-main);
+    margin-bottom: 25px;
+}
+
+/* LISTADO DE FORMULARIOS EN CAPA 2 */
+.forms-status-list {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-mini-status {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    padding: 14px 18px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    border: 1px solid #edf2f7;
+    transition: 0.3s;
+}
+
+.form-mini-status.is-ok { border-left: 4px solid var(--atlas-success); }
+.form-mini-status.is-pending { border-left: 4px solid var(--atlas-gold); }
+
+.form-mini-status .f-title {
+    flex-grow: 1;
+    font-weight: 600;
+    color: var(--atlas-blue-dark);
+}
+
+.form-mini-status .f-check {
+    font-size: 1.1rem;
+}
+
+/* BOTONES DE ACCIÓN EN CAPAS */
+.btn-formal-action, .btn-go-diagnostic {
+    width: 100%;
+    padding: 20px;
+    background: var(--atlas-blue-dark);
+    color: white;
+    border: none;
+    border-radius: 18px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: auto;
+}
+
+.btn-go-diagnostic {
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+}
+
+.btn-formal-action:hover:not(:disabled), .btn-go-diagnostic:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.btn-formal-action.btn-done, .btn-go-diagnostic.btn-done {
+    background: var(--atlas-success);
+    color: white;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+/* MANIFIESTO Y OTROS ELEMENTOS */
+.manifesto-highlights {
+    background: rgba(255, 255, 255, 0.6);
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(197, 160, 89, 0.15);
+}
+
+.manifesto-highlights ul {
+    padding-left: 20px;
+    margin: 0;
+}
+
+.manifesto-highlights li {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: var(--atlas-text-main);
+    font-weight: 500;
+}
+
+.status-tag {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.status-tag.locked { background: #f1f5f9; color: #64748b; }
+.status-tag.success { background: #f0fdf4; color: #16a34a; }
+
+/* 4. SECCIÓN RETO (CAPA 3) */
+.reto-section {
+    margin-top: 60px;
+    animation: slideUp 0.8s ease-out;
+}
+
+.reto-card-full {
+    background: var(--atlas-white);
+    border-radius: 35px;
+    padding: 50px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+}
+
+.reto-header {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.icon-box-gold {
+    width: 70px;
+    height: 70px;
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    font-size: 2.2rem;
+}
+
+.reto-subtitle {
+    color: var(--atlas-gold);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+}
+
+.reto-instrucciones-formal {
+    background: #f8fafc;
+    padding: 30px;
+    border-radius: 24px;
+    border-left: 6px solid var(--atlas-gold);
+    margin-bottom: 35px;
+}
+
+.textarea-container {
+    width: 100%;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.reto-textarea-premium {
+    width: 100%;
+    min-height: 300px;
+    padding: 35px;
+    border-radius: 25px;
+    border: 2px solid #e2e8f0;
+    font-size: 1.15rem;
+    line-height: 1.8;
+    background: #fcfcfc;
+    transition: all 0.3s;
+    resize: vertical;
+}
+
+.reto-textarea-premium:focus {
+    outline: none;
+    border-color: var(--atlas-gold);
+    background: #fff;
+    box-shadow: 0 15px 40px rgba(197, 160, 89, 0.1);
+}
+
+.char-count {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+.btn-save-reto-atlas-full {
+    width: 100%;
+    padding: 22px;
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+    border: none;
+    border-radius: 20px;
+    font-size: 1.1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-save-reto-atlas-full:hover:not(:disabled) {
+    background: #b08d4a;
+    transform: scale(1.01);
+    box-shadow: 0 15px 30px rgba(176, 141, 74, 0.3);
+}
+
+/* AVISO DE SECCIÓN BLOQUEADA */
+.locked-section-notice {
+    margin-top: 40px;
+    text-align: center;
+    padding: 50px;
+    background: #f8fafc;
+    border-radius: 30px;
+    border: 2px dashed #e2e8f0;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* ANIMACIONES */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* =========================================
+   ESTILOS ESPECÍFICOS CAPA 2.5 (MICROMÓDULOS)
+   ========================================= */
+
+.layer-card.micro-entry {
+    border-top: 6px solid #6366f1; /* Un color índigo para diferenciarlo del diagnóstico */
+    background: linear-gradient(to bottom right, #ffffff, #f9faff);
+}
+
+/* Contenedor de las pastillas de progreso */
+.micros-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+}
+
+/* Estilo de cada pastilla de módulo */
+.micro-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    border-radius: 16px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.micro-pill .m-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.micro-pill .m-score {
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--atlas-blue-dark);
+}
+
+/* Estado: Módulo Aprobado (>= 80) */
+.micro-pill.passed {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.08);
+}
+
+.micro-pill.passed .m-label {
+    color: #16a34a;
+}
+
+.micro-pill.passed .m-score {
+    color: #15803d;
+}
+
+/* Botón específico para Micromódulos */
+.btn-go-micros {
+    width: 100%;
+    padding: 18px;
+    background: #6366f1; /* Color índigo */
+    color: white;
+    border: none;
+    border-radius: 18px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 15px;
+}
+
+.btn-go-micros:hover:not(:disabled) {
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+}
+
+.btn-go-micros.btn-done {
+    background: var(--atlas-success);
+    cursor: default;
+}
+
+/* Ajuste para el estado bloqueado de la Capa 2.5 */
+.layer-card.micro-entry.locked {
+    filter: grayscale(1) opacity(0.6);
+}
+
+/* =========================================
+   CAPA 3 - RESULTADOS COMPASS (FINALIZACIÓN)
+   ========================================= */
+
+.layer-card-result-full {
+    grid-column: 1 / -1; /* Ocupa todo el ancho */
+    background: var(--atlas-white);
+    border-radius: 35px;
+    border: 1px solid #eef2f6;
+    border-top: 6px solid var(--atlas-gold); /* Mantiene la jerarquía dorada */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+    margin-top: 20px;
+    animation: slideUp 0.8s ease-out;
+}
+
+/* Badge específica para el Hito A3 */
+.layer-badge-gold {
+    position: absolute;
+    top: 0;
+    right: 40px;
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+    padding: 10px 25px;
+    border-radius: 0 0 15px 15px;
+    font-weight: 900;
+    font-size: 1rem;
+    box-shadow: 0 5px 15px rgba(197, 160, 89, 0.2);
+    z-index: 10;
+}
+
+.result-main-content {
+    padding: 50px;
+}
+
+/* Encabezado del Resultado */
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #f8fafc;
+    padding-bottom: 30px;
+    margin-bottom: 35px;
+    gap: 20px;
+}
+
+.result-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin: 0;
+    font-weight: 600;
+}
+
+.result-level-name {
+    font-size: 2.4rem;
+    color: var(--atlas-blue-dark);
+    margin: 10px 0;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.result-range-tag {
+    display: inline-block;
+    background: #fdf8ee;
+    color: var(--atlas-gold);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+/* Tarjeta de Puntaje */
+.result-score-card {
+    text-align: center;
+    background: var(--atlas-blue-dark);
+    color: white;
+    padding: 20px;
+    border-radius: 22px;
+    min-width: 140px;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+}
+
+.score-number {
+    font-size: 2.8rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-top: 5px;
+    opacity: 0.8;
+}
+
+/* Grid de Detalles */
+.result-details-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 40px;
+}
+
+.detail-title, .next-steps-title {
+    font-size: 1.1rem;
+    color: var(--atlas-blue-dark);
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+/* Texto de la descripción (RESPETA SALTOS DE LÍNEA) */
+.description-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--atlas-text-main);
+    white-space: pre-line; /* Clave para leer los saltos de línea de JS */
+    margin-bottom: 25px;
+}
+
+/* Nota de pie estilo ATLAS */
+.disclaimer-note {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    color: #64748b;
+    line-height: 1.6;
+    border-left: 4px solid var(--atlas-gold);
+}
+
+/* Columna de Pasos a Seguir */
+.next-steps-column {
+    background: #fdfbf7;
+    padding: 35px;
+    border-radius: 28px;
+    border: 1px solid #f9f1e3;
+    display: flex;
+    flex-direction: column;
+}
+
+.next-steps-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #7a6336;
+    margin-bottom: 25px;
+}
+
+.btn-finish-fase {
+    width: 100%;
+    padding: 18px;
+    background: var(--atlas-blue-dark);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: auto;
+}
+
+.btn-finish-fase:hover {
+    background: var(--atlas-gold);
+    color: var(--atlas-blue-dark);
+    transform: translateY(-2px);
+}
+
+.ready-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-weight: 900;
+    color: var(--atlas-gold);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* =========================================
+   FASE AUDITAR - PROTOCOLO ACADÉMICO ATLAS
+   ========================================= */
+
+.auditar-container {
+    animation: fadeIn 0.6s ease-out;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative; /* Para la píldora flotante */
+
+    /* FORZAR ANCHO COMPLETO E IGNORAR RESTRICCIONES DEL DASHBOARD */
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+
+    /* SOLUCIÓN AL DASHBOARD-GRID: Rompe las 4 columnas globales y usa todo el ancho */
+    grid-column: 1 / -1 !important; 
+    
+    /* Por si el contenedor padre usara Flexbox en vez de Grid */
+    flex: 1 1 100% !important; 
+}
+
+/* Responsividad para la Capa 3 */
+@media (max-width: 900px) {
+    .result-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .result-main-content {
+        padding: 30px 20px;
+    }
+
+    .result-level-name {
+        font-size: 1.8rem;
+    }
+}
+
+/* =======================================================
+   SISTEMA DE RESPONSIVIDAD INTEGRAL - FASE AUDITAR
+   ======================================================= */
+
+
+/* --- 2. AJUSTES PARA TABLETS (IPADS / LAPTOPS PEQUEÑAS) --- */
+@media (max-width: 1024px) {
+    .auditar-container {
+        padding: 15px;
+    }
+
+    .fase-header-section h1 {
+        font-size: 2rem;
+    }
+
+    /* Grid de 2 columnas: Capa 1 y 2 arriba, Micromódulos abajo ancho completo */
+    .auditar-layers-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .layer-card.micro-entry {
+        grid-column: span 2;
+    }
+
+    .reto-card-full {
+        padding: 30px;
+    }
+
+    .roadmap-steps {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+
+    .sync-status-pill-floating {
+        top: 15px;
+        right: 15px;
+        padding: 8px 15px;
+        font-size: 0.8rem;
+    }
+}
+
+/* --- 3. AJUSTES PARA MÓVILES (SMARTPHONES) --- */
+@media (max-width: 768px) {
+    /* Píldora flotante pasa abajo para no estorbar el título */
+    .sync-status-pill-floating {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 18px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Roadmap se vuelve una lista vertical */
+    .atlas-roadmap-container {
+        padding: 25px 15px;
+        border-radius: 20px;
+    }
+
+    .roadmap-steps {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 25px;
+        padding-left: 15px;
+    }
+
+    /* Línea conector vertical ajustada */
+    .roadmap-steps::before {
+        left: 31px; 
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        height: 85%;
+    }
+
+    .step-item {
+        flex-direction: row;
+        width: 100%;
+        gap: 15px;
+        justify-content: flex-start;
+    }
+
+    .step-num {
+        width: 35px;
+        height: 35px;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        border-width: 3px;
+    }
+
+    .step-item p {
+        text-align: left;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    /* Cards a una sola columna */
+    .auditar-layers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .layer-card.micro-entry {
+        grid-column: span 1;
+    }
+
+    .layer-card {
+        padding: 25px;
+        border-radius: 20px;
+    }
+
+    .layer-badge {
+        right: 20px;
+        top: -12px;
+        padding: 6px 14px;
+        font-size: 0.75rem;
+    }
+
+    /* Sección del Reto Final */
+    .reto-card-full {
+        padding: 25px 20px;
+        border-radius: 25px;
+    }
+
+    .reto-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .icon-box-gold {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .reto-textarea-premium {
+        padding: 20px;
+        font-size: 1rem;
+        min-height: 220px;
+    }
+
+    .btn-save-reto-atlas-full {
+        padding: 18px;
+        font-size: 0.95rem;
+    }
+}
+
+/* --- 4. AJUSTES EXTREMOS (PANTALLAS MUY PEQUEÑAS) --- */
+@media (max-width: 480px) {
+    .fase-header-section h1 {
+        font-size: 1.6rem;
+    }
+
+    /* Cuadrícula de notas de micromódulos a lista vertical */
+    .micros-progress-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .micro-pill {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 12px 20px;
+    }
+
+    .micro-pill .m-label {
+        margin-bottom: 0;
+    }
+
+    .form-mini-status {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-formal-action, .btn-go-diagnostic, .btn-go-micros {
+        padding: 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* --- 5. SOPORTE LANDSCAPE (CELULAR HORIZONTAL) --- */
+@media (max-height: 500px) and (orientation: landscape) {
+    .sync-status-pill-floating {
+        display: none; /* Ocultar para maximizar espacio de lectura */
+    }
+    
+    .roadmap-steps {
+        flex-direction: row; /* Volver a horizontal para aprovechar el ancho */
+    }
+
+    .roadmap-steps::before {
+        top: 17px;
+        left: 10%;
+        width: 80%;
+        height: 2px;
+    }
+}

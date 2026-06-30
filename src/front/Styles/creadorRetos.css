@@ -899,6 +899,25 @@
     max-width: 100% !important;
     box-sizing: border-box;
 }
+
+.cr-item-info {
+    flex: 1;
+}
+
+.cr-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cr-editing-hint {
+    background: #fdf8ee;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    color: #92660f;
+    margin-top: 12px;
+}
 /* ── ANIMACIONES ──────────────────────────────────────────────────────── */
 @keyframes crFadeIn {
     from { opacity: 0; }

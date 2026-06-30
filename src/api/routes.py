@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from api.models import (
     db, Empresa, Usuario, ConfiguracionFaseEmpresa,
     Formulario, PreguntaFormulario, AsignacionFormulario,
-    RetoPlantilla, AsignacionReto
+    RetoPlantilla, AsignacionReto,
+    ProgresoFase, RespuestaFormulario
 )
 import uuid
 
@@ -445,16 +446,14 @@ def crear_reto_plantilla_completo():
     config = {"preguntas": data.get("preguntas", [])}
 
     reto = RetoPlantilla(
-        id_reto=f"RETO-{gen_id()}",
-        nombre_reto=data["nombre_reto"],
+        nombre=data["nombre_reto"],
         descripcion=data.get("descripcion"),
         fase=data["fase"],
         nivel_unesco=data.get("nivel_unesco"),
-        numero_reto=data.get("numero_reto"),
         rol_destino=data.get("rol_destino", "DOCENTE"),
         peso_huella=data.get("peso_huella", 10.0),
         config_json=config,
-        creado_por_id=u.id
+        creado_por_admin_id=u.id
     )
     db.session.add(reto)
     db.session.commit()
@@ -480,10 +479,13 @@ def actualizar_reto_plantilla(rid):
 
     r = RetoPlantilla.query.get_or_404(rid)
     data = request.get_json()
-    for c in ["nombre_reto", "descripcion", "fase", "nivel_unesco", "numero_reto",
-              "rol_destino", "peso_huella", "config_json", "is_active"]:
+
+    if "nombre_reto" in data:
+        r.nombre = data["nombre_reto"]
+    for c in ["descripcion", "fase", "nivel_unesco", "rol_destino", "peso_huella", "config_json", "is_active"]:
         if c in data:
             setattr(r, c, data[c])
+
     db.session.commit()
     return jsonify(r.serialize()), 200
 
@@ -526,6 +528,107 @@ def mis_retos():
 
 
 # ══════════════════════════════════════════════════════════════════════
+# EDICIÓN COMPLETA — Formulario (con sus preguntas) y Reto Plantilla
+# Agregar esto a routes_PASO1.py, justo después de las rutas existentes
+# de /formularios y /retos-plantilla respectivamente.
+# ══════════════════════════════════════════════════════════════════════
+
+@api.route('/formularios/<int:fid>/detalle', methods=['GET'])
+@jwt_required()
+def get_formulario_detalle(fid):
+    """
+    Devuelve el formulario junto con todas sus preguntas, en el mismo
+    formato que espera el editor del front (CreadorRetos.jsx).
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    f = Formulario.query.get_or_404(fid)
+    preguntas = PreguntaFormulario.query.filter_by(formulario_id=fid)\
+        .order_by(PreguntaFormulario.orden_pregunta).all()
+
+    data = f.serialize()
+    data["preguntas"] = [p.serialize() for p in preguntas]
+    return jsonify(data), 200
+
+
+@api.route('/formularios/<int:fid>/completo', methods=['PUT'])
+@jwt_required()
+def actualizar_formulario_completo(fid):
+    """
+    Reemplaza los datos generales del formulario Y todas sus preguntas.
+    Body: igual que el POST de creación (titulo, descripcion, fase_atlas,
+    rol_destino, puntos_maximos, preguntas: [...]).
+    Estrategia: borra las preguntas viejas y crea las nuevas — más simple
+    y seguro que intentar hacer match pregunta por pregunta.
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    f = Formulario.query.get_or_404(fid)
+    data = request.get_json()
+
+    if not data.get("titulo") or not data.get("preguntas"):
+        return jsonify({"error": "titulo y preguntas son requeridos"}), 400
+
+    f.titulo = data["titulo"]
+    f.descripcion = data.get("descripcion")
+    f.fase_atlas = data.get("fase_atlas", f.fase_atlas)
+    f.puntos_maximos = data.get("puntos_maximos", f.puntos_maximos)
+    f.rol_destino = data.get("rol_destino", f.rol_destino)
+
+    # Borra preguntas anteriores y crea las nuevas
+    PreguntaFormulario.query.filter_by(formulario_id=fid).delete()
+
+    for i, p in enumerate(data["preguntas"]):
+        pregunta = PreguntaFormulario(
+            formulario_id=f.id,
+            texto_pregunta=p.get("texto_pregunta", ""),
+            tipo_respuesta=p.get("tipo_respuesta", "ESCALA"),
+            opciones_seleccion=p.get("opciones_seleccion"),
+            puntaje_asociado=p.get("puntaje_asociado", 0),
+            orden_pregunta=p.get("orden_pregunta", i + 1)
+        )
+        db.session.add(pregunta)
+
+    db.session.commit()
+    return jsonify(f.serialize()), 200
+
+
+@api.route('/retos-plantilla/<int:rid>/completo', methods=['PUT'])
+@jwt_required()
+def actualizar_reto_plantilla_completo(rid):
+    """
+    Reemplaza los datos generales del reto Y su banco de preguntas
+    (guardado dentro de config_json.preguntas).
+    Body: igual que el POST de creación (nombre_reto, descripcion, fase,
+    nivel_unesco, numero_reto, rol_destino, peso_huella, preguntas: [...]).
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    r = RetoPlantilla.query.get_or_404(rid)
+    data = request.get_json()
+
+    if not data.get("nombre_reto") or not data.get("fase"):
+        return jsonify({"error": "nombre_reto y fase son requeridos"}), 400
+
+    r.nombre = data["nombre_reto"]
+    r.descripcion = data.get("descripcion")
+    r.fase = data["fase"]
+    r.nivel_unesco = data.get("nivel_unesco")
+    r.rol_destino = data.get("rol_destino", "DOCENTE")
+    r.peso_huella = data.get("peso_huella", r.peso_huella)
+    r.config_json = {"preguntas": data.get("preguntas", [])}
+
+    db.session.commit()
+    return jsonify(r.serialize()), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
 # HUELLA (placeholders mínimos para que el Dashboard no truene)
 # ══════════════════════════════════════════════════════════════════════
 
@@ -551,3 +654,450 @@ def historial_huella():
 @jwt_required()
 def mis_notificaciones():
     return jsonify([]), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# ASIGNACIÓN DE FORMULARIOS Y RETOS A EMPRESAS
+# Agregar esto a routes.py, después de las rutas de retos-plantilla.
+#
+# PESOS POR FASE (cuánto vale cada fase en la Huella COMPASS, 100 pts total):
+#   AUDITAR     → 20 pts
+#   TRANSFORMAR → 30 pts
+#   LIDERAR     → 15 pts
+#   ASEGURAR    → 20 pts
+#   SOSTENER    → 15 pts
+#
+# Lógica de progreso por empresa:
+#   - AUDITAR: completo si tiene al menos 1 formulario asignado para DOCENTE
+#     y 1 para DIRECTIVO (los dos roles que auditan).
+#   - Las otras 4 fases: completo si tiene AL MENOS 1 reto asignado.
+#     (No exigimos un número fijo de retos por fase — el admin decide
+#     cuántos y cuáles asignar; "completo" = la fase tiene contenido.)
+# ══════════════════════════════════════════════════════════════════════
+
+PESOS_FASE = {
+    "AUDITAR": 20,
+    "TRANSFORMAR": 30,
+    "LIDERAR": 15,
+    "ASEGURAR": 20,
+    "SOSTENER": 15,
+}
+
+
+# ── ASIGNAR / DESASIGNAR formularios y retos existentes ─────────────────
+
+@api.route('/empresas/<int:eid>/formularios/<int:fid>/asignar', methods=['POST'])
+@jwt_required()
+def asignar_formulario_a_empresa(eid, fid):
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    Empresa.query.get_or_404(eid)
+    Formulario.query.get_or_404(fid)
+
+    existente = AsignacionFormulario.query.filter_by(empresa_id=eid, formulario_id=fid).first()
+    if existente:
+        return jsonify({"message": "Ya estaba asignado", "asignacion": existente.serialize()}), 200
+
+    a = AsignacionFormulario(empresa_id=eid, formulario_id=fid)
+    db.session.add(a)
+    db.session.commit()
+    return jsonify(a.serialize()), 201
+
+
+@api.route('/empresas/<int:eid>/formularios/<int:fid>/asignar', methods=['DELETE'])
+@jwt_required()
+def desasignar_formulario_de_empresa(eid, fid):
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    a = AsignacionFormulario.query.filter_by(empresa_id=eid, formulario_id=fid).first_or_404()
+    db.session.delete(a)
+    db.session.commit()
+    return jsonify({"message": "Formulario desasignado"}), 200
+
+
+@api.route('/empresas/<int:eid>/retos/<int:rid>/asignar', methods=['POST'])
+@jwt_required()
+def asignar_reto_a_empresa(eid, rid):
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    Empresa.query.get_or_404(eid)
+    reto = RetoPlantilla.query.get_or_404(rid)
+
+    existente = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first()
+    if existente:
+        return jsonify({"message": "Ya estaba asignado", "asignacion": existente.serialize()}), 200
+
+    data = request.get_json() or {}
+    siguiente_orden = data.get("numero_orden")
+    if siguiente_orden is None:
+        existentes_misma_fase = db.session.query(AsignacionReto).join(RetoPlantilla)\
+            .filter(AsignacionReto.empresa_id == eid, RetoPlantilla.fase == reto.fase).count()
+        siguiente_orden = existentes_misma_fase + 1
+
+    a = AsignacionReto(empresa_id=eid, reto_plantilla_id=rid, numero_orden=siguiente_orden)
+    db.session.add(a)
+    db.session.commit()
+    return jsonify(a.serialize()), 201
+
+
+@api.route('/empresas/<int:eid>/retos/<int:rid>/asignar', methods=['DELETE'])
+@jwt_required()
+def desasignar_reto_de_empresa(eid, rid):
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+    db.session.delete(a)
+    db.session.commit()
+    return jsonify({"message": "Reto desasignado"}), 200
+
+
+@api.route('/empresas/<int:eid>/asignaciones', methods=['GET'])
+@jwt_required()
+def get_asignaciones_empresa(eid):
+    """
+    Devuelve TODO el panorama de asignación de una empresa:
+    - Formularios asignados (Auditar)
+    - Retos asignados, agrupados por fase
+    - Porcentaje de progreso por fase y total general
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    Empresa.query.get_or_404(eid)
+
+    # ── Formularios (Auditar) ────────────────────────────────────────────
+    asigs_form = AsignacionFormulario.query.filter_by(empresa_id=eid).all()
+    formularios_asignados = []
+    roles_auditar_cubiertos = set()
+    for a in asigs_form:
+        f = a.formulario
+        if not f:
+            continue
+        formularios_asignados.append({
+            "asignacion_id": a.id,
+            "formulario_id": f.id,
+            "titulo": f.titulo,
+            "rol_destino": f.rol_destino,
+            "puntos_maximos": f.puntos_maximos,
+            "fase_atlas": f.fase_atlas,
+        })
+        if f.rol_destino in ("DOCENTE", "TODOS"):
+            roles_auditar_cubiertos.add("DOCENTE")
+        if f.rol_destino in ("DIRECTIVO", "TODOS"):
+            roles_auditar_cubiertos.add("DIRECTIVO")
+
+    auditar_completo = "DOCENTE" in roles_auditar_cubiertos and "DIRECTIVO" in roles_auditar_cubiertos
+
+    # ── Retos (Transformar, Liderar, Asegurar, Sostener) ────────────────
+    asigs_reto = AsignacionReto.query.filter_by(empresa_id=eid)\
+        .order_by(AsignacionReto.numero_orden).all()
+
+    retos_por_fase = {"TRANSFORMAR": [], "LIDERAR": [], "ASEGURAR": [], "SOSTENER": []}
+    for a in asigs_reto:
+        rp = a.reto_plantilla
+        if not rp or rp.fase not in retos_por_fase:
+            continue
+        retos_por_fase[rp.fase].append({
+            "asignacion_id": a.id,
+            "reto_plantilla_id": rp.id,
+            "nombre_reto": rp.nombre,
+            "rol_destino": rp.rol_destino,
+            "peso_huella": rp.peso_huella,
+            "numero_orden": a.numero_orden,
+            "nivel_unesco": rp.nivel_unesco,
+        })
+
+    # ── Cálculo de progreso por fase ─────────────────────────────────────
+    progreso_fases = {}
+    progreso_fases["AUDITAR"] = {
+        "completo": auditar_completo,
+        "porcentaje": 100 if auditar_completo else (50 if len(roles_auditar_cubiertos) == 1 else 0),
+        "items_asignados": len(formularios_asignados),
+        "peso_fase": PESOS_FASE["AUDITAR"],
+    }
+    for fase in ["TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
+        tiene_retos = len(retos_por_fase[fase]) > 0
+        progreso_fases[fase] = {
+            "completo": tiene_retos,
+            "porcentaje": 100 if tiene_retos else 0,
+            "items_asignados": len(retos_por_fase[fase]),
+            "peso_fase": PESOS_FASE[fase],
+        }
+
+    # ── Porcentaje total ponderado por peso de cada fase ────────────────
+    total_peso = sum(PESOS_FASE.values())
+    avance_ponderado = sum(
+        (progreso_fases[fase]["porcentaje"] / 100) * PESOS_FASE[fase]
+        for fase in PESOS_FASE
+    )
+    porcentaje_total = round((avance_ponderado / total_peso) * 100, 1)
+
+    return jsonify({
+        "empresa_id": eid,
+        "formularios_asignados": formularios_asignados,
+        "retos_por_fase": retos_por_fase,
+        "progreso_fases": progreso_fases,
+        "porcentaje_total": porcentaje_total,
+    }), 200
+
+
+@api.route('/asignaciones/resumen-todas', methods=['GET'])
+@jwt_required()
+def get_resumen_todas_empresas():
+    """
+    Devuelve, para cada empresa, su porcentaje_total de asignación.
+    Pensado para pintar una barra de progreso junto a cada empresa
+    en la lista principal de Gestión de Empresas o en esta nueva page.
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    empresas = Empresa.query.all()
+    resultado = []
+
+    for emp in empresas:
+        asigs_form = AsignacionFormulario.query.filter_by(empresa_id=emp.id).all()
+        roles_cubiertos = set()
+        for a in asigs_form:
+            f = a.formulario
+            if not f:
+                continue
+            if f.rol_destino in ("DOCENTE", "TODOS"):
+                roles_cubiertos.add("DOCENTE")
+            if f.rol_destino in ("DIRECTIVO", "TODOS"):
+                roles_cubiertos.add("DIRECTIVO")
+        auditar_pct = 100 if len(roles_cubiertos) == 2 else (50 if len(roles_cubiertos) == 1 else 0)
+
+        asigs_reto = AsignacionReto.query.filter_by(empresa_id=emp.id).all()
+        fases_con_retos = set()
+        for a in asigs_reto:
+            rp = a.reto_plantilla
+            if rp:
+                fases_con_retos.add(rp.fase)
+
+        porcentajes_fase = {"AUDITAR": auditar_pct}
+        for fase in ["TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
+            porcentajes_fase[fase] = 100 if fase in fases_con_retos else 0
+
+        total_peso = sum(PESOS_FASE.values())
+        avance_ponderado = sum(
+            (porcentajes_fase[fase] / 100) * PESOS_FASE[fase]
+            for fase in PESOS_FASE
+        )
+        porcentaje_total = round((avance_ponderado / total_peso) * 100, 1)
+
+        resultado.append({
+            "empresa_id": emp.id,
+            "empresa_nombre": emp.nombre,
+            "porcentaje_total": porcentaje_total,
+            "porcentajes_fase": porcentajes_fase,
+        })
+
+    return jsonify(resultado), 200
+
+
+@api.route('/empresas/<int:eid>/asignaciones/reto/<int:rid>', methods=['PUT'])
+@jwt_required()
+def actualizar_orden_asignacion_reto(eid, rid):
+    """
+    Permite cambiar el numero_orden de un reto ya asignado a una empresa
+    (ej: que el reto 3 pase a ser el primero en mostrarse).
+    rid = id de RetoPlantilla (no de la asignación).
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+    data = request.get_json()
+    if "numero_orden" in data:
+        a.numero_orden = data["numero_orden"]
+    db.session.commit()
+    return jsonify(a.serialize()), 200
+
+
+@api.route('/empresas/<int:eid>/asignaciones/reto/<int:rid>/reemplazar', methods=['PUT'])
+@jwt_required()
+def reemplazar_reto_asignado(eid, rid):
+    """
+    Reemplaza un reto asignado por otro distinto (ej: la empresa ya no
+    quiere el Reto 3, ahora quiere el Reto 4 en su lugar).
+    rid = id de RetoPlantilla actualmente asignado (el que se va a quitar).
+    Body: { "nuevo_reto_plantilla_id": 8 }
+    """
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+
+    data = request.get_json()
+    nuevo_id = data.get("nuevo_reto_plantilla_id")
+    if not nuevo_id:
+        return jsonify({"error": "nuevo_reto_plantilla_id requerido"}), 400
+
+    RetoPlantilla.query.get_or_404(nuevo_id)
+
+    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+
+    # Evita duplicar si el nuevo reto ya estaba asignado a esta empresa
+    ya_existe = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=nuevo_id).first()
+    if ya_existe and ya_existe.id != a.id:
+        return jsonify({"error": "Ese reto ya está asignado a esta empresa"}), 409
+
+    a.reto_plantilla_id = nuevo_id
+    db.session.commit()
+    return jsonify(a.serialize()), 200
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE AUDITAR — Progreso de fase + Preguntas + Respuestas del usuario
+# Agregar esto a routes.py, después de las rutas de /retos-plantilla.
+# Usa los modelos: ProgresoFase, PreguntaFormulario, RespuestaFormulario
+# ══════════════════════════════════════════════════════════════════════
+
+@api.route('/progreso-fases', methods=['GET'])
+@jwt_required()
+def get_progreso_fases():
+    """Devuelve todos los registros de progreso (Capa 1 / Capa 3) del usuario actual."""
+    u = get_usuario_actual()
+    registros = ProgresoFase.query.filter_by(usuario_id=u.id).all()
+    return jsonify([r.serialize() for r in registros]), 200
+
+
+@api.route('/progreso-fases', methods=['POST'])
+@jwt_required()
+def upsert_progreso_fase():
+    """
+    Crea o actualiza el registro de progreso de una fase para el usuario actual.
+    Body: { "fase": "AUDITAR", "capa_1_sentido": "COMPLETADO", "capa_3_hito_texto": "..." }
+    Si ya existe un registro para esa fase y ese usuario, lo actualiza; si no, lo crea.
+    """
+    u = get_usuario_actual()
+    data = request.get_json()
+    fase = data.get("fase")
+    if not fase:
+        return jsonify({"error": "fase requerida"}), 400
+
+    registro = ProgresoFase.query.filter_by(usuario_id=u.id, fase=fase).first()
+    if not registro:
+        registro = ProgresoFase(usuario_id=u.id, fase=fase)
+        db.session.add(registro)
+
+    if "capa_1_sentido" in data:
+        registro.capa_1_sentido = data["capa_1_sentido"]
+    if "capa_3_hito_texto" in data:
+        registro.capa_3_hito_texto = data["capa_3_hito_texto"]
+
+    registro.fecha_actualizacion = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(registro.serialize()), 200
+
+
+@api.route('/formularios/<int:fid>/preguntas', methods=['GET'])
+@jwt_required()
+def get_preguntas_formulario(fid):
+    """Devuelve las preguntas de un formulario (para abrir el modal de responder)."""
+    preguntas = PreguntaFormulario.query.filter_by(formulario_id=fid)\
+        .order_by(PreguntaFormulario.orden_pregunta).all()
+    return jsonify([p.serialize() for p in preguntas]), 200
+
+
+@api.route('/mis-respuestas', methods=['GET'])
+@jwt_required()
+def get_mis_respuestas():
+    """
+    Devuelve todas las respuestas que el usuario actual ya envió,
+    para saber qué formularios están pendientes vs completados.
+    """
+    u = get_usuario_actual()
+    respuestas = RespuestaFormulario.query.filter_by(usuario_id=u.id).all()
+    return jsonify([r.serialize() for r in respuestas]), 200
+
+
+@api.route('/respuestas', methods=['POST'])
+@jwt_required()
+def crear_respuestas_batch():
+    """
+    Guarda en batch todas las respuestas de un formulario completo.
+    Body: {
+        "formulario_id": 3,
+        "respuestas": [
+            { "pregunta_id": 12, "valor_respondido": "Opción X", "puntos_ganados": 4 },
+            ...
+        ]
+    }
+    Si el usuario ya había respondido este formulario antes, se SOBRESCRIBEN
+    las respuestas anteriores (permite reintentos), igual que el sistema viejo
+    permitía recalcular el mejor puntaje por lote.
+    """
+    u = get_usuario_actual()
+    data = request.get_json()
+    formulario_id = data.get("formulario_id")
+    respuestas = data.get("respuestas", [])
+
+    if not formulario_id or not respuestas:
+        return jsonify({"error": "formulario_id y respuestas son requeridos"}), 400
+
+    Formulario.query.get_or_404(formulario_id)
+
+    # Borra respuestas previas de este usuario para este formulario (permite reintentar)
+    RespuestaFormulario.query.filter_by(usuario_id=u.id, formulario_id=formulario_id).delete()
+
+    for r in respuestas:
+        nueva = RespuestaFormulario(
+            usuario_id=u.id,
+            formulario_id=formulario_id,
+            pregunta_id=r.get("pregunta_id"),
+            valor_respondido=r.get("valor_respondido", ""),
+            puntos_ganados=r.get("puntos_ganados", 0)
+        )
+        db.session.add(nueva)
+
+    db.session.commit()
+
+    total_puntos = sum(r.get("puntos_ganados", 0) for r in respuestas)
+    return jsonify({
+        "message": "Respuestas guardadas",
+        "formulario_id": formulario_id,
+        "total_puntos": total_puntos
+    }), 201
+
+
+@api.route('/mi-empresa/formularios', methods=['GET'])
+@jwt_required()
+def get_formularios_mi_empresa():
+    """
+    Devuelve SOLO los formularios que fueron asignados a la empresa del
+    usuario actual y que aplican a su rol (DOCENTE/DIRECTIVO/TODOS).
+    Si el usuario no tiene empresa, o la empresa no tiene formularios
+    asignados, devuelve lista vacía (el front debe mostrar el mensaje
+    "aún no te han asignado formularios en esta fase").
+    """
+    u = get_usuario_actual()
+    if not u.empresa_id:
+        return jsonify([]), 200
+
+    fase = request.args.get("fase", "AUDITAR")
+
+    asigs = AsignacionFormulario.query.filter_by(empresa_id=u.empresa_id).all()
+    ids = [a.formulario_id for a in asigs]
+
+    if not ids:
+        return jsonify([]), 200
+
+    forms = Formulario.query.filter(
+        Formulario.id.in_(ids),
+        Formulario.fase_atlas == fase,
+        Formulario.rol_destino.in_([u.rol, "TODOS"]),
+        Formulario.is_active == True
+    ).all()
+
+    return jsonify([f.serialize() for f in forms]), 200

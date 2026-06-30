@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../Styles/creadorRetos.css";
 
-
-
 const TIPOS_PREGUNTA = [
     { value: "ESCALA",   label: "Escala (1-5)",          icon: "📊", desc: "El usuario elige un valor del 1 al 5" },
     { value: "MULTIPLE", label: "Opción Múltiple",        icon: "🔘", desc: "Una sola respuesta correcta entre varias opciones" },
@@ -79,6 +77,9 @@ export const CreadorRetos = ({ apiFetch }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
+    // ── Control de edición: si tiene valor, estamos editando ese item ────
+    const [editandoId, setEditandoId] = useState(null);
+
     // ── Datos del formulario/reto en construcción ─────────────────────────
     const [titulo, setTitulo] = useState("");
     const [descripcion, setDescripcion] = useState("");
@@ -117,6 +118,7 @@ export const CreadorRetos = ({ apiFetch }) => {
     };
 
     const resetForm = () => {
+        setEditandoId(null);
         setTitulo("");
         setDescripcion("");
         setNivelUnesco("ACQUIRE");
@@ -128,6 +130,84 @@ export const CreadorRetos = ({ apiFetch }) => {
         setJsonTexto("");
         setJsonError("");
         setModo("formulario");
+    };
+
+    // ── Convierte preguntas del backend (formato API) a formato del editor ─
+    const preguntasDesdeAPI = (listaPreguntasAPI) => {
+        return listaPreguntasAPI.map(p => {
+            const esSlider = p.tipo_respuesta === "SLIDER";
+            const opcionesEsArray = Array.isArray(p.opciones_seleccion);
+            return {
+                _localId: Date.now() + Math.random(),
+                texto_pregunta: p.texto_pregunta || "",
+                tipo_respuesta: p.tipo_respuesta || "ESCALA",
+                opciones_seleccion: opcionesEsArray ? p.opciones_seleccion : [],
+                slider_min: esSlider ? (p.opciones_seleccion?.min ?? 1) : 1,
+                slider_max: esSlider ? (p.opciones_seleccion?.max ?? 5) : 5,
+                puntaje_asociado: p.puntaje_asociado ?? 0,
+            };
+        });
+    };
+
+    // ── Cargar un formulario existente al editor ──────────────────────────
+    const handleEditarFormulario = async (item) => {
+        try {
+            const detalle = await apiFetch(`/api/formularios/${item.id}/detalle`);
+            setEditandoId(item.id);
+            setTitulo(detalle.titulo || "");
+            setDescripcion(detalle.descripcion || "");
+            setRolDestino(detalle.rol_destino || "DOCENTE");
+            setPuntosMaximos(detalle.puntos_maximos ?? 100);
+            const pregs = preguntasDesdeAPI(detalle.preguntas || []);
+            setPreguntas(pregs.length > 0 ? pregs : [nuevaPregunta()]);
+            setModo("tabla");
+            setVista("crear");
+        } catch (e) {
+            console.error("Error cargando formulario para editar:", e);
+            alert("No se pudo cargar el formulario para editar.");
+        }
+    };
+
+    // ── Cargar un reto existente al editor (las preguntas ya vienen en config_json) ─
+    const handleEditarReto = (item) => {
+        setEditandoId(item.id);
+        setTitulo(item.nombre_reto || "");
+        setDescripcion(item.descripcion || "");
+        setNivelUnesco(item.nivel_unesco || "ACQUIRE");
+        setNumeroOrden(item.numero_reto ?? 1);
+        setRolDestino(item.rol_destino || "DOCENTE");
+        setPesoHuella(item.peso_huella ?? 10);
+        const preguntasGuardadas = item.config_json?.preguntas || [];
+        const pregs = preguntasDesdeAPI(preguntasGuardadas);
+        setPreguntas(pregs.length > 0 ? pregs : [nuevaPregunta()]);
+        setModo("tabla");
+        setVista("crear");
+    };
+
+    const handleEditarItem = (item) => {
+        if (esFormulario) {
+            handleEditarFormulario(item);
+        } else {
+            handleEditarReto(item);
+        }
+    };
+
+    // ── Eliminar ───────────────────────────────────────────────────────────
+    const handleEliminarItem = async (item) => {
+        const nombre = item.titulo || item.nombre_reto;
+        if (!window.confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+        try {
+            if (esFormulario) {
+                await apiFetch(`/api/formularios/${item.id}`, { method: "DELETE" });
+            } else {
+                await apiFetch(`/api/retos-plantilla/${item.id}`, { method: "DELETE" });
+            }
+            await cargarDatos();
+        } catch (e) {
+            console.error("Error eliminando:", e);
+            alert("Hubo un error al eliminar. Revisa la consola.");
+        }
     };
 
     // ── Manejo de preguntas (compartido por modo formulario y tabla) ──────
@@ -182,7 +262,7 @@ export const CreadorRetos = ({ apiFetch }) => {
         });
     };
 
-    // ── Guardar (modos formulario y tabla comparten esta función) ────────
+    // ── Guardar (crea si editandoId es null, actualiza si tiene valor) ───
     const handleGuardar = async () => {
         if (!titulo.trim()) {
             alert("El título / nombre es obligatorio.");
@@ -200,7 +280,7 @@ export const CreadorRetos = ({ apiFetch }) => {
             await cargarDatos();
             resetForm();
             setVista("lista");
-            alert("¡Guardado exitosamente!");
+            alert(editandoId ? "¡Actualizado exitosamente!" : "¡Guardado exitosamente!");
         } catch (e) {
             console.error("Error guardando:", e);
             alert("Hubo un error al guardar. Revisa la consola.");
@@ -211,32 +291,48 @@ export const CreadorRetos = ({ apiFetch }) => {
 
     const guardarEnAPI = async (preguntasLimpias) => {
         if (esFormulario) {
-            await apiFetch("/api/formularios/completo", {
-                method: "POST",
-                body: JSON.stringify({
-                    titulo,
-                    descripcion,
-                    fase_atlas: faseSeleccionada,
-                    rol_destino: rolDestino,
-                    puntos_maximos: parseFloat(puntosMaximos),
-                    preguntas: preguntasLimpias,
-                }),
-            });
+            const payload = {
+                titulo,
+                descripcion,
+                fase_atlas: faseSeleccionada,
+                rol_destino: rolDestino,
+                puntos_maximos: parseFloat(puntosMaximos),
+                preguntas: preguntasLimpias,
+            };
+            if (editandoId) {
+                await apiFetch(`/api/formularios/${editandoId}/completo`, {
+                    method: "PUT",
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                await apiFetch("/api/formularios/completo", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
+            }
         } else {
-            await apiFetch("/api/retos-plantilla/completo", {
-                method: "POST",
-                body: JSON.stringify({
-                    nombre_reto: titulo,
-                    descripcion,
-                    fase: faseSeleccionada,
-                    nivel_unesco: nivelUnesco,
-                    numero_reto: parseInt(numeroOrden),
-                    rol_destino: rolDestino,
-                    peso_huella: parseFloat(pesoHuella),
-                    numero_orden: parseInt(numeroOrden),
-                    preguntas: preguntasLimpias,
-                }),
-            });
+            const payload = {
+                nombre_reto: titulo,
+                descripcion,
+                fase: faseSeleccionada,
+                nivel_unesco: nivelUnesco,
+                numero_reto: parseInt(numeroOrden),
+                rol_destino: rolDestino,
+                peso_huella: parseFloat(pesoHuella),
+                numero_orden: parseInt(numeroOrden),
+                preguntas: preguntasLimpias,
+            };
+            if (editandoId) {
+                await apiFetch(`/api/retos-plantilla/${editandoId}/completo`, {
+                    method: "PUT",
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                await apiFetch("/api/retos-plantilla/completo", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
+            }
         }
     };
 
@@ -266,26 +362,12 @@ export const CreadorRetos = ({ apiFetch }) => {
             setPesoHuella(parsed.peso_huella ?? 10);
             setNumeroOrden(parsed.numero_reto ?? 1);
 
-            const preguntasNormalizadas = parsed.preguntas.map(p => {
-                const base = nuevaPregunta();
-                const esSlider = p.tipo_respuesta === "SLIDER";
-                return {
-                    ...base,
-                    texto_pregunta: p.texto_pregunta || "",
-                    tipo_respuesta: p.tipo_respuesta || "ESCALA",
-                    opciones_seleccion: TIPOS_CON_OPCIONES.includes(p.tipo_respuesta)
-                        ? (p.opciones_seleccion || [])
-                        : [],
-                    slider_min: esSlider ? (p.opciones_seleccion?.min ?? 1) : 1,
-                    slider_max: esSlider ? (p.opciones_seleccion?.max ?? 5) : 5,
-                    puntaje_asociado: p.puntaje_asociado ?? 10,
-                };
-            });
+            const preguntasNormalizadas = preguntasDesdeAPI(parsed.preguntas);
 
             setPreguntas(preguntasNormalizadas.length > 0 ? preguntasNormalizadas : [nuevaPregunta()]);
             setJsonError("");
             alert(`JSON cargado: ${preguntasNormalizadas.length} preguntas. Revisa y guarda cuando estés listo.`);
-            setModo("tabla"); // tras importar, mostramos la vista tabla para revisar/editar
+            setModo("tabla");
         } catch (err) {
             setJsonError(`JSON inválido: ${err.message}`);
         }
@@ -335,7 +417,7 @@ export const CreadorRetos = ({ apiFetch }) => {
                 <div className="cr-card">
                     <div className="cr-card-header">
                         <h3>{esFormulario ? "Formularios" : "Retos Plantilla"} — {faseSeleccionada}</h3>
-                        <button className="cr-btn-primary" onClick={() => setVista("crear")}>
+                        <button className="cr-btn-primary" onClick={() => { resetForm(); setVista("crear"); }}>
                             ➕ {esFormulario ? "Nuevo Formulario" : "Nuevo Reto"}
                         </button>
                     </div>
@@ -350,15 +432,19 @@ export const CreadorRetos = ({ apiFetch }) => {
                         <div className="cr-item-list">
                             {listaActual.map((item, i) => (
                                 <div key={i} className="cr-item-row">
-                                    <div>
+                                    <div className="cr-item-info">
                                         <p className="cr-item-title">{item.titulo || item.nombre_reto}</p>
                                         <p className="cr-item-meta">
                                             {item.rol_destino} · {esFormulario ? `${item.puntos_maximos} pts máx` : `${item.peso_huella} pts huella`}
                                         </p>
                                     </div>
-                                    <span className={`cr-status-badge ${item.is_active ? "activo" : "inactivo"}`}>
-                                        {item.is_active ? "ACTIVO" : "INACTIVO"}
-                                    </span>
+                                    <div className="cr-item-actions">
+                                        <span className={`cr-status-badge ${item.is_active ? "activo" : "inactivo"}`}>
+                                            {item.is_active ? "ACTIVO" : "INACTIVO"}
+                                        </span>
+                                        <button className="cr-icon-btn edit" title="Editar" onClick={() => handleEditarItem(item)}>✏️</button>
+                                        <button className="cr-icon-btn delete" title="Eliminar" onClick={() => handleEliminarItem(item)}>🗑️</button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -366,28 +452,39 @@ export const CreadorRetos = ({ apiFetch }) => {
                 </div>
             )}
 
-            {/* ── VISTA CREAR ──────────────────────────────────────────────── */}
+            {/* ── VISTA CREAR / EDITAR ─────────────────────────────────────── */}
             {vista === "crear" && (
                 <>
                     {/* SELECTOR DE MODO */}
                     <div className="cr-card">
                         <div className="cr-card-header">
-                            <h3>¿Cómo quieres crear este {esFormulario ? "formulario" : "reto"}?</h3>
+                            <h3>
+                                {editandoId
+                                    ? `Editando: ${titulo || (esFormulario ? "Formulario" : "Reto")}`
+                                    : `¿Cómo quieres crear este ${esFormulario ? "formulario" : "reto"}?`}
+                            </h3>
                             <button className="cr-icon-btn" onClick={() => { resetForm(); setVista("lista"); }}>✖ Cancelar</button>
                         </div>
-                        <div className="cr-modo-grid">
-                            {MODOS.map(m => (
-                                <button
-                                    key={m.value}
-                                    onClick={() => setModo(m.value)}
-                                    className={`cr-modo-btn ${modo === m.value ? "active" : ""}`}
-                                >
-                                    <div className="cr-modo-icon">{m.icon}</div>
-                                    <div className="cr-modo-label">{m.label}</div>
-                                    <div className="cr-modo-desc">{m.desc}</div>
-                                </button>
-                            ))}
-                        </div>
+                        {!editandoId && (
+                            <div className="cr-modo-grid">
+                                {MODOS.map(m => (
+                                    <button
+                                        key={m.value}
+                                        onClick={() => setModo(m.value)}
+                                        className={`cr-modo-btn ${modo === m.value ? "active" : ""}`}
+                                    >
+                                        <div className="cr-modo-icon">{m.icon}</div>
+                                        <div className="cr-modo-label">{m.label}</div>
+                                        <div className="cr-modo-desc">{m.desc}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {editandoId && (
+                            <p className="cr-editing-hint">
+                                Editando en vista tabla. Modifica los campos que necesites y guarda los cambios.
+                            </p>
+                        )}
                     </div>
 
                     {/* DATOS GENERALES — comunes a los 3 modos */}
@@ -510,7 +607,6 @@ export const CreadorRetos = ({ apiFetch }) => {
                                             {TIPOS_PREGUNTA.find(t => t.value === p.tipo_respuesta)?.desc}
                                         </p>
 
-                                        {/* Editor de opciones para MULTIPLE / CHECKBOX / SELECT / ORDEN */}
                                         {TIPOS_CON_OPCIONES.includes(p.tipo_respuesta) && (
                                             <div className="cr-opciones-box">
                                                 <p className="cr-opciones-label">
@@ -533,7 +629,6 @@ export const CreadorRetos = ({ apiFetch }) => {
                                             </div>
                                         )}
 
-                                        {/* SLIDER: rango configurable min/max */}
                                         {p.tipo_respuesta === "SLIDER" && (
                                             <div className="cr-slider-box">
                                                 <p className="cr-opciones-label">RANGO DEL SLIDER</p>
@@ -564,7 +659,6 @@ export const CreadorRetos = ({ apiFetch }) => {
                                             </div>
                                         )}
 
-                                        {/* Preview del tipo ESCALA */}
                                         {p.tipo_respuesta === "ESCALA" && (
                                             <div className="cr-preview-box">
                                                 <p className="cr-preview-label">Vista previa:</p>
@@ -588,7 +682,7 @@ export const CreadorRetos = ({ apiFetch }) => {
                                     disabled={isSaving}
                                     className="cr-btn-guardar"
                                 >
-                                    {isSaving ? "Guardando..." : `Guardar ${esFormulario ? "Formulario" : "Reto"}`}
+                                    {isSaving ? "Guardando..." : editandoId ? `Actualizar ${esFormulario ? "Formulario" : "Reto"}` : `Guardar ${esFormulario ? "Formulario" : "Reto"}`}
                                 </button>
                             </div>
                         </div>
@@ -709,14 +803,14 @@ export const CreadorRetos = ({ apiFetch }) => {
                                     disabled={isSaving}
                                     className="cr-btn-guardar"
                                 >
-                                    {isSaving ? "Guardando..." : `Guardar ${esFormulario ? "Formulario" : "Reto"}`}
+                                    {isSaving ? "Guardando..." : editandoId ? `Actualizar ${esFormulario ? "Formulario" : "Reto"}` : `Guardar ${esFormulario ? "Formulario" : "Reto"}`}
                                 </button>
                             </div>
                         </div>
                     )}
 
                     {/* ── MODO: IMPORTAR JSON ─────────────────────────────────── */}
-                    {modo === "json" && (
+                    {modo === "json" && !editandoId && (
                         <div className="cr-card">
                             <div className="cr-card-header">
                                 <h3>Importar desde JSON</h3>

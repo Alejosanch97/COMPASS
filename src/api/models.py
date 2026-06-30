@@ -269,7 +269,7 @@ class RetoPlantilla(db.Model):
 
     def serialize(self):
         return {
-            "id": self.id, "nombre": self.nombre, "descripcion": self.descripcion,
+            "id": self.id, "nombre": self.nombre, "nombre_reto": self.nombre,"descripcion": self.descripcion,
             "fase": self.fase, "nivel_unesco": self.nivel_unesco,
             "rol_destino": self.rol_destino, "peso_huella": self.peso_huella,
             "config_json": self.config_json, "is_active": self.is_active,
