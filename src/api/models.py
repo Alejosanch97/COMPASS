@@ -251,6 +251,9 @@ class ProgresoFase(db.Model):
 # ─────────────────────────────────────────────
 # 9. RETO PLANTILLA (catálogo global)
 # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# 9. RETO PLANTILLA (catálogo global)
+# ─────────────────────────────────────────────
 class RetoPlantilla(db.Model):
     __tablename__ = "retos_plantilla"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -265,14 +268,30 @@ class RetoPlantilla(db.Model):
     creado_por_admin_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
+    # ── NUEVOS: contenido narrativo del reto (Contexto / Misión / Preguntas) ──
+    contexto_narrativo: Mapped[str] = mapped_column(Text, nullable=True)
+    mision_texto: Mapped[str] = mapped_column(Text, nullable=True)
+    objetivos_aprendizaje: Mapped[dict] = mapped_column(JSON, nullable=True)  # lista de strings
+    preguntas_orientadoras: Mapped[dict] = mapped_column(JSON, nullable=True)  # lista de strings
+    conceptos_clave: Mapped[dict] = mapped_column(JSON, nullable=True)  # lista de strings (tags)
+    autoevaluacion_items: Mapped[dict] = mapped_column(JSON, nullable=True)
+    lectura_previa: Mapped[dict] = mapped_column(JSON, nullable=True)
+
     asignaciones = relationship("AsignacionReto", back_populates="reto_plantilla", cascade="all, delete-orphan")
 
     def serialize(self):
         return {
-            "id": self.id, "nombre": self.nombre, "nombre_reto": self.nombre,"descripcion": self.descripcion,
+            "id": self.id, "nombre": self.nombre, "nombre_reto": self.nombre, "descripcion": self.descripcion,
             "fase": self.fase, "nivel_unesco": self.nivel_unesco,
             "rol_destino": self.rol_destino, "peso_huella": self.peso_huella,
             "config_json": self.config_json, "is_active": self.is_active,
+            "contexto_narrativo": self.contexto_narrativo,
+            "mision_texto": self.mision_texto,
+            "objetivos_aprendizaje": self.objetivos_aprendizaje or [],
+            "preguntas_orientadoras": self.preguntas_orientadoras or [],
+            "conceptos_clave": self.conceptos_clave or [],
+            "autoevaluacion_items": self.autoevaluacion_items or [],
+            "lectura_previa": self.lectura_previa or None,
         }
 
 

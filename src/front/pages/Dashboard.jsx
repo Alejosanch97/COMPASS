@@ -4,7 +4,9 @@ import { GestionEmpresasUsuarios } from "./GestionEmpresasUsuarios";
 import { CreadorRetos } from "./CreadorRetos";
 import { AsignacionRetos } from "./AsignacionRetos";
 import { FaseAuditar } from "./FaseAuditar";
-import { ResponderFormularios } from "./ResponderFormularios"; // <-- Nueva página para responder instrumentos
+import { ResponderFormularios } from "./ResponderFormularios";
+import { EjecutarReto } from "./EjecutarReto"; // <-- Nueva página para la ejecución de retos
+import { FaseTransformar } from "./FaseTransformar"; // <-- Nueva página para responder instrumentos
 import "../Styles/dashboard.css";
 
 // ─── URL del backend ──────────────────────────────────────────────────────────
@@ -47,9 +49,15 @@ export const Dashboard = ({ onLogout }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openMenu, setOpenMenu] = useState("consola");
     const [faseRespondiendo, setFaseRespondiendo] = useState("AUDITAR");
+    const [retoEjecutando, setRetoEjecutando] = useState(null);
 
     const handleNavigateFase = (tab, fase) => {
         if (fase) setFaseRespondiendo(fase);
+        switchTab(tab);
+    };
+
+    const handleNavigateTransformar = (tab, retoId) => {
+        if (retoId) setRetoEjecutando(retoId);
         switchTab(tab);
     };
 
@@ -189,20 +197,30 @@ export const Dashboard = ({ onLogout }) => {
                                 <button className={activeTab === "overview" ? "active" : ""} onClick={() => switchTab("overview")}>
                                     Compass de IA
                                 </button>
-                                <button className={activeTab === "gestion_empresas" ? "active" : ""} onClick={() => switchTab("gestion_empresas")}>
-                                    Gestión de Empresas
-                                </button>
-                                {/* ── Nuevas Secciones para el ADMIN que redirigen a las rutas externas ── */}
-                                <button className={activeTab === "creador_retos" ? "active" : ""} onClick={() => switchTab("creador_retos")}>
-                                    Creador de Retos
-                                </button>
+                                {userData.rol === "ADMIN" && (
+                                    <>
+                                        <button
+                                            className={activeTab === "gestion_empresas" ? "active" : ""}
+                                            onClick={() => switchTab("gestion_empresas")}
+                                        >
+                                            Gestión de Empresas
+                                        </button>
 
-                                <button
-                                    className={activeTab === "asignacion_retos" ? "active" : ""}
-                                    onClick={() => switchTab("asignacion_retos")}
-                                >
-                                    Asignación de Retos
-                                </button>
+                                        <button
+                                            className={activeTab === "creador_retos" ? "active" : ""}
+                                            onClick={() => switchTab("creador_retos")}
+                                        >
+                                            Creador de Retos
+                                        </button>
+
+                                        <button
+                                            className={activeTab === "asignacion_retos" ? "active" : ""}
+                                            onClick={() => switchTab("asignacion_retos")}
+                                        >
+                                            Asignación de Retos
+                                        </button>
+                                    </>
+                                )}
 
                                 {(userData.rol === "ADMIN" || userData.rol === "DIRECTIVO") && (
                                     <button className={activeTab === "analisis" ? "active" : ""} onClick={() => switchTab("analisis")}>
@@ -340,6 +358,7 @@ export const Dashboard = ({ onLogout }) => {
                             {activeTab === "analisis" && "Análisis Estratégico"}
                             {activeTab === "asignacion_retos" && "Asignación de Retos"}
                             {activeTab === "responder_fase" && "Responder Instrumento"}
+                            {activeTab === "ejecutar_reto" && "Ejecutando Misión"}
                         </h1>
                         <p className="header-subtitle">Modelo de Madurez y Gobernanza en IA Educativa</p>
                     </div>
@@ -610,36 +629,45 @@ export const Dashboard = ({ onLogout }) => {
 
                 {/* ── TABS DE FASES (placeholders — conectar tus componentes existentes) */}
                 {activeTab !== "overview" && (
-                    <section className="dashboard-grid">
-
-                        {/* 1. Renderizado directo de tus nuevas vistas si están activas */}
-                        {activeTab === "creador_retos" && <CreadorRetos apiFetch={apiFetch} />}
-                        {activeTab === "gestion_empresas" && <GestionEmpresasUsuarios apiFetch={apiFetch} API_URL={API_URL} />}
-                        {activeTab === "asignacion_retos" && <AsignacionRetos apiFetch={apiFetch} />}
+                    <>
+                        {/* 1. Fases con su propio layout — SIN wrapper grid, ocupan el ancho completo */}
                         {activeTab === "fase_auditar" && <FaseAuditar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateFase} />}
                         {activeTab === "responder_fase" && <ResponderFormularios userData={userData} apiFetch={apiFetch} filterPhase={faseRespondiendo} onNavigate={handleNavigateFase} />}
+                        {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} />}
+                        {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} />}
 
-                        {/* 2. Bloque genérico (Solo se muestra para las fases que aún son placeholders) */}
-                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase"].includes(activeTab) && (
-                            <div className="info-card wide-card" style={{ textAlign: "center", padding: "60px 20px" }}>
-                                <div style={{ fontSize: "3rem", marginBottom: "16px" }}>
-                                    {getFaseIcon(activeTab.replace("fase_", "").toUpperCase())}
-                                </div>
-                                <h2 style={{ color: "#1e293b", marginBottom: "8px" }}>
-                                    {activeTab.replace(/_/g, " ").toUpperCase()}
-                                </h2>
-                                <p style={{ color: "#64748b", maxWidth: "400px", margin: "0 auto 24px" }}>
-                                    Esta sección se conectará con los componentes de cada fase. El login y la carga de datos desde la nueva API ya funcionan correctamente.
-                                </p>
-                                <button
-                                    onClick={() => switchTab("overview")}
-                                    style={{ padding: "10px 24px", background: "#1e293b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "700" }}
-                                >
-                                    ← Volver al Dashboard
-                                </button>
-                            </div>
+                        {/* 2. Páginas tipo panel/admin que sí usan el grid de cards de 2 columnas */}
+                        {["creador_retos", "gestion_empresas", "asignacion_retos"].includes(activeTab) && (
+                            <section className="dashboard-grid">
+                                {activeTab === "creador_retos" && <CreadorRetos apiFetch={apiFetch} />}
+                                {activeTab === "gestion_empresas" && <GestionEmpresasUsuarios apiFetch={apiFetch} API_URL={API_URL} />}
+                                {activeTab === "asignacion_retos" && <AsignacionRetos apiFetch={apiFetch} />}
+                            </section>
                         )}
-                    </section>
+
+                        {/* 3. Bloque genérico (placeholders restantes: talentos, formularios, analisis, etc.) */}
+                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto"].includes(activeTab) && (
+                            <section className="dashboard-grid">
+                                <div className="info-card wide-card" style={{ textAlign: "center", padding: "60px 20px" }}>
+                                    <div style={{ fontSize: "3rem", marginBottom: "16px" }}>
+                                        {getFaseIcon(activeTab.replace("fase_", "").toUpperCase())}
+                                    </div>
+                                    <h2 style={{ color: "#1e293b", marginBottom: "8px" }}>
+                                        {activeTab.replace(/_/g, " ").toUpperCase()}
+                                    </h2>
+                                    <p style={{ color: "#64748b", maxWidth: "400px", margin: "0 auto 24px" }}>
+                                        Esta sección se conectará con los componentes de cada fase. El login y la carga de datos desde la nueva API ya funcionan correctamente.
+                                    </p>
+                                    <button
+                                        onClick={() => switchTab("overview")}
+                                        style={{ padding: "10px 24px", background: "#1e293b", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "700" }}
+                                    >
+                                        ← Volver al Dashboard
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+                    </>
                 )}
 
             </main>

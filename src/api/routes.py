@@ -12,7 +12,7 @@ from api.models import (
     db, Empresa, Usuario, ConfiguracionFaseEmpresa,
     Formulario, PreguntaFormulario, AsignacionFormulario,
     RetoPlantilla, AsignacionReto,
-    ProgresoFase, RespuestaFormulario
+    ProgresoFase, RespuestaFormulario, RetoTransformar
 )
 import uuid
 
@@ -453,7 +453,14 @@ def crear_reto_plantilla_completo():
         rol_destino=data.get("rol_destino", "DOCENTE"),
         peso_huella=data.get("peso_huella", 10.0),
         config_json=config,
-        creado_por_admin_id=u.id
+        creado_por_admin_id=u.id,
+        contexto_narrativo=data.get("contexto_narrativo"),
+        mision_texto=data.get("mision_texto"),
+        objetivos_aprendizaje=data.get("objetivos_aprendizaje", []),
+        preguntas_orientadoras=data.get("preguntas_orientadoras", []),
+        conceptos_clave=data.get("conceptos_clave", []),
+        autoevaluacion_items=data.get("autoevaluacion_items", []),
+        lectura_previa=data.get("lectura_previa"),
     )
     db.session.add(reto)
     db.session.commit()
@@ -482,7 +489,7 @@ def actualizar_reto_plantilla(rid):
 
     if "nombre_reto" in data:
         r.nombre = data["nombre_reto"]
-    for c in ["descripcion", "fase", "nivel_unesco", "rol_destino", "peso_huella", "config_json", "is_active"]:
+    for c in ["descripcion", "fase", "nivel_unesco", "rol_destino", "peso_huella", "config_json", "is_active", "contexto_narrativo", "mision_texto", "objetivos_aprendizaje", "preguntas_orientadoras", "conceptos_clave", "autoevaluacion_items"]:
         if c in data:
             setattr(r, c, data[c])
 
@@ -616,6 +623,7 @@ def actualizar_reto_plantilla_completo(rid):
     if not data.get("nombre_reto") or not data.get("fase"):
         return jsonify({"error": "nombre_reto y fase son requeridos"}), 400
 
+    
     r.nombre = data["nombre_reto"]
     r.descripcion = data.get("descripcion")
     r.fase = data["fase"]
@@ -623,6 +631,13 @@ def actualizar_reto_plantilla_completo(rid):
     r.rol_destino = data.get("rol_destino", "DOCENTE")
     r.peso_huella = data.get("peso_huella", r.peso_huella)
     r.config_json = {"preguntas": data.get("preguntas", [])}
+    r.contexto_narrativo = data.get("contexto_narrativo", r.contexto_narrativo)
+    r.mision_texto = data.get("mision_texto", r.mision_texto)
+    r.objetivos_aprendizaje = data.get("objetivos_aprendizaje", r.objetivos_aprendizaje)
+    r.preguntas_orientadoras = data.get("preguntas_orientadoras", r.preguntas_orientadoras)
+    r.conceptos_clave = data.get("conceptos_clave", r.conceptos_clave)
+    r.autoevaluacion_items = data.get("autoevaluacion_items", r.autoevaluacion_items)
+    r.lectura_previa = data.get("lectura_previa", r.lectura_previa)
 
     db.session.commit()
     return jsonify(r.serialize()), 200
@@ -1101,3 +1116,134 @@ def get_formularios_mi_empresa():
     ).all()
 
     return jsonify([f.serialize() for f in forms]), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE TRANSFORMAR — Progreso de fase + Retos asignados + Guardar avance
+# ══════════════════════════════════════════════════════════════════════
+
+
+@api.route('/mi-empresa/retos', methods=['GET'])
+@jwt_required()
+def get_retos_mi_empresa():
+    """
+    Devuelve SOLO los retos plantilla que fueron asignados a la empresa
+    del usuario actual, filtrados por fase y por su rol.
+    Si no hay ninguno asignado, devuelve lista vacía.
+    """
+    u = get_usuario_actual()
+    if not u.empresa_id:
+        return jsonify([]), 200
+
+    fase = request.args.get("fase", "TRANSFORMAR")
+
+    asigs = AsignacionReto.query.filter_by(empresa_id=u.empresa_id)\
+        .order_by(AsignacionReto.numero_orden).all()
+
+    result = []
+    for a in asigs:
+        rp = a.reto_plantilla
+        if not rp or not rp.is_active:
+            continue
+        if rp.fase != fase:
+            continue
+        if rp.rol_destino not in (u.rol, "TODOS"):
+            continue
+        result.append({**rp.serialize(), "numero_orden": a.numero_orden})
+    return jsonify(result), 200
+
+
+@api.route('/mis-retos-transformar', methods=['GET'])
+@jwt_required()
+def get_mis_retos_transformar():
+    """
+    Devuelve los registros de avance (borrador o completado) del usuario
+    actual en la fase Transformar, para saber qué retos ya completó.
+    """
+    u = get_usuario_actual()
+    registros = RetoTransformar.query.filter_by(usuario_id=u.id).all()
+    return jsonify([r.serialize() for r in registros]), 200
+
+
+@api.route('/retos-transformar/<int:reto_plantilla_id>', methods=['GET'])
+@jwt_required()
+def get_mi_avance_reto_transformar(reto_plantilla_id):
+    """
+    Devuelve el registro de avance del usuario actual para un reto
+    plantilla específico (si existe). Prioriza COMPLETADO sobre BORRADOR,
+    igual que el sistema viejo.
+    """
+    u = get_usuario_actual()
+    registros = RetoTransformar.query.filter_by(
+        usuario_id=u.id, reto_plantilla_id=reto_plantilla_id
+    ).all()
+
+    if not registros:
+        return jsonify(None), 200
+
+    completado = next((r for r in reversed(registros) if r.status_reto == "COMPLETADO"), None)
+    if completado:
+        return jsonify(completado.serialize()), 200
+
+    borrador = next((r for r in reversed(registros) if r.status_reto == "BORRADOR"), None)
+    return jsonify(borrador.serialize() if borrador else None), 200
+
+
+@api.route('/retos-transformar', methods=['POST'])
+@jwt_required()
+def guardar_reto_transformar():
+    """
+    Crea o actualiza el avance del usuario en un reto de Transformar.
+    Body: {
+        "reto_plantilla_id": 5,
+        "numero_reto": 1,
+        "nombre_reto": "Reto 1: Evaluación Ética...",
+        "nivel_unesco": "ACQUIRE",
+        "datos_json": { "respuestas": {...} },
+        "status_reto": "BORRADOR" | "COMPLETADO"
+    }
+    Si ya existe un registro de este usuario para ese reto_plantilla_id,
+    lo actualiza en vez de crear uno nuevo (evita duplicados).
+    """
+    u = get_usuario_actual()
+    data = request.get_json()
+
+    reto_plantilla_id = data.get("reto_plantilla_id")
+    if not reto_plantilla_id:
+        return jsonify({"error": "reto_plantilla_id requerido"}), 400
+
+    registro = RetoTransformar.query.filter_by(
+        usuario_id=u.id, reto_plantilla_id=reto_plantilla_id
+    ).first()
+
+    if not registro:
+        registro = RetoTransformar(
+            usuario_id=u.id,
+            reto_plantilla_id=reto_plantilla_id,
+            numero_reto=data.get("numero_reto", 1)
+        )
+        db.session.add(registro)
+
+    registro.nombre_reto = data.get("nombre_reto", registro.nombre_reto)
+    registro.nivel_unesco = data.get("nivel_unesco", registro.nivel_unesco)
+    registro.datos_json = data.get("datos_json", {})
+    registro.status_reto = data.get("status_reto", "BORRADOR")
+
+    db.session.commit()
+    return jsonify(registro.serialize()), 200
+
+@api.route('/empresa/retos-transformar', methods=['GET'])
+@jwt_required()
+def get_retos_transformar_empresa():
+    """Solo DIRECTIVO puede ver todos los registros de su empresa."""
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    if not u.empresa_id:
+        return jsonify([]), 200
+
+    # Trae todos los usuarios de la empresa y sus retos
+    usuarios_empresa = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    ids = [usr.id for usr in usuarios_empresa]
+    registros = RetoTransformar.query.filter(RetoTransformar.usuario_id.in_(ids)).all()
+    return jsonify([r.serialize() for r in registros]), 200

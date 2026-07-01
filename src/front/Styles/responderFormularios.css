@@ -469,27 +469,6 @@
     transition: all 0.3s;
 }
 
-/* =============================================
-   CONTENEDOR Y ESTRUCTURA BASE
-   ============================================= */
-.atlas-responder-container {
-    padding: 1.5rem 0;
-    font-family: 'Inter', -apple-system, sans-serif;
-    color: #1e293b;
-
-    /* FORZAR ANCHO COMPLETO E IGNORAR RESTRICCIONES DEL DASHBOARD */
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box;
-
-    /* SOLUCIÓN AL DASHBOARD-GRID: Rompe las 4 columnas globales y usa todo el ancho */
-    grid-column: 1 / -1 !important; 
-    
-    /* Por si el contenedor padre usara Flexbox en vez de Grid */
-    flex: 1 1 100% !important; 
-}
-
 /* =======================================================
    SISTEMA DE RESPONSIVIDAD INTEGRAL - ATLAS RESPONDER
    ======================================================= */

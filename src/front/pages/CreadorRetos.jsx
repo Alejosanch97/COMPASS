@@ -2,35 +2,40 @@ import React, { useState, useEffect } from "react";
 import "../Styles/creadorRetos.css";
 
 const TIPOS_PREGUNTA = [
-    { value: "ESCALA",   label: "Escala (1-5)",          icon: "📊", desc: "El usuario elige un valor del 1 al 5" },
-    { value: "MULTIPLE", label: "Opción Múltiple",        icon: "🔘", desc: "Una sola respuesta correcta entre varias opciones" },
-    { value: "CHECKBOX", label: "Casillas (varias)",      icon: "☑️", desc: "El usuario puede marcar varias opciones" },
-    { value: "ABIERTA",  label: "Texto Corto",            icon: "✏️", desc: "Respuesta breve en una línea" },
-    { value: "PARRAFO",  label: "Párrafo / Texto largo",  icon: "📝", desc: "Respuesta extensa tipo reflexión" },
-    { value: "ORDEN",    label: "Ordenar por prioridad",  icon: "🔢", desc: "El usuario numera las opciones de más a menos importante" },
-    { value: "SLIDER",   label: "Slider deslizante",      icon: "🎛️", desc: "El usuario desliza un control entre un valor mínimo y máximo" },
-    { value: "SELECT",   label: "Lista desplegable",      icon: "📋", desc: "El usuario elige una opción de un select" },
+    { value: "ESCALA", label: "Escala (1-5)", icon: "📊", desc: "El usuario elige un valor del 1 al 5" },
+    { value: "MULTIPLE", label: "Opción Múltiple", icon: "🔘", desc: "Una sola respuesta correcta entre varias opciones" },
+    { value: "CHECKBOX", label: "Casillas (varias)", icon: "☑️", desc: "El usuario puede marcar varias opciones" },
+    { value: "ABIERTA", label: "Texto Corto", icon: "✏️", desc: "Respuesta breve en una línea" },
+    { value: "PARRAFO", label: "Párrafo / Texto largo", icon: "📝", desc: "Respuesta extensa tipo reflexión" },
+    { value: "ORDEN", label: "Ordenar por prioridad", icon: "🔢", desc: "El usuario numera las opciones de más a menos importante" },
+    { value: "SLIDER", label: "Slider deslizante", icon: "🎛️", desc: "El usuario desliza un control entre un valor mínimo y máximo" },
+    { value: "SELECT", label: "Lista desplegable", icon: "📋", desc: "El usuario elige una opción de un select" },
+    { value: "MATRIZ_UNESCO", label: "Matriz Ética UNESCO (5 criterios)", icon: "🧭", desc: "Matriz interactiva de 5 sliders con diagnóstico automático por puntaje total" },
+    { value: "ANALISIS_SECUENCIA", label: "Análisis Secuencia Didáctica", icon: "📐", desc: "3 momentos (inicio/desarrollo/cierre) con análisis de patrón UNESCO automático" },
+    { value: "SECUENCIA_DEEPEN", label: "Secuencia Didáctica UNESCO DEEPEN", icon: "📐", desc: "3 momentos (inicio/desarrollo/cierre) con análisis de patrón human-centred automático" },
 ];
 
 const TIPOS_CON_OPCIONES = ["MULTIPLE", "CHECKBOX", "SELECT", "ORDEN"];
 
 const FASES = [
-    { value: "AUDITAR",     label: "A · Auditar",     icon: "🔍", tipo: "formulario", pesoMax: 20 },
-    { value: "TRANSFORMAR", label: "T · Transformar", icon: "⚡", tipo: "reto",        pesoMax: 30 },
-    { value: "LIDERAR",     label: "L · Liderar",     icon: "🧭", tipo: "reto",        pesoMax: 15 },
-    { value: "ASEGURAR",    label: "A · Asegurar",    icon: "🛡️", tipo: "reto",        pesoMax: 20 },
-    { value: "SOSTENER",    label: "S · Sostener",    icon: "🌱", tipo: "reto",        pesoMax: 15 },
+    { value: "AUDITAR", label: "A · Auditar", icon: "🔍", tipo: "formulario", pesoMax: 20 },
+    { value: "TRANSFORMAR", label: "T · Transformar", icon: "⚡", tipo: "reto", pesoMax: 30 },
+    { value: "LIDERAR", label: "L · Liderar", icon: "🧭", tipo: "reto", pesoMax: 15 },
+    { value: "ASEGURAR", label: "A · Asegurar", icon: "🛡️", tipo: "reto", pesoMax: 20 },
+    { value: "SOSTENER", label: "S · Sostener", icon: "🌱", tipo: "reto", pesoMax: 15 },
 ];
 
 const MODOS = [
     { value: "formulario", label: "Formulario guiado", icon: "📝", desc: "Construye pregunta por pregunta, paso a paso" },
-    { value: "tabla",      label: "Vista tabla",        icon: "📊", desc: "Llena una hoja tipo Excel, fila por fila" },
-    { value: "json",       label: "Importar JSON",      icon: "📁", desc: "Sube un archivo .json con todas las preguntas" },
+    { value: "tabla", label: "Vista tabla", icon: "📊", desc: "Llena una hoja tipo Excel, fila por fila" },
+    { value: "json", label: "Importar JSON", icon: "📁", desc: "Sube un archivo .json con todas las preguntas" },
 ];
+
 
 const nuevaPregunta = () => ({
     _localId: Date.now() + Math.random(),
     texto_pregunta: "",
+    descripcion_pregunta: "",
     tipo_respuesta: "ESCALA",
     opciones_seleccion: [],
     slider_min: 1,
@@ -89,6 +94,22 @@ export const CreadorRetos = ({ apiFetch }) => {
     const [pesoHuella, setPesoHuella] = useState(10);
     const [puntosMaximos, setPuntosMaximos] = useState(100);
     const [preguntas, setPreguntas] = useState([nuevaPregunta()]);
+    const [contextoNarrativo, setContextoNarrativo] = useState("");
+    const [misionTexto, setMisionTexto] = useState("");
+    const [objetivosAprendizaje, setObjetivosAprendizaje] = useState([""]);
+    const [preguntasOrientadoras, setPreguntasOrientadoras] = useState([""]);
+    const [conceptosClave, setConceptosClave] = useState([""]);
+    const [autoevaluacionItems, setAutoevaluacionItems] = useState([""]);
+
+    const [lecturaPrevia, setLecturaPrevia] = useState({
+        activa: false,
+        intro_texto: "",        // "Esta misión no está diseñada..."
+        intro_destacado: "",
+        tiempo: "",
+        proposito: "",
+        puntos: [""],
+        nota_footer: ""
+    });
 
     // ── Estado del modo JSON ───────────────────────────────────────────────
     const [jsonTexto, setJsonTexto] = useState("");
@@ -96,6 +117,7 @@ export const CreadorRetos = ({ apiFetch }) => {
 
     const esFormulario = FASES.find(f => f.value === faseSeleccionada)?.tipo === "formulario";
     const faseActual = FASES.find(f => f.value === faseSeleccionada);
+
 
     useEffect(() => {
         cargarDatos();
@@ -130,6 +152,21 @@ export const CreadorRetos = ({ apiFetch }) => {
         setJsonTexto("");
         setJsonError("");
         setModo("formulario");
+        setContextoNarrativo("");
+        setMisionTexto("");
+        setObjetivosAprendizaje([""]);
+        setPreguntasOrientadoras([""]);
+        setConceptosClave([""]);
+        setAutoevaluacionItems([""]);
+        setLecturaPrevia({
+            activa: false,
+            intro_texto: "",
+            intro_destacado: "",
+            tiempo: "",
+            proposito: "",
+            puntos: [""],
+            nota_footer: ""
+        });
     };
 
     // ── Convierte preguntas del backend (formato API) a formato del editor ─
@@ -140,6 +177,7 @@ export const CreadorRetos = ({ apiFetch }) => {
             return {
                 _localId: Date.now() + Math.random(),
                 texto_pregunta: p.texto_pregunta || "",
+                descripcion_pregunta: p.descripcion_pregunta || "",
                 tipo_respuesta: p.tipo_respuesta || "ESCALA",
                 opciones_seleccion: opcionesEsArray ? p.opciones_seleccion : [],
                 slider_min: esSlider ? (p.opciones_seleccion?.min ?? 1) : 1,
@@ -177,6 +215,22 @@ export const CreadorRetos = ({ apiFetch }) => {
         setNumeroOrden(item.numero_reto ?? 1);
         setRolDestino(item.rol_destino || "DOCENTE");
         setPesoHuella(item.peso_huella ?? 10);
+        setContextoNarrativo(item.contexto_narrativo || "");
+        setMisionTexto(item.mision_texto || "");
+        setObjetivosAprendizaje(item.objetivos_aprendizaje?.length ? item.objetivos_aprendizaje : [""]);
+        setPreguntasOrientadoras(item.preguntas_orientadoras?.length ? item.preguntas_orientadoras : [""]);
+        setConceptosClave(item.conceptos_clave?.length ? item.conceptos_clave : [""]);
+        setAutoevaluacionItems(item.autoevaluacion_items?.length ? item.autoevaluacion_items : [""]);
+        setLecturaPrevia(item.lectura_previa || { activa: false, tiempo: "", proposito: "", puntos: [""], nota_footer: "" });
+        setLecturaPrevia(item.lectura_previa || {
+            activa: false,
+            intro_texto: "",
+            intro_destacado: "",
+            tiempo: "",
+            proposito: "",
+            puntos: [""],
+            nota_footer: ""
+        });
         const preguntasGuardadas = item.config_json?.preguntas || [];
         const pregs = preguntasDesdeAPI(preguntasGuardadas);
         setPreguntas(pregs.length > 0 ? pregs : [nuevaPregunta()]);
@@ -251,9 +305,13 @@ export const CreadorRetos = ({ apiFetch }) => {
                 opciones = (p.opciones_seleccion || []).filter(o => String(o).trim() !== "");
             } else if (p.tipo_respuesta === "SLIDER") {
                 opciones = { min: Number(p.slider_min ?? 1), max: Number(p.slider_max ?? 5) };
+            } else if (["MATRIZ_UNESCO", "ANALISIS_SECUENCIA"].includes(p.tipo_respuesta)) {
+                opciones = null;  // toda la lógica vive en EjecutarReto
             }
+
             return {
                 texto_pregunta: p.texto_pregunta,
+                descripcion_pregunta: p.descripcion_pregunta || "",
                 tipo_respuesta: p.tipo_respuesta,
                 opciones_seleccion: opciones,
                 puntaje_asociado: parseFloat(p.puntaje_asociado) || 0,
@@ -321,6 +379,13 @@ export const CreadorRetos = ({ apiFetch }) => {
                 peso_huella: parseFloat(pesoHuella),
                 numero_orden: parseInt(numeroOrden),
                 preguntas: preguntasLimpias,
+                contexto_narrativo: contextoNarrativo,
+                mision_texto: misionTexto,
+                objetivos_aprendizaje: objetivosAprendizaje.filter(o => o.trim() !== ""),
+                preguntas_orientadoras: preguntasOrientadoras.filter(p => p.trim() !== ""),
+                conceptos_clave: conceptosClave.filter(c => c.trim() !== ""),
+                autoevaluacion_items: autoevaluacionItems.filter(a => a.trim() !== ""),
+                lectura_previa: lecturaPrevia.activa ? lecturaPrevia : null,
             };
             if (editandoId) {
                 await apiFetch(`/api/retos-plantilla/${editandoId}/completo`, {
@@ -555,6 +620,234 @@ export const CreadorRetos = ({ apiFetch }) => {
                         </div>
                     )}
 
+                    {modo !== "json" && !esFormulario && (
+                        <div className="cr-card">
+                            <h3>Contenido Narrativo del Reto</h3>
+                            <div className="cr-form-grid">
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">CONTEXTO (texto explicativo previo)</label>
+                                    <textarea
+                                        className="cr-input cr-textarea"
+                                        value={contextoNarrativo}
+                                        onChange={(e) => setContextoNarrativo(e.target.value)}
+                                        placeholder="Ej: El EU AI Act 2024 establece un enfoque basado en riesgo..."
+                                        rows={5}
+                                    />
+                                </div>
+
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">TU MISIÓN</label>
+                                    <textarea
+                                        className="cr-input cr-textarea"
+                                        value={misionTexto}
+                                        onChange={(e) => setMisionTexto(e.target.value)}
+                                        placeholder="Ej: Clasificar un caso hipotético de uso de IA en tu institución..."
+                                    />
+                                </div>
+
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">OBJETIVOS DE APRENDIZAJE (uno por línea)</label>
+                                    {objetivosAprendizaje.map((obj, idx) => (
+                                        <div key={idx} className="cr-opcion-row">
+                                            <input
+                                                type="text" className="cr-input"
+                                                value={obj}
+                                                onChange={(e) => {
+                                                    const nuevos = [...objetivosAprendizaje];
+                                                    nuevos[idx] = e.target.value;
+                                                    setObjetivosAprendizaje(nuevos);
+                                                }}
+                                                placeholder={`Objetivo ${idx + 1}`}
+                                            />
+                                            <button className="cr-icon-btn delete" onClick={() => setObjetivosAprendizaje(objetivosAprendizaje.filter((_, i) => i !== idx))}>✖</button>
+                                        </div>
+                                    ))}
+                                    <button className="cr-btn-add-opcion" onClick={() => setObjetivosAprendizaje([...objetivosAprendizaje, ""])}>
+                                        + Agregar objetivo
+                                    </button>
+                                </div>
+
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">PREGUNTAS ORIENTADORAS (una por línea)</label>
+                                    {preguntasOrientadoras.map((preg, idx) => (
+                                        <div key={idx} className="cr-opcion-row">
+                                            <input
+                                                type="text" className="cr-input"
+                                                value={preg}
+                                                onChange={(e) => {
+                                                    const nuevas = [...preguntasOrientadoras];
+                                                    nuevas[idx] = e.target.value;
+                                                    setPreguntasOrientadoras(nuevas);
+                                                }}
+                                                placeholder={`Pregunta ${idx + 1}`}
+                                            />
+                                            <button className="cr-icon-btn delete" onClick={() => setPreguntasOrientadoras(preguntasOrientadoras.filter((_, i) => i !== idx))}>✖</button>
+                                        </div>
+                                    ))}
+                                    <button className="cr-btn-add-opcion" onClick={() => setPreguntasOrientadoras([...preguntasOrientadoras, ""])}>
+                                        + Agregar pregunta
+                                    </button>
+                                </div>
+
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">CONCEPTOS RELACIONADOS (uno por línea, se muestran como tags)</label>
+                                    {conceptosClave.map((c, idx) => (
+                                        <div key={idx} className="cr-opcion-row">
+                                            <input
+                                                type="text" className="cr-input"
+                                                value={c}
+                                                onChange={(e) => {
+                                                    const nuevos = [...conceptosClave];
+                                                    nuevos[idx] = e.target.value;
+                                                    setConceptosClave(nuevos);
+                                                }}
+                                                placeholder={`Ej: Risk-based approach`}
+                                            />
+                                            <button className="cr-icon-btn delete" onClick={() => setConceptosClave(conceptosClave.filter((_, i) => i !== idx))}>✖</button>
+                                        </div>
+                                    ))}
+                                    <button className="cr-btn-add-opcion" onClick={() => setConceptosClave([...conceptosClave, ""])}>
+                                        + Agregar concepto
+                                    </button>
+                                </div>
+                                <div className="cr-form-field full-width">
+                                    <label className="cr-field-label">AUTOEVALUACIÓN DE LOGRO (checklist final, una afirmación por línea)</label>
+                                    {autoevaluacionItems.map((item, idx) => (
+                                        <div key={idx} className="cr-opcion-row">
+                                            <input
+                                                type="text" className="cr-input"
+                                                value={item}
+                                                onChange={(e) => {
+                                                    const nuevos = [...autoevaluacionItems];
+                                                    nuevos[idx] = e.target.value;
+                                                    setAutoevaluacionItems(nuevos);
+                                                }}
+                                                placeholder={`Ej: Se clasifica el sistema según enfoque basado en riesgo`}
+                                            />
+                                            <button className="cr-icon-btn delete" onClick={() => setAutoevaluacionItems(autoevaluacionItems.filter((_, i) => i !== idx))}>✖</button>
+                                        </div>
+                                    ))}
+                                    <button className="cr-btn-add-opcion" onClick={() => setAutoevaluacionItems([...autoevaluacionItems, ""])}>
+                                        + Agregar afirmación
+                                    </button>
+                                </div>
+                                <div className="cr-card">
+                                    <h3>Lectura Previa (Aviso antes de comenzar)</h3>
+                                    <p className="cr-intro-text">
+                                        Si este reto requiere que el docente trabaje en clase antes de volver a documentar, activa esta sección. Solo aparecerá si tiene contenido.
+                                    </p>
+
+                                    <div className="cr-form-grid">
+                                        <div className="cr-form-field full-width">
+                                            <label className="cr-field-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={lecturaPrevia.activa}
+                                                    onChange={(e) => setLecturaPrevia(prev => ({ ...prev, activa: e.target.checked }))}
+                                                    style={{ marginRight: '8px' }}
+                                                />
+                                                ACTIVAR LECTURA PREVIA en este reto
+                                            </label>
+                                        </div>
+
+                                        {lecturaPrevia.activa && (
+                                            <>
+                                                <div className="cr-form-field full-width">
+                                                    <label className="cr-field-label">TEXTO INTRODUCTORIO (primera línea)</label>
+                                                    <input
+                                                        type="text"
+                                                        className="cr-input"
+                                                        value={lecturaPrevia.intro_texto}
+                                                        onChange={(e) => setLecturaPrevia(prev => ({ ...prev, intro_texto: e.target.value }))}
+                                                        placeholder="Ej: Esta misión no está diseñada para resolverse en una sola sesión frente a tu dispositivo."
+                                                    />
+                                                </div>
+
+                                                <div className="cr-form-field full-width">
+                                                    <label className="cr-field-label">TEXTO DESTACADO (segunda línea, en negrita parcial)</label>
+                                                    <input
+                                                        type="text"
+                                                        className="cr-input"
+                                                        value={lecturaPrevia.intro_destacado}
+                                                        onChange={(e) => setLecturaPrevia(prev => ({ ...prev, intro_destacado: e.target.value }))}
+                                                        placeholder="Ej: planifiques tu clase e implementes la IA en el aula"
+                                                    />
+                                                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                                                        Este texto aparecerá en negrita dentro de la frase: "Se espera que primero <strong>[tu texto]</strong>, y luego regreses a documentar..."
+                                                    </p>
+                                                </div>
+                                                <div className="cr-form-field">
+                                                    <label className="cr-field-label">⏳ TIEMPO (ej: "Tienes una semana...")</label>
+                                                    <input
+                                                        type="text"
+                                                        className="cr-input"
+                                                        value={lecturaPrevia.tiempo}
+                                                        onChange={(e) => setLecturaPrevia(prev => ({ ...prev, tiempo: e.target.value }))}
+                                                        placeholder="Ej: Tienes una semana para desarrollar esta misión."
+                                                    />
+                                                </div>
+
+                                                <div className="cr-form-field">
+                                                    <label className="cr-field-label">💡 PROPÓSITO</label>
+                                                    <input
+                                                        type="text"
+                                                        className="cr-input"
+                                                        value={lecturaPrevia.proposito}
+                                                        onChange={(e) => setLecturaPrevia(prev => ({ ...prev, proposito: e.target.value }))}
+                                                        placeholder="Ej: Reflexionar sobre tu práctica real, no completar un formulario rápido."
+                                                    />
+                                                </div>
+
+                                                <div className="cr-form-field full-width">
+                                                    <label className="cr-field-label">PUNTOS / PASOS (lista de acciones esperadas)</label>
+                                                    {lecturaPrevia.puntos.map((punto, idx) => (
+                                                        <div key={idx} className="cr-opcion-row">
+                                                            <input
+                                                                type="text"
+                                                                className="cr-input"
+                                                                value={punto}
+                                                                onChange={(e) => {
+                                                                    const nuevos = [...lecturaPrevia.puntos];
+                                                                    nuevos[idx] = e.target.value;
+                                                                    setLecturaPrevia(prev => ({ ...prev, puntos: nuevos }));
+                                                                }}
+                                                                placeholder={`Ej: Diseñar con intención pedagógica.`}
+                                                            />
+                                                            <button
+                                                                className="cr-icon-btn delete"
+                                                                onClick={() => setLecturaPrevia(prev => ({
+                                                                    ...prev,
+                                                                    puntos: prev.puntos.filter((_, i) => i !== idx)
+                                                                }))}
+                                                            >✖</button>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        className="cr-btn-add-opcion"
+                                                        onClick={() => setLecturaPrevia(prev => ({ ...prev, puntos: [...prev.puntos, ""] }))}
+                                                    >
+                                                        + Agregar punto
+                                                    </button>
+                                                </div>
+
+                                                <div className="cr-form-field full-width">
+                                                    <label className="cr-field-label">NOTA FOOTER (texto al pie del aviso)</label>
+                                                    <input
+                                                        type="text"
+                                                        className="cr-input"
+                                                        value={lecturaPrevia.nota_footer}
+                                                        onChange={(e) => setLecturaPrevia(prev => ({ ...prev, nota_footer: e.target.value }))}
+                                                        placeholder="Ej: Puedes usar Guardar Borrador para registrar avances parciales."
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ── MODO: FORMULARIO GUIADO ─────────────────────────────── */}
                     {modo === "formulario" && (
                         <div className="cr-card">
@@ -579,6 +872,15 @@ export const CreadorRetos = ({ apiFetch }) => {
                                                     value={p.texto_pregunta}
                                                     onChange={(e) => actualizarPregunta(p._localId, "texto_pregunta", e.target.value)}
                                                     placeholder="Ej: ¿Con qué frecuencia revisas los resultados generados por IA?"
+                                                />
+                                            </div>
+                                            <div className="cr-form-field">
+                                                <label className="cr-field-label">DESCRIPCIÓN / INSTRUCCIÓN (opcional)</label>
+                                                <input
+                                                    type="text" className="cr-input"
+                                                    value={p.descripcion_pregunta || ""}
+                                                    onChange={(e) => actualizarPregunta(p._localId, "descripcion_pregunta", e.target.value)}
+                                                    placeholder="Ej: Selecciona tu primera acción (solo una)"
                                                 />
                                             </div>
                                             <div className="cr-form-field">
@@ -702,6 +1004,7 @@ export const CreadorRetos = ({ apiFetch }) => {
                                         <tr>
                                             <th>#</th>
                                             <th>Texto pregunta</th>
+                                            <th>Descripción / Instrucción</th>
                                             <th>Tipo</th>
                                             <th>Opciones / Rango</th>
                                             <th>Puntaje</th>
@@ -719,6 +1022,15 @@ export const CreadorRetos = ({ apiFetch }) => {
                                                         value={p.texto_pregunta}
                                                         onChange={(e) => actualizarPregunta(p._localId, "texto_pregunta", e.target.value)}
                                                         placeholder="Escribe la pregunta..."
+                                                    />
+                                                </td>
+                                                <td className="cr-table-cell-wide">
+                                                    <input
+                                                        type="text"
+                                                        className="cr-table-input"
+                                                        value={p.descripcion_pregunta || ""}
+                                                        onChange={(e) => actualizarPregunta(p._localId, "descripcion_pregunta", e.target.value)}
+                                                        placeholder="Instrucción opcional..."
                                                     />
                                                 </td>
                                                 <td className="cr-table-cell">

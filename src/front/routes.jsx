@@ -15,6 +15,8 @@ import { GestionEmpresasUsuarios } from "./pages/GestionEmpresasUsuarios";
 import { AsignacionRetos } from "./pages/AsignacionRetos";
 import { ResponderFormularios } from "./pages/ResponderFormularios"; // <-- Nueva Importación
 import { FaseAuditar } from "./pages/FaseAuditar";
+import { EjecutarReto } from "./pages/EjecutarReto"; // <-- Nueva Importación
+import { FaseTransformar } from "./pages/FaseTransformar";
 
 export const router = createBrowserRouter(
     createRoutesFromElements(
@@ -43,6 +45,8 @@ export const router = createBrowserRouter(
         <Route path="/asignacion-retos" element={<AsignacionRetos />} />
         <Route path="/responder-formularios" element={<ResponderFormularios />} />
         <Route path="/fase-auditar" element={<FaseAuditar />} />
+        <Route path="/ejecutar-reto" element={<EjecutarReto />} />
+        <Route path="/fase-transformar" element={<FaseTransformar />} />
       </Route>
     )
 );

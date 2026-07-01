@@ -918,6 +918,97 @@
     color: #92660f;
     margin-top: 12px;
 }
+
+/* ── LECTURA PREVIA dentro del cr-form-grid ──────────────────────────── */
+
+/* Saca la card de lectura previa del grid de 2 columnas */
+.cr-form-grid > .cr-card {
+    grid-column: 1 / -1;
+    background: #fffaf0;
+    border: 2px dashed #c5a059;
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: none;
+    margin-top: 8px;
+}
+
+/* El h3 interno de lectura previa */
+.cr-form-grid > .cr-card h3 {
+    font-size: 1.05rem;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+/* El checkbox de activar queda en fila con el label */
+.cr-form-grid > .cr-card .cr-form-field > label.cr-field-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+
+.cr-form-grid > .cr-card .cr-form-field > label.cr-field-label:hover {
+    border-color: #c5a059;
+    background: #fffdf7;
+}
+
+.cr-form-grid > .cr-card .cr-form-field > label.cr-field-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c5a059;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* El cr-form-grid interno de la lectura previa */
+.cr-form-grid > .cr-card .cr-form-grid {
+    margin-top: 12px;
+    gap: 14px;
+}
+
+/* Labels de los campos internos con color dorado */
+.cr-form-grid > .cr-card .cr-field-label {
+    color: #92660f;
+}
+
+/* Inputs internos con borde dorado suave */
+.cr-form-grid > .cr-card .cr-input {
+    border-color: #e8d5a3;
+    background: white;
+}
+
+.cr-form-grid > .cr-card .cr-input:focus {
+    border-color: #c5a059;
+    box-shadow: 0 4px 14px rgba(197, 160, 89, 0.12);
+}
+
+/* Botón de agregar punto con color dorado */
+.cr-form-grid > .cr-card .cr-btn-add-opcion {
+    border-color: #c5a059;
+    color: #c5a059;
+}
+
+.cr-form-grid > .cr-card .cr-btn-add-opcion:hover {
+    background: #c5a059;
+    color: white;
+}
+
+/* Botón eliminar punto */
+.cr-form-grid > .cr-card .cr-icon-btn.delete {
+    background: #fef2f2;
+    border-color: #fee2e2;
+}
 /* ── ANIMACIONES ──────────────────────────────────────────────────────── */
 @keyframes crFadeIn {
     from { opacity: 0; }

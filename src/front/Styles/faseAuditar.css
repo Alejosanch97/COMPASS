@@ -702,28 +702,6 @@
     letter-spacing: 1px;
 }
 
-/* =========================================
-   FASE AUDITAR - PROTOCOLO ACADÉMICO ATLAS
-   ========================================= */
-
-.auditar-container {
-    animation: fadeIn 0.6s ease-out;
-    margin: 0 auto;
-    padding: 20px;
-    position: relative; /* Para la píldora flotante */
-
-    /* FORZAR ANCHO COMPLETO E IGNORAR RESTRICCIONES DEL DASHBOARD */
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box;
-
-    /* SOLUCIÓN AL DASHBOARD-GRID: Rompe las 4 columnas globales y usa todo el ancho */
-    grid-column: 1 / -1 !important; 
-    
-    /* Por si el contenedor padre usara Flexbox en vez de Grid */
-    flex: 1 1 100% !important; 
-}
 
 /* Responsividad para la Capa 3 */
 @media (max-width: 900px) {
