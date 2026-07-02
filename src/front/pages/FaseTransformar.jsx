@@ -324,7 +324,9 @@ export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
                             <div className="retos-roadmap-v2">
                                 {retosAsignados.map((reto) => {
                                     const isCompleted = retosCompletados.includes(reto.id);
-                                    const icon = reto.nivel_unesco === "ACQUIRE" ? "⚖️" : reto.nivel_unesco === "DEEPEN" ? "🔐" : "🚨";
+                                    const icon = isDirectivo
+                                        ? (reto.nivel_unesco === "ACQUIRE" ? "⚖️" : reto.nivel_unesco === "DEEPEN" ? "🔐" : "🚨")
+                                        : (reto.nivel_unesco === "ACQUIRE" ? "⚖️" : reto.nivel_unesco === "DEEPEN" ? "🧠" : "🌍");
 
                                     return (
                                         <div key={reto.id} className={`reto-card-premium ${isCompleted ? 'completed' : ''} active`}>

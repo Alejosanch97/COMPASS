@@ -50,18 +50,18 @@ export const ResponderFormularios = ({
     const completedForms = availableForms.filter(f => isFormAnswered(f.id));
 
     const handleOpenForm = async (form) => {
-        setIsSyncing(true);
-        try {
-            const preguntas = await apiFetch(`/api/formularios/${form.id}/preguntas`);
-            setSelectedForm({ ...form, questions: preguntas });
-            setCurrentResponses({});
-        } catch (e) {
-            console.error(e);
-            Swal.fire("Error", "No se pudieron cargar las preguntas.", "error");
-        } finally {
-            setIsSyncing(false);
-        }
-    };
+    // Abre el modal inmediatamente con estado de carga
+    setSelectedForm({ ...form, questions: null });
+    try {
+        const preguntas = await apiFetch(`/api/formularios/${form.id}/preguntas`);
+        setSelectedForm({ ...form, questions: preguntas });
+        setCurrentResponses({});
+    } catch (e) {
+        console.error(e);
+        setSelectedForm(null);
+        Swal.fire("Error", "No se pudieron cargar las preguntas.", "error");
+    }
+};
 
     // Las opciones llegan como array (opciones_seleccion es JSON), no como string separado por comas
     const splitOptions = (opciones) => {
@@ -173,13 +173,22 @@ export const ResponderFormularios = ({
 
             await fetchInitialData();
 
-            Swal.fire({
-                icon: 'success',
-                title: '¡Enviado!',
-                text: 'Tus respuestas han sido sincronizadas correctamente.',
-                timer: 2000,
-                showConfirmButton: false
-            });
+await Swal.fire({
+    icon: 'success',
+    title: '¡Enviado!',
+    text: 'Tus respuestas han sido sincronizadas correctamente.',
+    timer: 2000,
+    showConfirmButton: false
+});
+
+// Redirigir a la fase de origen después de completar
+if (filterPhase === 'AUDITAR') {
+    onNavigate('fase_auditar');
+} else {
+    onNavigate('overview');
+}
+
+
         } catch (err) {
             console.error("Error:", err);
             Swal.fire({
@@ -279,135 +288,143 @@ export const ResponderFormularios = ({
                         </div>
 
                         <form onSubmit={handleSubmitAnswers} className="modal-atlas-body">
-                            {selectedForm.questions.map((q, idx) => (
-                                <div key={q.id} className="question-card-minimal">
-                                    <div className="q-number">{idx + 1}</div>
-                                    <div className="q-content">
-                                        <label className="q-text">{q.texto_pregunta}</label>
 
-                                        {q.tipo_respuesta === "MULTIPLE" && (
-                                            <div className="options-vertical">
-                                                {splitOptions(q.opciones_seleccion).map(opt => (
-                                                    <label key={opt} className="custom-radio-row">
-                                                        <input type="radio" name={`q_${q.id}`} value={opt} required onChange={(e) => handleInputChange(q.id, e.target.value)} />
-                                                        <span className="radio-label-text">{cleanOptionText(opt)}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
+    {selectedForm.questions === null ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+            <div style={{
+                width: '36px', height: '36px', border: '3px solid #f1f5f9',
+                borderTopColor: '#c5a059', borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite', margin: '0 auto 12px'
+            }} />
+            <p>Cargando preguntas...</p>
+        </div>
+    ) : (
+        selectedForm.questions.map((q, idx) => (
+            <div key={q.id} className="question-card-minimal">
+                <div className="q-number">{idx + 1}</div>
+                <div className="q-content">
+                    <label className="q-text">{q.texto_pregunta}</label>
 
-                                        {(q.tipo_respuesta === "CHECKBOX" || q.tipo_respuesta === "SELECT") && (
-                                            <div className="options-vertical">
-                                                {splitOptions(q.opciones_seleccion).map(opt => (
-                                                    <label key={opt} className="custom-radio-row">
-                                                        <input
-                                                            type={q.tipo_respuesta === "SELECT" ? "radio" : "checkbox"}
-                                                            name={q.tipo_respuesta === "SELECT" ? `q_${q.id}` : undefined}
-                                                            value={opt}
-                                                            onChange={(e) => handleInputChange(q.id, e.target.value, q.tipo_respuesta === "CHECKBOX")}
-                                                        />
-                                                        <span className="radio-label-text">{cleanOptionText(opt)}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {q.tipo_respuesta === "ORDEN" && (
-                                            <div className="options-vertical">
-                                                <p style={{ fontSize: '0.7rem', color: '#c5a059', marginBottom: '8px' }}>Selecciona las opciones en orden de importancia (1 es mayor prioridad):</p>
-                                                {splitOptions(q.opciones_seleccion).map(opt => {
-                                                    const orderIndex = (currentResponses[q.id] || []).indexOf(opt);
-                                                    return (
-                                                        <button
-                                                            key={opt}
-                                                            type="button"
-                                                            className={`custom-radio-row ${orderIndex !== -1 ? 'active-order' : ''}`}
-                                                            onClick={() => handleInputChange(q.id, opt, false, true)}
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center',
-                                                                cursor: 'pointer',
-                                                                width: '100%',
-                                                                padding: '12px',
-                                                                textAlign: 'left',
-                                                                background: orderIndex !== -1 ? '#fdf8ee' : 'white',
-                                                                border: orderIndex !== -1 ? '1px solid #c5a059' : '1px solid #e2e8f0',
-                                                                borderRadius: '8px',
-                                                                marginBottom: '6px'
-                                                            }}
-                                                        >
-                                                            <span className="radio-label-text">{cleanOptionText(opt)}</span>
-                                                            {orderIndex !== -1 && (
-                                                                <span style={{
-                                                                    backgroundColor: '#c5a059',
-                                                                    color: 'white',
-                                                                    borderRadius: '50%',
-                                                                    width: '22px',
-                                                                    height: '22px',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    fontSize: '0.75rem',
-                                                                    fontWeight: 'bold'
-                                                                }}>
-                                                                    {orderIndex + 1}
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-
-                                        {["ABIERTA", "PARRAFO"].includes(q.tipo_respuesta) && (
-                                            <textarea className="atlas-textarea" placeholder={q.tipo_respuesta === "PARRAFO" ? "Escribe un párrafo detallado..." : "Respuesta corta..."} onChange={(e) => handleInputChange(q.id, e.target.value)} required />
-                                        )}
-
-                                        {q.tipo_respuesta === "ESCALA" && (
-                                            <div className="scale-container-expert">
-                                                <div className="scale-labels-top">
-                                                    <span className="label-min">1 - Totalmente en desacuerdo</span>
-                                                    <span className="label-max">5 - Totalmente de acuerdo</span>
-                                                </div>
-                                                <div className="atlas-scale-row">
-                                                    {[1, 2, 3, 4, 5].map(num => (
-                                                        <button
-                                                            key={num}
-                                                            type="button"
-                                                            className={`scale-pill ${currentResponses[q.id] == num ? 'active' : ''}`}
-                                                            onClick={() => handleInputChange(q.id, num)}
-                                                        >
-                                                            {num}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {q.tipo_respuesta === "SLIDER" && (
-                                            <div className="scale-container-expert">
-                                                <div className="scale-labels-top">
-                                                    <span className="label-min">{q.opciones_seleccion?.min ?? 1}</span>
-                                                    <span className="label-max">{q.opciones_seleccion?.max ?? 5}</span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min={q.opciones_seleccion?.min ?? 1}
-                                                    max={q.opciones_seleccion?.max ?? 5}
-                                                    defaultValue={q.opciones_seleccion?.min ?? 1}
-                                                    onChange={(e) => handleInputChange(q.id, e.target.value)}
-                                                    style={{ width: '100%' }}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                    {q.tipo_respuesta === "MULTIPLE" && (
+                        <div className="options-vertical">
+                            {splitOptions(q.opciones_seleccion).map(opt => (
+                                <label key={opt} className="custom-radio-row">
+                                    <input type="radio" name={`q_${q.id}`} value={opt} required onChange={(e) => handleInputChange(q.id, e.target.value)} />
+                                    <span className="radio-label-text">{cleanOptionText(opt)}</span>
+                                </label>
                             ))}
-                            <div className="modal-footer-sticky">
-                                <button type="submit" className="btn-submit-atlas">Finalizar y Enviar Respuestas</button>
+                        </div>
+                    )}
+
+                    {(q.tipo_respuesta === "CHECKBOX" || q.tipo_respuesta === "SELECT") && (
+                        <div className="options-vertical">
+                            {splitOptions(q.opciones_seleccion).map(opt => (
+                                <label key={opt} className="custom-radio-row">
+                                    <input
+                                        type={q.tipo_respuesta === "SELECT" ? "radio" : "checkbox"}
+                                        name={q.tipo_respuesta === "SELECT" ? `q_${q.id}` : undefined}
+                                        value={opt}
+                                        onChange={(e) => handleInputChange(q.id, e.target.value, q.tipo_respuesta === "CHECKBOX")}
+                                    />
+                                    <span className="radio-label-text">{cleanOptionText(opt)}</span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+
+                    {q.tipo_respuesta === "ORDEN" && (
+                        <div className="options-vertical">
+                            <p style={{ fontSize: '0.7rem', color: '#c5a059', marginBottom: '8px' }}>Selecciona las opciones en orden de importancia (1 es mayor prioridad):</p>
+                            {splitOptions(q.opciones_seleccion).map(opt => {
+                                const orderIndex = (currentResponses[q.id] || []).indexOf(opt);
+                                return (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        className={`custom-radio-row ${orderIndex !== -1 ? 'active-order' : ''}`}
+                                        onClick={() => handleInputChange(q.id, opt, false, true)}
+                                        style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            cursor: 'pointer', width: '100%', padding: '12px', textAlign: 'left',
+                                            background: orderIndex !== -1 ? '#fdf8ee' : 'white',
+                                            border: orderIndex !== -1 ? '1px solid #c5a059' : '1px solid #e2e8f0',
+                                            borderRadius: '8px', marginBottom: '6px'
+                                        }}
+                                    >
+                                        <span className="radio-label-text">{cleanOptionText(opt)}</span>
+                                        {orderIndex !== -1 && (
+                                            <span style={{
+                                                backgroundColor: '#c5a059', color: 'white', borderRadius: '50%',
+                                                width: '22px', height: '22px', display: 'flex', alignItems: 'center',
+                                                justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold'
+                                            }}>
+                                                {orderIndex + 1}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {["ABIERTA", "PARRAFO"].includes(q.tipo_respuesta) && (
+                        <textarea
+                            className="atlas-textarea"
+                            placeholder={q.tipo_respuesta === "PARRAFO" ? "Escribe un párrafo detallado..." : "Respuesta corta..."}
+                            onChange={(e) => handleInputChange(q.id, e.target.value)}
+                            required
+                        />
+                    )}
+
+                    {q.tipo_respuesta === "ESCALA" && (
+                        <div className="scale-container-expert">
+                            <div className="scale-labels-top">
+                                <span className="label-min">1 - Totalmente en desacuerdo</span>
+                                <span className="label-max">5 - Totalmente de acuerdo</span>
                             </div>
-                        </form>
+                            <div className="atlas-scale-row">
+                                {[1, 2, 3, 4, 5].map(num => (
+                                    <button
+                                        key={num}
+                                        type="button"
+                                        className={`scale-pill ${currentResponses[q.id] == num ? 'active' : ''}`}
+                                        onClick={() => handleInputChange(q.id, num)}
+                                    >
+                                        {num}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {q.tipo_respuesta === "SLIDER" && (
+                        <div className="scale-container-expert">
+                            <div className="scale-labels-top">
+                                <span className="label-min">{q.opciones_seleccion?.min ?? 1}</span>
+                                <span className="label-max">{q.opciones_seleccion?.max ?? 5}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min={q.opciones_seleccion?.min ?? 1}
+                                max={q.opciones_seleccion?.max ?? 5}
+                                defaultValue={q.opciones_seleccion?.min ?? 1}
+                                onChange={(e) => handleInputChange(q.id, e.target.value)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
+        ))
+    )}
+
+    {selectedForm.questions !== null && (
+        <div className="modal-footer-sticky">
+            <button type="submit" className="btn-submit-atlas">Finalizar y Enviar Respuestas</button>
+        </div>
+    )}
+
+</form>
                     </div>
                 </div>
             )}

@@ -13,9 +13,12 @@ const TIPOS_PREGUNTA = [
     { value: "MATRIZ_UNESCO", label: "Matriz Ética UNESCO (5 criterios)", icon: "🧭", desc: "Matriz interactiva de 5 sliders con diagnóstico automático por puntaje total" },
     { value: "ANALISIS_SECUENCIA", label: "Análisis Secuencia Didáctica", icon: "📐", desc: "3 momentos (inicio/desarrollo/cierre) con análisis de patrón UNESCO automático" },
     { value: "SECUENCIA_DEEPEN", label: "Secuencia Didáctica UNESCO DEEPEN", icon: "📐", desc: "3 momentos (inicio/desarrollo/cierre) con análisis de patrón human-centred automático" },
+    { value: "ANALISIS_INCLUSIVO_CREATE", label: "Análisis Impacto Inclusivo (UNESCO CREATE)", icon: "📈", desc: "Panel automático que evalúa el nivel de inclusión estructural según las respuestas del reto" },
+    { value: "DASHBOARD_DIRECTIVO_R3", label: "Dashboard Institucional Directivo (Reto 3)", icon: "📊", desc: "Panel consolidado que muestra el análisis de inclusión de todos los docentes de la empresa" },
+    { value: "SELECT_CON_TOOLTIP", label: "Lista desplegable con Tooltip Explicativo", icon: "💡", desc: "El usuario elige una opción y aparece una explicación detallada según su selección" },
 ];
 
-const TIPOS_CON_OPCIONES = ["MULTIPLE", "CHECKBOX", "SELECT", "ORDEN"];
+const TIPOS_CON_OPCIONES = ["MULTIPLE", "CHECKBOX", "SELECT", "ORDEN", "SELECT_CON_TOOLTIP"];
 
 const FASES = [
     { value: "AUDITAR", label: "A · Auditar", icon: "🔍", tipo: "formulario", pesoMax: 20 },
@@ -419,6 +422,7 @@ export const CreadorRetos = ({ apiFetch }) => {
             if (!parsed.titulo && !parsed.nombre_reto) throw new Error("Falta 'titulo' o 'nombre_reto'");
             if (!Array.isArray(parsed.preguntas)) throw new Error("Falta el array 'preguntas'");
 
+            // ── Datos generales ────────────────────────────────────────────
             setTitulo(parsed.titulo || parsed.nombre_reto || "");
             setDescripcion(parsed.descripcion || "");
             setRolDestino(parsed.rol_destino || "DOCENTE");
@@ -427,9 +431,39 @@ export const CreadorRetos = ({ apiFetch }) => {
             setPesoHuella(parsed.peso_huella ?? 10);
             setNumeroOrden(parsed.numero_reto ?? 1);
 
-            const preguntasNormalizadas = preguntasDesdeAPI(parsed.preguntas);
+            // ── Contenido narrativo ────────────────────────────────────────
+            setContextoNarrativo(parsed.contexto_narrativo || "");
+            setMisionTexto(parsed.mision_texto || "");
+            setObjetivosAprendizaje(
+                parsed.objetivos_aprendizaje?.length ? parsed.objetivos_aprendizaje : [""]
+            );
+            setPreguntasOrientadoras(
+                parsed.preguntas_orientadoras?.length ? parsed.preguntas_orientadoras : [""]
+            );
+            setConceptosClave(
+                parsed.conceptos_clave?.length ? parsed.conceptos_clave : [""]
+            );
+            setAutoevaluacionItems(
+                parsed.autoevaluacion_items?.length ? parsed.autoevaluacion_items : [""]
+            );
 
+            // ── Lectura previa ─────────────────────────────────────────────
+            if (parsed.lectura_previa) {
+                setLecturaPrevia({
+                    activa: parsed.lectura_previa.activa ?? false,
+                    intro_texto: parsed.lectura_previa.intro_texto || "",
+                    intro_destacado: parsed.lectura_previa.intro_destacado || "",
+                    tiempo: parsed.lectura_previa.tiempo || "",
+                    proposito: parsed.lectura_previa.proposito || "",
+                    puntos: parsed.lectura_previa.puntos?.length ? parsed.lectura_previa.puntos : [""],
+                    nota_footer: parsed.lectura_previa.nota_footer || ""
+                });
+            }
+
+            // ── Preguntas ──────────────────────────────────────────────────
+            const preguntasNormalizadas = preguntasDesdeAPI(parsed.preguntas);
             setPreguntas(preguntasNormalizadas.length > 0 ? preguntasNormalizadas : [nuevaPregunta()]);
+
             setJsonError("");
             alert(`JSON cargado: ${preguntasNormalizadas.length} preguntas. Revisa y guarda cuando estés listo.`);
             setModo("tabla");

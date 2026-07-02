@@ -23,6 +23,8 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
     const [formulariosFase, setFormulariosFase] = useState([]);
     const [respuestasUsuario, setRespuestasUsuario] = useState([]);
 
+    const [modalRespuestas, setModalRespuestas] = useState(null);
+
     useEffect(() => {
         fetchInitialData();
     }, []);
@@ -391,12 +393,30 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                         ) : (
                             <>
                                 <div className="forms-status-list">
-                                    {formulariosFase.map(f => (
-                                        <div key={f.id} className={`form-mini-status ${respuestasUsuario.some(r => r.formulario_id === f.id) ? 'is-ok' : 'is-pending'}`}>
-                                            <span className="f-title">{f.titulo}</span>
-                                            <span className="f-check">{respuestasUsuario.some(r => r.formulario_id === f.id) ? "✅" : "⏳"}</span>
-                                        </div>
-                                    ))}
+                                    {formulariosFase.map(f => {
+                                        const completado = respuestasUsuario.some(r => r.formulario_id === f.id);
+                                        return (
+                                            <div key={f.id} className={`form-mini-status ${completado ? 'is-ok' : 'is-pending'}`}>
+                                                <span className="f-title">{f.titulo}</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span className="f-check">{completado ? "" : "⏳"}</span>
+                                                    {completado && (
+                                                        <button
+                                                            onClick={() => setModalRespuestas(f)}
+                                                            style={{
+                                                                fontSize: '0.72rem', padding: '3px 10px',
+                                                                borderRadius: '6px', border: '1px solid #c5a059',
+                                                                background: 'white', color: '#c5a059',
+                                                                cursor: 'pointer', fontWeight: '700'
+                                                            }}
+                                                        >
+                                                            Ver respuestas
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                                 <div className="status-indicator-box">
                                     {progreso?.capa_1_sentido === 'COMPLETADO' ? (
@@ -449,6 +469,57 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                 </button>
                                 <footer className="ready-footer">¿Estás preparad@?</footer>
                             </article>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {modalRespuestas && (
+                <div
+                    onClick={() => setModalRespuestas(null)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                        zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'white', borderRadius: '20px', padding: '30px',
+                            maxWidth: '640px', width: '100%', maxHeight: '80vh',
+                            overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1.1rem' }}>{modalRespuestas.titulo}</h3>
+                            <button
+                                onClick={() => setModalRespuestas(null)}
+                                style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#64748b' }}
+                            >×</button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {respuestasUsuario
+                                .filter(r => r.formulario_id === modalRespuestas.id)
+                                .map((r, i) => (
+                                    <div key={i} style={{
+                                        padding: '14px 18px', background: '#f8fafc',
+                                        borderRadius: '12px', border: '1px solid #e2e8f0'
+                                    }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
+                                            Pregunta {i + 1}
+                                        </div>
+                                        <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: '600', marginBottom: '4px' }}>
+                                            {r.pregunta_texto || `Pregunta ${i + 1}`}
+                                        </div>
+                                        <div style={{ fontSize: '0.9rem', color: '#475569' }}>
+                                            → {r.valor_respondido}
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: '#c5a059', fontWeight: '700', marginTop: '4px' }}>
+                                            {r.puntos_ganados} pts
+                                        </div>
+                                    </div>
+                                ))
+                            }
                         </div>
                     </div>
                 </div>
