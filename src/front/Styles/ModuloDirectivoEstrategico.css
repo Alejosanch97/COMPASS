@@ -1,0 +1,1131 @@
+/* --- ModuloDirectivo.css --- */
+:root {
+    --primary-atlas: #1a237e; /* Azul profundo institucional */
+    --gold-atlas: #d69e2e;    /* Dorado de ATLAS */
+    --success: #38a169;
+    --bg-light: #f8fafc;
+    --text-main: #2d3748;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.directivo-wrapper {
+    background-color: var(--bg-light);
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-main);
+}
+
+/* Header Estilo Consola */
+.directivo-header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 20px 40px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 30px;
+    border-left: 6px solid var(--primary-atlas);
+}
+
+.directivo-header-main h2 {
+    margin: 0;
+    color: var(--primary-atlas);
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.progress-bar-dir {
+    display: flex;
+    gap: 20px;
+}
+
+.progress-bar-dir .step {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #edf2f7;
+    color: #a0aec0;
+    transition: all 0.3s ease;
+}
+
+.progress-bar-dir .step.active {
+    background: var(--primary-atlas);
+    color: white;
+}
+
+/* Paso 1: Panorama Cards */
+.panorama-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
+
+.card-reflexion {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid transparent;
+    box-shadow: var(--card-shadow);
+}
+
+.card-reflexion:hover {
+    transform: translateY(-10px);
+}
+
+.card-reflexion.active {
+    border-color: var(--gold-atlas);
+    background: #fffdf5;
+}
+
+.card-reflexion .icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.card-reflexion h4 {
+    color: var(--primary-atlas);
+    margin-bottom: 15px;
+}
+
+.card-reflexion ul {
+    text-align: left;
+    font-size: 0.9rem;
+    color: #4a5568;
+    padding-left: 20px;
+}
+
+/* Paso 2: Grid de Diagnóstico (ESTRUCTURA BASE) */
+.grid-diagnostico {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+}
+
+.panel-docentes {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+/* Cuestionario Likert */
+.panel-formulario {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.scroll-preguntas {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 15px;
+    margin-bottom: 25px;
+}
+
+.item-likert {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.radios button {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.radios button.selected {
+    background: var(--primary-atlas);
+    color: white;
+    border-color: var(--primary-atlas);
+}
+
+/* Paso 3: Canvas del Plan */
+.canvas-plan {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    padding: 40px;
+    border: 1px solid #e2e8f0;
+}
+
+.canvas-body textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #edf2f7;
+    font-family: inherit;
+    margin-bottom: 20px;
+    resize: none;
+}
+
+/* Botones */
+.btn-next, .btn-save-final {
+    background: var(--gold-atlas);
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 4px 12px rgba(214, 158, 46, 0.3);
+}
+
+/* Animaciones */
+.section-fade {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   COMPLEMENTOS PARA DIAGNÓSTICO ATLAS (NUEVA SECCIÓN)
+   ============================================================ */
+
+.grid-diagnostico-full {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Estenedor del Pop-up de realidad docente */
+.panel-realidad-docente {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    height: 75vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.atl-an-modal-head {
+    padding: 25px;
+    background: white;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Botones de Pestañas */
+.modal-tabs {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-tabs button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.modal-tabs button.active {
+    background: var(--primary-atlas);
+    color: white;
+    border-color: var(--primary-atlas);
+}
+
+/* Área de contenido con Scroll */
+.scroll-evidencias-directivo {
+    flex: 1;
+    overflow-y: auto;
+    padding: 25px;
+    background: #fbfcfd;
+}
+
+/* Métricas tipo Dashboard (Cajas oscuras) */
+.atl-an-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.atl-an-mini-box.dark {
+    background: #1a202c;
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.atl-an-val { font-size: 1.8rem; font-weight: 800; display: block; }
+.atl-an-val.blue { color: #63b3ed; }
+.atl-an-val.green { color: #68d391; }
+.atl-an-val.gold { color: #f6e05e; }
+.atl-an-lbl { font-size: 0.65rem; color: #a0aec0; letter-spacing: 1px; }
+
+/* Tarjeta de Análisis de Texto */
+.atl-an-insight-card {
+    background: #fffaf0;
+    border-left: 5px solid var(--gold-atlas);
+    padding: 20px;
+    border-radius: 12px;
+    line-height: 1.6;
+}
+
+/* Estilos para el panel comparativo derecho */
+.panel-comparativo-directivo {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.radar-box {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.item-likert-dir {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.radios-dir {
+    display: flex;
+    gap: 4px;
+}
+
+.radios-dir button {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.radios-dir button.selected {
+    background: var(--gold-atlas);
+    color: white;
+    border-color: var(--gold-atlas);
+}
+
+/* Scrollbar Custom para el panel de evidencias */
+.scroll-evidencias-directivo::-webkit-scrollbar { width: 6px; }
+.scroll-evidencias-directivo::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+
+.riesgo-bar-global {
+    height: 20px; /* Un poco más gruesa */
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f1f5f9;
+    margin: 20px 0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.riesgo-bar-global div {
+    height: 100%;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.r-fill.alto { background: #ef4444; }
+.r-fill.moderado { background: #f59e0b; }
+.r-fill.responsable { background: #10b981; }
+.likert-group-box { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.item-likert-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+.q-label { font-size: 0.8rem; flex: 1; padding-right: 10px; }
+.btn-group-likert button { width: 30px; height: 30px; margin-left: 5px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; }
+.btn-group-likert button.active { background: #c5a059; color: white; border-color: #c5a059; }
+
+/* --- Mejora específica para la sección de Riesgos Prompts --- */
+
+/* Contenedor principal de la pestaña de riesgos */
+.riesgo-dist-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 16px;
+}
+
+.riesgo-dist-container h6 {
+    color: var(--primary-atlas);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* Barra de progreso multicolor (Rojo-Amarillo-Verde) */
+.riesgo-bar-global {
+    display: flex;
+    height: 14px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #e2e8f0; /* Fondo por si no hay datos */
+    margin: 15px 0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Etiquetas de porcentaje debajo de la barra */
+.distribucion-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.distribucion-labels span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Lista de métricas individuales (Ética, Privacidad, etc.) */
+.prompt-list-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Mantiene 2 columnas */
+    gap: 15px; /* Espacio entre tarjetas */
+    padding: 0;
+    list-style: none;
+    margin-top: 20px;
+}
+
+.prompt-list-metrics li {
+    background: #ffffff; /* Fondo blanco para resaltar sobre el gris suave */
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* Sombra muy sutil */
+}
+
+.prompt-list-metrics li:hover {
+    transform: scale(1.02);
+    border-color: var(--gold-atlas);
+}
+
+.prompt-list-metrics li span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.prompt-list-metrics li strong {
+    font-size: 1rem;
+    color: var(--primary-atlas);
+    font-weight: 800;
+}
+
+/* Ajuste para los iconos dentro de la lista */
+.prompt-list-metrics li .icon-metric {
+    margin-right: 8px;
+}
+
+.item-riesgo-detalle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.item-riesgo-detalle span {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.item-riesgo-detalle strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1a202c;
+}
+
+.canvas-input, .canvas-body input, .canvas-body select {
+    border: 2px solid #edf2f7;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.canvas-input:focus, .canvas-body input:focus {
+    border-color: var(--gold-atlas);
+    background: #fffdf5;
+}
+
+.canvas-col label {
+    color: var(--primary-atlas);
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.spinner-mini {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   ESTILOS PARA BOTONES (MAPEADOS A TUS CLASES JSX)
+   ============================================================ */
+
+/* Botón Principal (Siguiente / Finalizar / Guardar Plan) */
+.btn-next, 
+.btn-save-final {
+    background: var(--gold-atlas) !important;
+    color: white !important;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(214, 158, 46, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-next:hover, 
+.btn-save-final:hover {
+    background: #b08d4a !important; /* Dorado más profundo */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(214, 158, 46, 0.35);
+}
+
+.btn-next:disabled {
+    background: #e2e8f0 !important;
+    color: #a0aec0 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Botón de Borrador (Paso 2: Diagnóstico) */
+.btn-save-draft {
+    background: white;
+    color: var(--text-main);
+    padding: 12px 25px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-save-draft:hover {
+    border-color: var(--primary-atlas);
+    color: var(--primary-atlas);
+    background: #f8fafc;
+}
+
+/* Botón de Borrador Estilo "Canvas" (Paso 3: Plan) */
+.btn-draft {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px dashed #cbd5e0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-draft:hover {
+    background: #e2e8f0;
+    color: var(--primary-atlas);
+    border-style: solid;
+    border-color: #cbd5e0;
+}
+
+/* Utilidad para botones que deben ocupar todo el ancho */
+.w-100 {
+    width: 100%;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN - ATLAS GOVERNANCE
+   ============================================================ */
+
+/* --- TABLETS (iPad & Pantallas Medianas) --- */
+@media (max-width: 1024px) {
+    .grid-diagnostico-full {
+        grid-template-columns: 1fr; /* Apilamos columnas */
+    }
+
+    .panel-realidad-docente {
+        height: auto;
+        max-height: 600px;
+    }
+
+    .canvas-body {
+        grid-template-columns: 1fr; /* El constructor de plan pasa a una sola columna */
+        gap: 10px;
+    }
+
+    .directivo-header-main {
+        padding: 15px 25px;
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
+
+/* --- CELULARES (Portrait & Pantallas Pequeñas) --- */
+@media (max-width: 768px) {
+    .directivo-wrapper {
+        padding: 10px;
+    }
+
+    /* Ajuste Header */
+    .directivo-header-main h2 {
+        font-size: 1.2rem;
+    }
+
+    .progress-bar-dir {
+        gap: 8px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .progress-bar-dir .step {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+
+    /* Etapa 1: Panorama */
+    .panorama-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    /* Etapa 2: Diagnóstico */
+    .atl-an-metrics-grid {
+        grid-template-columns: 1fr; /* Métricas una sobre otra */
+    }
+
+    .item-likert-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-bottom: 15px;
+    }
+
+    .btn-group-likert {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .btn-group-likert button {
+        flex: 1;
+        margin-left: 0;
+        margin-right: 5px;
+    }
+
+    /* Etapa 3: Canvas Plan */
+    .canvas-plan {
+        padding: 20px;
+    }
+
+    .canvas-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .canvas-footer button {
+        width: 100%; /* Botones ocupan todo el ancho en móvil */
+    }
+
+    /* Tabs de Evidencia */
+    .modal-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .modal-tabs button {
+        font-size: 0.7rem;
+        padding: 8px;
+    }
+
+    .prompt-list-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- MÓVIL HORIZONTAL (Landscape) --- */
+@media (max-height: 500px) and (orientation: landscape) {
+    .directivo-header-main {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    .panel-realidad-docente {
+        height: 100vh;
+    }
+
+    .scroll-evidencias-directivo, 
+    .form-directivo-likert-scroll {
+        max-height: 200px;
+    }
+
+    .canvas-plan {
+        padding: 15px;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/* =============================================
+   ESTRUCTURA BASE ATLAS ANÁLISIS (atl-an)
+   ============================================= */
+.atl-an-container {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    padding: 1rem 0;
+}
+
+.atl-an-grid {
+    display: grid;
+    /* Limitamos el tamaño máximo para que no se crezcan de más */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
+    gap: 24px;
+    justify-content: center;
+} 
+
+.atl-an-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.atl-an-card:hover {
+    transform: translateY(-4px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.atl-an-card-info h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.user-key-tag {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* =============================================
+   ESTADÍSTICAS RÁPIDAS (MINI BOXES)
+   ============================================= */
+.atl-an-stats-row {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.atl-an-mini-box {
+    flex: 1;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #f1f5f9;
+}
+
+.atl-an-mini-box.dark { 
+    background: #0f172a; 
+    border-color: #1e293b; 
+}
+
+.atl-an-val { 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    display: block; 
+}
+
+.atl-an-val.blue { color: #3b82f6; }
+.atl-an-val.green { color: #10b981; }
+.atl-an-val.gold { color: #f59e0b; }
+
+.atl-an-lbl { 
+    font-size: 0.65rem; 
+    color: #94a3b8; 
+    text-transform: uppercase; 
+    font-weight: 700; 
+}
+
+.atl-an-btn-main {
+    width: 100%;
+    padding: 12px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    margin-top: auto;
+}
+
+.atl-an-btn-main:hover { 
+    background: #2563eb; 
+    transform: translateY(-2px);
+}
+
+/* =============================================
+   MODAL PREMIUM Y TABS (CON SCROLL FIX)
+   ============================================= */
+.atl-an-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.atl-an-modal {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    max-height: 90vh; 
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    position: relative;
+}
+
+.atl-an-modal.wide {
+    max-width: 850px; 
+}
+
+.atl-an-modal-head {
+    padding: 24px 32px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.atl-an-modal-head h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #0f172a;
+    padding-right: 40px;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 5px;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.modal-tabs button {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+    background: transparent;
+}
+
+.modal-tabs button.active {
+    background: white;
+    color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.atl-an-modal-body {
+    padding: 32px;
+    overflow-y: auto;
+    flex-grow: 1;
+    background: #ffffff;
+}
+
+/* =============================================
+   MÉTRICAS E INTERPRETACIÓN (LÓGICA IMAGEN 2)
+   ============================================= */
+.atl-an-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.atl-an-progress-section {
+    margin-bottom: 30px;
+}
+
+/* GRÁFICAS CORREGIDAS: Estilo Senior */
+.atl-an-bar-container {
+    margin-top: 12px;
+    margin-bottom: 16px;
+}
+
+.atl-an-bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.atl-an-bar-bg {
+    background: #f1f5f9;
+    height: 12px; /* Un poco más gruesa para que se vea mejor */
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0; /* Definición extra */
+}
+
+.atl-an-bar-fill {
+    height: 100%;
+    /* Degradado para que no se vea aburrido */
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.atl-an-insight-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #3b82f6;
+}
+
+/* =============================================
+   SÍNTESIS NARRATIVA 
+   ============================================= */
+.sintesis-narrativa {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.parrafo-analitico {
+    background: #fdfdfd;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    border-left: 4px solid #3b82f6;
+}
+
+.parrafo-analitico h5 {
+    margin: 0 0 8px 0;
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.parrafo-analitico p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #475569;
+}
+
+/* =============================================
+   DETALLE DE ENCUESTA (PREGUNTAS)
+   ============================================= */
+.pregunta-detalle-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.pregunta-detalle-card h5 {
+    font-size: 1rem;
+    margin: 0 0 15px 0;
+    line-height: 1.4;
+    color: #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.badge-tipo {
+    font-size: 0.65rem;
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+/* =============================================
+   FOOTER Y CIERRE (FIJOS)
+   ============================================= */
+.modal-footer {
+    padding: 20px 32px;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+    flex-shrink: 0;
+}
+
+.atl-an-close {
+    background: #f1f5f9;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    color: #64748b;
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.atl-an-close:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* --- LOADER ESTRUCTURADO --- */
+.dash-lider-2026-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh; /* Ajustado para que no ocupe toda la pantalla si está dentro de un contenedor */
+    width: 100%;
+}
+
+.dash-lider-2026-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(197, 160, 89, 0.1); /* Fondo del círculo muy tenue */
+    border-top: 5px solid #c5a059; /* El color dorado de tu marca */
+    border-radius: 50%;
+    animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    margin-bottom: 20px;
+}
+
+.dash-lider-2026-loader p {
+    font-family: 'Montserrat', sans-serif; /* O la que uses en tu app */
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #c5a059;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+/* =============================================
+   ANIMACIONES Y RESPONSIVE
+   ============================================= */
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 768px) {
+    .atl-an-modal {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    .atl-an-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

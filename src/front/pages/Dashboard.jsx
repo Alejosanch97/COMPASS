@@ -7,6 +7,15 @@ import { FaseAuditar } from "./FaseAuditar";
 import { ResponderFormularios } from "./ResponderFormularios";
 import { EjecutarReto } from "./EjecutarReto"; // <-- Nueva página para la ejecución de retos
 import { FaseTransformar } from "./FaseTransformar"; // <-- Nueva página para responder instrumentos
+
+import FaseLiderar from "./FaseLiderar";
+import RetosLiderar from "./RetosLiderar";
+import AnalisisLiderazgo from "./AnalisisLiderazgo";
+
+import FaseAsegurar from "./FaseAsegurar";
+import TallerMejoraAsegurar from "./TallerMejoraAsegurar";
+import ModuloDirectivoEstrategico from "./ModuloDirectivoEstrategico";
+
 import "../Styles/dashboard.css";
 
 // ─── URL del backend ──────────────────────────────────────────────────────────
@@ -50,6 +59,7 @@ export const Dashboard = ({ onLogout }) => {
     const [openMenu, setOpenMenu] = useState("consola");
     const [faseRespondiendo, setFaseRespondiendo] = useState("AUDITAR");
     const [retoEjecutando, setRetoEjecutando] = useState(null);
+    const [retoLiderarId, setRetoLiderarId] = useState(null);
 
     const handleNavigateFase = (tab, fase) => {
         if (fase) setFaseRespondiendo(fase);
@@ -58,6 +68,15 @@ export const Dashboard = ({ onLogout }) => {
 
     const handleNavigateTransformar = (tab, retoId) => {
         if (retoId) setRetoEjecutando(retoId);
+        switchTab(tab);
+    };
+
+    const handleNavigateLiderar = (tab, id) => {
+        if (id) setRetoLiderarId(id);
+        switchTab(tab);
+    };
+
+    const handleNavigateAsegurar = (tab) => {
         switchTab(tab);
     };
 
@@ -359,6 +378,11 @@ export const Dashboard = ({ onLogout }) => {
                             {activeTab === "asignacion_retos" && "Asignación de Retos"}
                             {activeTab === "responder_fase" && "Responder Instrumento"}
                             {activeTab === "ejecutar_reto" && "Ejecutando Misión"}
+                            {activeTab === "retos_liderar" && "Laboratorio de Prompt Ético"}
+                            {activeTab === "analisis_liderazgo" && "Panel de Gobernanza"}
+                            {activeTab === "fase_asegurar" && ""}
+                            {activeTab === "taller_asegurar" && "Taller de Mejora ASEGURAR"}
+                            {activeTab === "diagnostico_directivo" && "Módulo de Gobernanza"}
                         </h1>
                         <p className="header-subtitle">Modelo de Madurez y Gobernanza en IA Educativa</p>
                     </div>
@@ -635,6 +659,12 @@ export const Dashboard = ({ onLogout }) => {
                         {activeTab === "responder_fase" && <ResponderFormularios userData={userData} apiFetch={apiFetch} filterPhase={faseRespondiendo} onNavigate={handleNavigateFase} />}
                         {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} />}
                         {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} />}
+                        {activeTab === "fase_liderar" && <FaseLiderar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
+                        {activeTab === "retos_liderar" && <RetosLiderar userData={userData} apiFetch={apiFetch} retoId={retoLiderarId} onNavigate={handleNavigateLiderar} />}
+                        {activeTab === "analisis_liderazgo" && <AnalisisLiderazgo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
+                        {activeTab === "fase_asegurar" && <FaseAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
+                        {activeTab === "taller_asegurar" && <TallerMejoraAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
+                        {activeTab === "diagnostico_directivo" && <ModuloDirectivoEstrategico userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
 
                         {/* 2. Páginas tipo panel/admin que sí usan el grid de cards de 2 columnas */}
                         {["creador_retos", "gestion_empresas", "asignacion_retos"].includes(activeTab) && (
@@ -646,7 +676,7 @@ export const Dashboard = ({ onLogout }) => {
                         )}
 
                         {/* 3. Bloque genérico (placeholders restantes: talentos, formularios, analisis, etc.) */}
-                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto"].includes(activeTab) && (
+                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto", "fase_liderar", "retos_liderar", "analisis_liderazgo", "fase_asegurar", "taller_asegurar", "diagnostico_directivo"].includes(activeTab) && (
                             <section className="dashboard-grid">
                                 <div className="info-card wide-card" style={{ textAlign: "center", padding: "60px 20px" }}>
                                     <div style={{ fontSize: "3rem", marginBottom: "16px" }}>

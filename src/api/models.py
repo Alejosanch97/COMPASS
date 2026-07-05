@@ -71,7 +71,7 @@ class Usuario(db.Model):
     asegurar_directivo_panorama = relationship("AsegurarDirectivoPanorama", back_populates="usuario", cascade="all, delete-orphan")
     asegurar_directivo_diagnostico = relationship("AsegurarDirectivoDiagnostico", back_populates="usuario", cascade="all, delete-orphan")
     asegurar_directivo_plan = relationship("AsegurarDirectivoPlan", back_populates="usuario", cascade="all, delete-orphan")
-    sostener_docente = relationship("SostenerDocente", back_populates="usuario", cascade="all, delete-orphan")
+    sostener_docentes = relationship("SostenerDocente", back_populates="usuario", cascade="all, delete-orphan")
     sostener_institucional = relationship("SostenerInstitucional", back_populates="usuario", cascade="all, delete-orphan")
     progreso_micromodulos = relationship("ProgresoMicromodulo", back_populates="usuario", cascade="all, delete-orphan")
     huella_history = relationship("HuellaCompassHistory", back_populates="usuario", cascade="all, delete-orphan")
@@ -371,6 +371,8 @@ class PromptLiderar(db.Model):
     simulador_puntaje: Mapped[float] = mapped_column(Float, default=0.0)
     clasificacion_riesgo: Mapped[str] = mapped_column(String(50), nullable=True)
     sugerencia_mejora: Mapped[str] = mapped_column(Text, nullable=True)
+    detalle_respuestas: Mapped[dict] = mapped_column(JSON, nullable=True)
+    dimension_mas_baja: Mapped[str] = mapped_column(String(50), nullable=True)
     fecha_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     es_publico: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(20), default="COMPLETADO")
@@ -386,6 +388,8 @@ class PromptLiderar(db.Model):
             "simulador_puntaje": self.simulador_puntaje,
             "clasificacion_riesgo": self.clasificacion_riesgo,
             "sugerencia_mejora": self.sugerencia_mejora,
+            "detalle_respuestas": self.detalle_respuestas or {}, 
+            "dimension_mas_baja": self.dimension_mas_baja, 
             "es_publico": self.es_publico, "status": self.status,
             "fecha_registro": self.fecha_registro.isoformat() if self.fecha_registro else None,
         }
@@ -461,14 +465,22 @@ class AsegurarDocente(db.Model):
     alertas_detectadas: Mapped[dict] = mapped_column(JSON, nullable=True)
     bloques_activados: Mapped[dict] = mapped_column(JSON, nullable=True)
     prompt_mejorado: Mapped[str] = mapped_column(Text, nullable=True)
-    riesgo_previo: Mapped[str] = mapped_column(String(50), nullable=True)
-    riesgo_final: Mapped[str] = mapped_column(String(50), nullable=True)
+    riesgo_previo: Mapped[str] = mapped_column(Text, nullable=True)
+    riesgo_final: Mapped[str] = mapped_column(Text, nullable=True)
     reflexion_1_cambios: Mapped[str] = mapped_column(Text, nullable=True)
     reflexion_2_riesgos: Mapped[str] = mapped_column(Text, nullable=True)
     reflexion_3_supervision: Mapped[str] = mapped_column(Text, nullable=True)
     reflexion_4_cognicion: Mapped[str] = mapped_column(Text, nullable=True)
-    estandar_seleccionado: Mapped[str] = mapped_column(String(100), nullable=True)
+    estandar_seleccionado: Mapped[str] = mapped_column(Text, nullable=True)
     url_doc_exportable: Mapped[str] = mapped_column(String(500), nullable=True)
+    # ── NUEVOS: taller significativo ──
+    constructor_prompt: Mapped[dict] = mapped_column(JSON, nullable=True)         # {rol, contexto, tarea, restricciones, formato, supervision}
+    reescrituras_aplicadas: Mapped[dict] = mapped_column(JSON, nullable=True)     # lista de ids
+    lecciones_vistas: Mapped[dict] = mapped_column(JSON, nullable=True)           # lista de dimensiones
+    puntaje_rector: Mapped[int] = mapped_column(Integer, nullable=True)           # 0-6 componentes de la fórmula
+    reduccion_riesgo_pct: Mapped[float] = mapped_column(Float, nullable=True)     # % de mejora calculado
+    compromiso_datos: Mapped[bool] = mapped_column(Boolean, default=False)        # firmó el pacto anti-datos-sensibles
+    
 
     usuario = relationship("Usuario", back_populates="asegurar_docente")
 
@@ -487,6 +499,12 @@ class AsegurarDocente(db.Model):
             "reflexion_4_cognicion": self.reflexion_4_cognicion,
             "estandar_seleccionado": self.estandar_seleccionado,
             "url_doc_exportable": self.url_doc_exportable,
+            "constructor_prompt": self.constructor_prompt or {},
+            "reescrituras_aplicadas": self.reescrituras_aplicadas or [],
+            "lecciones_vistas": self.lecciones_vistas or [],
+            "puntaje_rector": self.puntaje_rector,
+            "reduccion_riesgo_pct": self.reduccion_riesgo_pct,
+            "compromiso_datos": self.compromiso_datos,
         }
 
 
@@ -612,72 +630,58 @@ class AsegurarDirectivoPlan(db.Model):
 # ─────────────────────────────────────────────
 # 19. SOSTENER - DOCENTE (radar 4D × 6 = 24 preguntas)
 # ─────────────────────────────────────────────
+
 class SostenerDocente(db.Model):
     __tablename__ = "sostener_docentes"
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_sostener: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
     empresa_id: Mapped[int] = mapped_column(ForeignKey("empresas.id"), nullable=True)
+    periodo: Mapped[str] = mapped_column(String(20), nullable=True)  # "2026-1"
     fecha_evaluacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
-    periodo: Mapped[str] = mapped_column(String(50), nullable=True)
-    d1_p1: Mapped[int] = mapped_column(Integer, nullable=True)
-    d1_p2: Mapped[int] = mapped_column(Integer, nullable=True)
-    d1_p3: Mapped[int] = mapped_column(Integer, nullable=True)
-    d1_p4: Mapped[int] = mapped_column(Integer, nullable=True)
-    d1_p5: Mapped[int] = mapped_column(Integer, nullable=True)
-    d1_p6: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p7: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p8: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p9: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p10: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p11: Mapped[int] = mapped_column(Integer, nullable=True)
-    d2_p12: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p13: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p14: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p15: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p16: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p17: Mapped[int] = mapped_column(Integer, nullable=True)
-    d3_p18: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p19: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p20: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p21: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p22: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p23: Mapped[int] = mapped_column(Integer, nullable=True)
-    d4_p24: Mapped[int] = mapped_column(Integer, nullable=True)
-    promedio_global: Mapped[float] = mapped_column(Float, nullable=True)
-    nivel_calculado: Mapped[str] = mapped_column(String(10), nullable=True)
-    promedio_d1: Mapped[float] = mapped_column(Float, nullable=True)
-    promedio_d2: Mapped[float] = mapped_column(Float, nullable=True)
-    promedio_d3: Mapped[float] = mapped_column(Float, nullable=True)
-    promedio_d4: Mapped[float] = mapped_column(Float, nullable=True)
-    alertas_activas: Mapped[int] = mapped_column(Integer, nullable=True)
-    porcentaje_crecimiento: Mapped[float] = mapped_column(Float, nullable=True)
+
+    # Las 24 respuestas del radar como JSON: {"1": 4, "2": 3, ..., "24": 5}
+    respuestas: Mapped[dict] = mapped_column(JSON, nullable=True)
+
+    # Campos calculados
+    promedio_global: Mapped[float] = mapped_column(Float, default=0.0)
+    promedio_d1: Mapped[float] = mapped_column(Float, default=0.0)
+    promedio_d2: Mapped[float] = mapped_column(Float, default=0.0)
+    promedio_d3: Mapped[float] = mapped_column(Float, default=0.0)
+    promedio_d4: Mapped[float] = mapped_column(Float, default=0.0)
+    nivel_calculado: Mapped[str] = mapped_column(String(80), nullable=True)
+    alertas_activas: Mapped[str] = mapped_column(Text, nullable=True)
+    porcentaje_crecimiento: Mapped[str] = mapped_column(String(20), nullable=True)
+
+    # Cierre reflexivo (etapa 5)
     reflexion_antes: Mapped[str] = mapped_column(Text, nullable=True)
     reflexion_despues: Mapped[str] = mapped_column(Text, nullable=True)
     aprendizaje_clave: Mapped[str] = mapped_column(Text, nullable=True)
-    prioridad_sostener: Mapped[str] = mapped_column(String(100), nullable=True)
+    prioridad_sostener: Mapped[str] = mapped_column(String(50), nullable=True)
     compromiso_accion: Mapped[str] = mapped_column(Text, nullable=True)
     evidencia_mejora: Mapped[str] = mapped_column(Text, nullable=True)
-    fecha_revision_plan: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    fecha_revision_plan: Mapped[str] = mapped_column(String(50), nullable=True)
 
-    usuario = relationship("Usuario", back_populates="sostener_docente")
+    status: Mapped[str] = mapped_column(String(20), default="COMPLETADO")
+
+    usuario = relationship("Usuario", back_populates="sostener_docentes")
 
     def serialize(self):
         return {
-            "id": self.id, "id_sostener": self.id_sostener, "usuario_id": self.usuario_id,
-            "fecha_evaluacion": self.fecha_evaluacion.isoformat() if self.fecha_evaluacion else None,
+            "id": self.id, "usuario_id": self.usuario_id, "empresa_id": self.empresa_id,
             "periodo": self.periodo,
-            "promedio_global": self.promedio_global, "nivel_calculado": self.nivel_calculado,
+            "fecha_evaluacion": self.fecha_evaluacion.isoformat() if self.fecha_evaluacion else None,
+            "respuestas": self.respuestas or {},
+            "promedio_global": self.promedio_global,
             "promedio_d1": self.promedio_d1, "promedio_d2": self.promedio_d2,
             "promedio_d3": self.promedio_d3, "promedio_d4": self.promedio_d4,
+            "nivel_calculado": self.nivel_calculado,
             "alertas_activas": self.alertas_activas,
             "porcentaje_crecimiento": self.porcentaje_crecimiento,
-            "prioridad_sostener": self.prioridad_sostener,
-            "compromiso_accion": self.compromiso_accion,
-            "reflexion_antes": self.reflexion_antes,
-            "reflexion_despues": self.reflexion_despues,
-            "aprendizaje_clave": self.aprendizaje_clave,
-            "evidencia_mejora": self.evidencia_mejora,
+            "reflexion_antes": self.reflexion_antes, "reflexion_despues": self.reflexion_despues,
+            "aprendizaje_clave": self.aprendizaje_clave, "prioridad_sostener": self.prioridad_sostener,
+            "compromiso_accion": self.compromiso_accion, "evidencia_mejora": self.evidencia_mejora,
+            "fecha_revision_plan": self.fecha_revision_plan,
+            "status": self.status,
         }
 
 

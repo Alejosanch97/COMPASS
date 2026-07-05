@@ -135,13 +135,23 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     const fetchRetoData = async () => {
         setLoading(true);
         try {
-            const [retosAsignados, avance] = await Promise.all([
+            // Ejecutamos las promesas base en paralelo
+            const promesas = [
                 apiFetch(`/api/mi-empresa/retos?fase=TRANSFORMAR`).catch(() => []),
                 apiFetch(`/api/retos-transformar/${retoId}`).catch(() => null),
-            ]);
+            ];
+
+            // Si es DIRECTIVO, empujamos la tercera petición al pool para que corra al mismo tiempo
+            if (userData.rol === "DIRECTIVO") {
+                promesas.push(apiFetch(`/api/empresa/retos-transformar`).catch(() => []));
+            }
+
+            const resultados = await Promise.all(promesas);
+            const retosAsignados = resultados[0];
+            const avance = resultados[1];
 
             if (userData.rol === "DIRECTIVO") {
-                const todosLosRetos = await apiFetch(`/api/empresa/retos-transformar`).catch(() => []);
+                const todosLosRetos = resultados[2];
                 setRegistrosTransformar(Array.isArray(todosLosRetos) ? todosLosRetos : []);
             }
 
@@ -271,23 +281,23 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                 status_reto: statusFinal,
             };
 
-            await apiFetch("/api/retos-transformar", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            });
-
-            setStatusActual(statusFinal);
-
+            // Navegar inmediatamente si el estado es COMPLETADO sin bloquear el hilo principal
             if (statusFinal === 'COMPLETADO') {
-                await Swal.fire({
-                    title: "¡Misión Enviada!",
-                    text: "Tu evidencia ha sido registrada correctamente.",
-                    icon: "success",
-                    confirmButtonColor: "#c5a059",
-                    timer: 2500,
-                });
+                setStatusActual(statusFinal);
                 onNavigate('fase_transformar');
+
+                // Guardar silenciosamente en background
+                apiFetch("/api/retos-transformar", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                }).catch(e => console.error("Error guardando en background:", e));
             } else {
+                // Para el modo BORRADOR sí esperamos la respuesta (el usuario continúa en el formulario)
+                await apiFetch("/api/retos-transformar", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                });
+                setStatusActual(statusFinal);
                 Swal.fire({
                     title: "Borrador Guardado",
                     icon: "success",
@@ -307,12 +317,24 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     if (loading) {
         return (
             <div className="atlas-unique-page-wrapper">
-                <div className="atlas-sync-float">
-                    <div className="atlas-sync-pill">
-                        <span className="sync-icon">🔄</span>
-                        <span className="sync-text">Cargando misión...</span>
-                    </div>
+                <div className="narrative-hero-section" style={{ opacity: 0.4 }}>
+                    <div style={{ height: '28px', width: '60%', background: '#e2e8f0', borderRadius: '8px', marginBottom: '12px' }} />
+                    <div style={{ height: '16px', width: '40%', background: '#e2e8f0', borderRadius: '8px' }} />
                 </div>
+                <div className="form-card" style={{ marginTop: '20px' }}>
+                    {[1, 2, 3].map(i => (<div key={i} style={{ marginBottom: '24px' }}>
+                        <div style={{ height: '14px', width: '30%', background: '#e2e8f0', borderRadius: '6px', marginBottom: '10px' }} />
+                        <div style={{ height: '44px', width: '100%', background: '#f1f5f9', borderRadius: '10px' }} />
+                    </div>
+                    ))}            </div>
+                <style>{`
+                @keyframes shimmer {
+                    0% { opacity: 0.4; }
+                    50% { opacity: 0.8; }
+                    100% { opacity: 0.4; }
+                }
+                .atlas-unique-page-wrapper > * { animation: shimmer 1.2s ease infinite; }
+            `}</style>
             </div>
         );
     }

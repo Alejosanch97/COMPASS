@@ -16,9 +16,9 @@ import "../Styles/asignacionRetos.css";
 
 const FASES_RETO = [
     { value: "TRANSFORMAR", label: "T · Transformar", icon: "⚡", peso: 30 },
-    { value: "LIDERAR",     label: "L · Liderar",     icon: "🧭", peso: 15 },
-    { value: "ASEGURAR",    label: "A · Asegurar",    icon: "🛡️", peso: 20 },
-    { value: "SOSTENER",    label: "S · Sostener",    icon: "🌱", peso: 15 },
+    { value: "LIDERAR", label: "L · Liderar", icon: "🧭", peso: 15 },
+    { value: "ASEGURAR", label: "A · Asegurar", icon: "🛡️", peso: 20 },
+    { value: "SOSTENER", label: "S · Sostener", icon: "🌱", peso: 15 },
 ];
 
 export const AsignacionRetos = ({ apiFetch }) => {
@@ -37,6 +37,9 @@ export const AsignacionRetos = ({ apiFetch }) => {
 
     // Estado del modal de "reemplazar reto"
     const [reemplazando, setReemplazando] = useState(null); // { reto_plantilla_id, fase }
+    const [liderarActiva, setLiderarActiva] = useState(false);
+    const [asegurarActiva, setAsegurarActiva] = useState(false);
+    const [sostenerActiva, setSostenerActiva] = useState(false);
 
     useEffect(() => {
         cargarInicial();
@@ -65,8 +68,17 @@ export const AsignacionRetos = ({ apiFetch }) => {
     const cargarDetalleEmpresa = async (empresaId) => {
         setIsLoadingDetalle(true);
         try {
-            const detalle = await apiFetch(`/api/empresas/${empresaId}/asignaciones`);
+            const [detalle, fases] = await Promise.all([
+                apiFetch(`/api/empresas/${empresaId}/asignaciones`),
+                apiFetch(`/api/empresas/${empresaId}/fases`).catch(() => []),
+            ]);
             setDetalleAsignacion(detalle);
+            const liderar = Array.isArray(fases) ? fases.find(f => f.fase === "LIDERAR") : null;
+            setLiderarActiva(liderar?.is_activa === true);
+            const asegurar = Array.isArray(fases) ? fases.find(f => f.fase === "ASEGURAR") : null;
+            setAsegurarActiva(asegurar?.is_activa === true);
+             const sostener = Array.isArray(fases) ? fases.find(f => f.fase === "SOSTENER") : null;
+            setSostenerActiva(sostener?.is_activa === true);
         } catch (e) {
             console.error("Error cargando detalle:", e);
             alert("No se pudo cargar el detalle de asignación de esta empresa.");
@@ -157,6 +169,62 @@ export const AsignacionRetos = ({ apiFetch }) => {
         }
     };
 
+    // ── Activar / desactivar la fase LIDERAR (no asigna retos, solo la abre) ──
+    const toggleLiderar = async () => {
+        if (!empresaSeleccionada) return;
+        setIsSyncing(true);
+        try {
+            await apiFetch(`/api/empresas/${empresaSeleccionada.id}/fases`, {
+                method: "POST",
+                body: JSON.stringify({ fase: "LIDERAR", is_activa: !liderarActiva }),
+            });
+            setLiderarActiva(!liderarActiva);
+            await cargarDetalleEmpresa(empresaSeleccionada.id);
+        } catch (e) {
+            console.error("Error activando/desactivando LIDERAR:", e);
+            alert("Hubo un error al cambiar el estado de LIDERAR.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // ── Activar / desactivar la fase ASEGURAR (no asigna retos, solo la abre) ──
+    const toggleAsegurar = async () => {
+        if (!empresaSeleccionada) return;
+        setIsSyncing(true);
+        try {
+            await apiFetch(`/api/empresas/${empresaSeleccionada.id}/fases`, {
+                method: "POST",
+                body: JSON.stringify({ fase: "ASEGURAR", is_activa: !asegurarActiva }),
+            });
+            setAsegurarActiva(!asegurarActiva);
+            await cargarDetalleEmpresa(empresaSeleccionada.id);
+        } catch (e) {
+            console.error("Error activando/desactivando ASEGURAR:", e);
+            alert("Hubo un error al cambiar el estado de ASEGURAR.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const toggleSostener = async () => {
+        if (!empresaSeleccionada) return;
+        setIsSyncing(true);
+        try {
+            await apiFetch(`/api/empresas/${empresaSeleccionada.id}/fases`, {
+                method: "POST",
+                body: JSON.stringify({ fase: "SOSTENER", is_activa: !sostenerActiva }),
+            });
+            setSostenerActiva(!sostenerActiva);
+            await cargarDetalleEmpresa(empresaSeleccionada.id);
+        } catch (e) {
+            console.error("Error activando/desactivando SOSTENER:", e);
+            alert("Hubo un error al cambiar el estado de SOSTENER.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     // ── Helpers de UI ─────────────────────────────────────────────────────
     const getResumenDe = (empresaId) => resumenTodas.find(r => r.empresa_id === empresaId);
 
@@ -237,14 +305,19 @@ export const AsignacionRetos = ({ apiFetch }) => {
                             <div className="as-loader-wrap"><div className="as-loader" /></div>
                         ) : detalleAsignacion && (
                             <div className="as-fases-resumen-grid">
-                                {Object.entries(detalleAsignacion.progreso_fases).map(([fase, info]) => (
-                                    <div key={fase} className={`as-fase-resumen-card ${info.completo ? "completo" : "incompleto"}`}>
-                                        <span className="as-fase-resumen-nombre">{fase}</span>
-                                        <span className="as-fase-resumen-pct">{info.porcentaje}%</span>
-                                        <span className="as-fase-resumen-items">{info.items_asignados} asignado(s)</span>
-                                        <span className="as-fase-resumen-peso">{info.peso_fase} pts huella</span>
-                                    </div>
-                                ))}
+                                {["AUDITAR", "TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]
+                                    .filter(fase => detalleAsignacion.progreso_fases[fase])
+                                    .map(fase => {
+                                        const info = detalleAsignacion.progreso_fases[fase];
+                                        return (
+                                            <div key={fase} className={`as-fase-resumen-card ${info.completo ? "completo" : "incompleto"}`}>
+                                                <span className="as-fase-resumen-nombre">{fase}</span>
+                                                <span className="as-fase-resumen-pct">{info.porcentaje}%</span>
+                                                <span className="as-fase-resumen-items">{info.items_asignados} asignado(s)</span>
+                                                <span className="as-fase-resumen-peso">{info.peso_fase} pts huella</span>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         )}
                     </div>
@@ -313,7 +386,64 @@ export const AsignacionRetos = ({ apiFetch }) => {
                             ))}
                         </div>
 
-                        {retosDeFaseActiva.length === 0 ? (
+                        {faseActiva === "LIDERAR" ? (
+                            <div className="as-liderar-switch-box" style={{ padding: "20px", textAlign: "center" }}>
+                                <p className="as-intro-text">
+                                    La fase LIDERAR usa el Laboratorio de Prompt Ético con misiones ya integradas en la plataforma. No se asignan retos: solo actívala para que los docentes de esta empresa puedan usarla.
+                                </p>
+                                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px", marginTop: "20px" }}>
+                                    <span style={{ color: !liderarActiva ? "#1e293b" : "#94a3b8", fontWeight: 600 }}>Desactivada</span>
+                                    <label className="atlas-switch">
+                                        <input type="checkbox" checked={liderarActiva} onChange={toggleLiderar} disabled={isSyncing} />
+                                        <span className="atlas-slider round"></span>
+                                    </label>
+                                    <span style={{ color: liderarActiva ? "#22c55e" : "#94a3b8", fontWeight: 700 }}>Activada</span>
+                                </div>
+                                <p style={{ marginTop: "16px", fontSize: "0.85rem", color: "#64748b" }}>
+                                    {liderarActiva
+                                        ? "✅ ya pueden entrar al Laboratorio de Prompt Ético."
+                                        : "⚠️ La fase está oculta para los docentes de esta empresa."}
+                                </p>
+                            </div>
+                        ) : faseActiva === "ASEGURAR" ? (
+                            <div className="as-liderar-switch-box" style={{ padding: "20px", textAlign: "center" }}>
+                                <p className="as-intro-text">
+                                    La fase ASEGURAR usa el Taller de Mejora (docentes) y el Módulo de Gobernanza (directivos), ya integrados en la plataforma. No se asignan retos: solo actívala para esta empresa.
+                                </p>
+                                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px", marginTop: "20px" }}>
+                                    <span style={{ color: !asegurarActiva ? "#1e293b" : "#94a3b8", fontWeight: 600 }}>Desactivada</span>
+                                    <label className="atlas-switch">
+                                        <input type="checkbox" checked={asegurarActiva} onChange={toggleAsegurar} disabled={isSyncing} />
+                                        <span className="atlas-slider round"></span>
+                                    </label>
+                                    <span style={{ color: asegurarActiva ? "#22c55e" : "#94a3b8", fontWeight: 700 }}>Activada</span>
+                                </div>
+                                <p style={{ marginTop: "16px", fontSize: "0.85rem", color: "#64748b" }}>
+                                    {asegurarActiva
+                                        ? "✅ Los docentes y directivos ya pueden entrar a la fase ASEGURAR."
+                                        : "⚠️ La fase está oculta para esta empresa."}
+                                </p>
+                            </div>
+                        ) : faseActiva === "SOSTENER" ? (
+                            <div className="as-liderar-switch-box" style={{ padding: "20px", textAlign: "center" }}>
+                                <p className="as-intro-text">
+                                    La fase SOSTENER usa el Radar de Autoevaluación (docentes) y el Cierre Institucional (directivos), ya integrados. No se asignan retos: solo actívala para esta empresa.
+                                </p>
+                                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px", marginTop: "20px" }}>
+                                    <span style={{ color: !sostenerActiva ? "#1e293b" : "#94a3b8", fontWeight: 600 }}>Desactivada</span>
+                                    <label className="atlas-switch">
+                                        <input type="checkbox" checked={sostenerActiva} onChange={toggleSostener} disabled={isSyncing} />
+                                        <span className="atlas-slider round"></span>
+                                    </label>
+                                    <span style={{ color: sostenerActiva ? "#22c55e" : "#94a3b8", fontWeight: 700 }}>Activada</span>
+                                </div>
+                                <p style={{ marginTop: "16px", fontSize: "0.85rem", color: "#64748b" }}>
+                                    {sostenerActiva
+                                        ? "✅ Los docentes y directivos ya pueden entrar a la fase SOSTENER."
+                                        : "⚠️ La fase está oculta para esta empresa."}
+                                </p>
+                            </div>
+                        ) : retosDeFaseActiva.length === 0 ? (
                             <p className="as-empty-state">No hay retos creados para {faseActiva} aún. Ve al Creador de Retos para crearlos.</p>
                         ) : (
                             <div className="as-retos-grid">
@@ -347,7 +477,7 @@ export const AsignacionRetos = ({ apiFetch }) => {
                             </div>
                         )}
 
-                        {retosAsignadosFaseActiva.length > 0 && (
+                        {faseActiva !== "LIDERAR" && faseActiva !== "ASEGURAR" && faseActiva !== "SOSTENER" && retosAsignadosFaseActiva.length > 0 && (
                             <div className="as-asignados-resumen">
                                 <p className="as-asignados-resumen-title">✅ Asignados en {faseActiva} ({retosAsignadosFaseActiva.length})</p>
                                 <div className="as-asignados-chips">

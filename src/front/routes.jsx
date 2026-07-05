@@ -17,6 +17,16 @@ import { ResponderFormularios } from "./pages/ResponderFormularios"; // <-- Nuev
 import { FaseAuditar } from "./pages/FaseAuditar";
 import { EjecutarReto } from "./pages/EjecutarReto"; // <-- Nueva Importación
 import { FaseTransformar } from "./pages/FaseTransformar";
+import FaseLiderar from "./pages/FaseLiderar";
+import RetosLiderar from "./pages/RetosLiderar";
+import AnalisisLiderazgo from "./pages/AnalisisLiderazgo";
+import FaseAsegurar from "./pages/FaseAsegurar";
+import TallerMejoraAsegurar from "./pages/TallerMejoraAsegurar";
+import ModuloDirectivoEstrategico from "./pages/ModuloDirectivoEstrategico";
+
+
+
+
 
 export const router = createBrowserRouter(
     createRoutesFromElements(
@@ -47,6 +57,13 @@ export const router = createBrowserRouter(
         <Route path="/fase-auditar" element={<FaseAuditar />} />
         <Route path="/ejecutar-reto" element={<EjecutarReto />} />
         <Route path="/fase-transformar" element={<FaseTransformar />} />
+        <Route path="/fase-liderar" element={<FaseLiderar />} />
+        <Route path="/retos-liderar" element={<RetosLiderar />} />
+        <Route path="/analisis-liderazgo" element={<AnalisisLiderazgo />} />
+        <Route path="/fase-asegurar" element={<FaseAsegurar />} />
+        <Route path="/taller-asegurar" element={<TallerMejoraAsegurar />} />
+        <Route path="/modulo-directivo-estrategico" element={<ModuloDirectivoEstrategico />} />
+        
       </Route>
     )
 );

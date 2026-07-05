@@ -1,0 +1,308 @@
+/* ==========================================================================
+   ASEGURAR UPGRADE - ESTILO COHERENTE CON IMAGEN 1 Y 2
+   ========================================================================== */
+
+.asegurar-upgrade-wrapper {
+    background-color: #f8fafc; /* Fondo gris muy claro de la imagen 2 */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #334155;
+}
+
+/* HEADER: Cambiado a Blanco como en la Imagen 2 */
+.asegurar-upgrade-header {
+    background-color: white; 
+    padding: 1.5rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #1e293b;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.asegurar-upgrade-brand h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.asegurar-upgrade-back-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 15px;
+    transition: all 0.2s;
+}
+
+.asegurar-upgrade-back-btn:hover {
+    background-color: #f1f5f9;
+}
+
+/* BOTÓN FINALIZAR: Estilo exacto Imagen 2 (Dorado/Arena) */
+.asegurar-upgrade-save-btn {
+    background-color: #c5a059;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px rgba(197, 160, 89, 0.2);
+}
+
+.asegurar-upgrade-save-btn:hover { 
+    background-color: #b38f4d; 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(197, 160, 89, 0.3);
+}
+
+.asegurar-upgrade-save-btn:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.asegurar-upgrade-main {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* SECCIONES: Tarjetas blancas limpias */
+.asegurar-upgrade-section {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* BADGE: Estilo Imagen 1 */
+.asegurar-upgrade-badge {
+    background-color: #c5a059; /* Color dorado para el badge */
+    color: white;
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.asegurar-upgrade-title {
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.asegurar-upgrade-grid-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+/* CAJAS DE TEXTO: Monospace profesional */
+.asegurar-upgrade-box {
+    background-color: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    min-height: 180px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+}
+
+.asegurar-upgrade-box.gold {
+    background-color: #fffdf5;
+    border: 2px solid #c5a059;
+}
+
+.asegurar-upgrade-tags {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.asegurar-upgrade-alert-tag {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid #fecaca;
+}
+
+.asegurar-upgrade-safe-tag {
+    color: #059669;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.asegurar-upgrade-blocks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* BLOQUES: Eliminado el azul, ahora usa el Dorado de la Imagen 1 */
+.asegurar-upgrade-block-item {
+    text-align: left;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: #475569;
+}
+
+.asegurar-upgrade-block-item:hover {
+    border-color: #c5a059;
+    background-color: #f8fafc;
+}
+
+.asegurar-upgrade-block-item.active {
+    background-color: #fffdf5; /* Fondo crema */
+    border-color: #c5a059;    /* Borde dorado */
+    color: #92400e;            /* Texto cálido */
+}
+
+.asegurar-upgrade-check {
+    font-size: 1.2rem;
+}
+
+.asegurar-upgrade-risk-meter {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #f8fafc;
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid #e2e8f0;
+}
+
+.asegurar-upgrade-risk-val {
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.asegurar-upgrade-risk-val.high { color: #ef4444; }
+.asegurar-upgrade-risk-val.mid { color: #f59e0b; }
+.asegurar-upgrade-risk-val.low { color: #10b981; }
+
+.asegurar-upgrade-risk-arrow {
+    font-size: 2rem;
+    color: #cbd5e1;
+}
+
+.asegurar-upgrade-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.asegurar-upgrade-input label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.asegurar-upgrade-input textarea {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    min-height: 100px;
+    font-size: 1rem;
+    background-color: #f8fafc;
+    transition: border-color 0.2s;
+    resize: vertical;
+}
+
+.asegurar-upgrade-input textarea:focus {
+    outline: none;
+    border-color: #c5a059;
+    background-color: white;
+}
+
+.gold-card {
+    border: 2px solid #c5a059;
+    background-color: #fffdf5;
+}
+
+.asegurar-upgrade-checklist {
+    margin-top: 15px;
+}
+
+.asegurar-upgrade-check-row {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+.asegurar-upgrade-check-row:hover {
+    border-color: #c5a059;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.asegurar-upgrade-check-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c5a059;
+}
+
+.asegurar-upgrade-loading {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: #64748b;
+    background-color: #f8fafc;
+}
+
+/* Responsividad básica */
+@media (max-width: 768px) {
+    .asegurar-upgrade-grid-split {
+        grid-template-columns: 1fr;
+    }
+    
+    .asegurar-upgrade-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}

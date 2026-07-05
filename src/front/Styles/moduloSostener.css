@@ -1,0 +1,4670 @@
+/* =========================================
+   MODULO SOSTENER - DOCENTE (ESTÁNDAR ATLAS PRO)
+   ========================================= */
+
+.sostener-page-wrapper {
+    --primary: #c5a059;
+    --primary-dark: #a8894a;
+    --primary-soft: rgba(197,160,89,0.15);
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --slate-dark: #15203c;
+        --gold-light: rgba(197, 160, 89, 0.1);
+        --atlas-blue: #15203c;
+    
+        --atlas-blue-light: #15203c;
+    
+        --atlas-gold: #c5a059;
+    
+        --atlas-white: #ffffff;
+
+    background:
+        radial-gradient(circle at 20% 0%, rgba(197,160,89,0.08), transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(15,23,42,0.05), transparent 50%),
+        var(--bg);
+
+    min-height: 100vh;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+
+
+.sostener-page-wrapper {
+
+    --primary: #c5a059;
+
+    --primary-dark: #a8894a;
+
+    --bg: transparent
+
+    --white: #ffffff;
+
+    --text: #1e293b;
+
+    --text-muted: #64748b;
+
+    --border: #e2e8f0;
+
+    --gold-light: rgba(197, 160, 89, 0.1);
+
+    
+
+    background-color: var(--bg);
+
+    min-height: 100vh;
+
+    padding: 30px;
+
+    font-family: 'Inter', sans-serif;
+
+    color: var(--text);
+
+}
+
+
+
+/* Animaciones */
+
+.animate-fade-in {
+
+    animation: fadeIn 0.5s ease-out;
+
+}
+
+
+
+@keyframes fadeIn {
+
+    from { opacity: 0; transform: translateY(10px); }
+
+    to { opacity: 1; transform: translateY(0); }
+
+}
+
+
+
+/* --- VISTA: MENU PRINCIPAL --- */
+
+.sostener-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 40px;
+
+    border-bottom: 1px solid var(--border);
+
+    padding-bottom: 20px;
+
+}
+
+
+
+.sostener-header h2 {
+
+    font-size: 1.8rem;
+
+    font-weight: 800;
+
+    color: var(--text);
+
+    margin: 0;
+
+}
+
+
+
+.btn-back-atlas {
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+
+    padding: 10px 20px;
+
+    border-radius: 10px;
+
+    font-weight: 600;
+
+    color: var(--text-muted);
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+}
+
+
+
+.btn-back-atlas:hover {
+
+    background: #f1f5f9;
+
+}
+
+
+
+.sostener-grid-menu {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+
+    gap: 30px;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+}
+
+
+
+.sos-card-main {
+
+    background: var(--white);
+
+    border-radius: 20px;
+
+    padding: 40px;
+
+    text-align: center;
+
+    border: 1px solid var(--border);
+
+    transition: all 0.3s ease;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+
+}
+
+
+
+.sos-card-main:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+
+}
+
+
+
+.sos-icon {
+
+    font-size: 3rem;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+.sos-card-main h3 {
+
+    font-size: 1.4rem;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+
+}
+
+
+
+.sos-card-main p {
+
+    color: var(--text-muted);
+
+    margin-bottom: 30px;
+
+}
+
+
+
+.sos-actions {
+
+    display: flex;
+
+    gap: 15px;
+
+    justify-content: center;
+
+}
+
+
+
+.btn-sos-primary {
+
+    background: var(--primary);
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 25px;
+
+    border-radius: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+}
+
+
+
+.btn-sos-secondary {
+
+    background: #f1f5f9;
+
+    color: var(--text);
+
+    border: 1px solid var(--border);
+
+    padding: 12px 25px;
+
+    border-radius: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+
+
+.is-locked {
+
+    opacity: 0.6;
+
+    filter: grayscale(1);
+
+    cursor: not-allowed;
+
+}
+
+
+
+/* --- VISTA: CUESTIONARIO --- */
+
+.sos-form-container {
+
+    max-width: 800px;
+
+    margin: 0 auto;
+
+    background: white;
+
+    padding: 40px;
+
+    border-radius: 20px;
+
+    border: 1px solid var(--border);
+
+}
+
+
+
+.sos-dim-group {
+
+    margin-bottom: 40px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 2px solid #f8fafc;
+
+}
+
+
+
+.sos-dim-group h3 {
+
+    color: var(--primary-dark);
+
+    font-size: 1.2rem;
+
+    margin-bottom: 20px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+}
+
+
+
+.sos-q-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    gap: 20px;
+
+}
+
+
+
+.sos-q-item span {
+
+    font-size: 0.95rem;
+
+    font-weight: 500;
+
+}
+
+
+
+.sos-likert {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
+
+
+.sos-likert button {
+
+    width: 38px;
+
+    height: 38px;
+
+    border-radius: 50%;
+
+    border: 1px solid var(--border);
+
+    background: white;
+
+    cursor: pointer;
+
+    font-weight: 600;
+
+    transition: 0.2s;
+
+}
+
+
+
+.sos-likert button.active {
+
+    background: var(--primary);
+
+    color: white;
+
+    border-color: var(--primary);
+
+    transform: scale(1.1);
+
+}
+
+
+
+.btn-sos-submit {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    background: var(--text);
+
+    color: white;
+
+    padding: 18px;
+
+    border-radius: 12px;
+
+    font-weight: 800;
+
+    font-size: 1.1rem;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+
+
+/* --- VISTA: DASHBOARD --- */
+
+.sos-dash-layout {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 25px;
+
+    max-width: 1100px;
+
+    margin: 20px auto;
+
+}
+
+
+
+.sos-dash-top {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1.5fr 1fr;
+
+    gap: 20px;
+
+}
+
+
+
+.sos-stat-card {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 18px;
+
+    border: 1px solid var(--border);
+
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+
+}
+
+
+
+.sos-stat-card.gold {
+
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+    color: white;
+
+    border: none;
+
+    text-align: center;
+
+}
+
+
+
+.sos-stat-card h4 {
+
+    font-size: 0.85rem;
+
+    text-transform: uppercase;
+
+    color: var(--text-muted);
+
+    margin-bottom: 15px;
+
+}
+
+
+
+.sos-stat-card.gold h4 { color: rgba(255,255,255,0.6); }
+
+
+
+.sos-big-val {
+
+    font-size: 1.4rem;
+
+    font-weight: 800;
+
+    color: var(--primary);
+
+    margin: 10px 0;
+
+}
+
+
+
+.sos-alert-pill {
+
+    background: #fff1f2;
+
+    color: #be123c;
+
+    padding: 8px 12px;
+
+    border-radius: 8px;
+
+    font-size: 0.85rem;
+
+    margin-bottom: 8px;
+
+    font-weight: 600;
+
+}
+
+
+
+.sos-history-chart {
+
+    background: white;
+
+    padding: 30px;
+
+    border-radius: 18px;
+
+    border: 1px solid var(--border);
+
+}
+
+/* --- MEJORA: BOTÓN VOLVER (ESTILO ATLAS) --- */
+
+.btn-sos-back {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+
+    padding: 10px 18px;
+
+    border-radius: 8px;
+
+    font-weight: 600;
+
+    color: var(--text);
+
+    cursor: pointer;
+
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    margin-bottom: 25px;
+
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+}
+
+
+
+.btn-sos-back:hover {
+
+    background: var(--bg);
+
+    border-color: var(--primary);
+
+    color: var(--primary-dark);
+
+    transform: translateX(-5px);
+
+}
+
+
+
+/* --- VISTA: CUESTIONARIO (ANCHO MEJORADO) --- */
+
+.sostener-cuestionario {
+
+    max-width: 1200px; /* Expandido para alinearse con el resto del dashboard */
+
+    margin: 0 auto;
+
+}
+
+
+
+.sos-form-container {
+
+    width: 100%; /* Ocupa todo el ancho del padre */
+
+    max-width: none; /* Quitamos la restricción anterior de 800px */
+
+    background: var(--white);
+
+    padding: 40px;
+
+    border-radius: 20px;
+
+    border: 1px solid var(--border);
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.02);
+
+}
+
+
+
+/* --- DISEÑO DE PREGUNTAS MÁS LIMPIO --- */
+
+.sos-q-item {
+
+    display: grid; /* Cambiamos a grid para mejor control de alineación */
+
+    grid-template-columns: 1fr auto; 
+
+    align-items: center;
+
+    padding: 20px 0;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    gap: 30px;
+
+}
+
+
+
+.sos-q-item:hover {
+
+    background-color: #fcfcfc;
+
+}
+
+
+
+.sos-q-item span {
+
+    font-size: 1rem;
+
+    line-height: 1.5;
+
+    color: var(--text);
+
+}
+
+
+
+/* --- BOTÓN SUBMIT PREMIUM --- */
+
+.btn-sos-submit {
+
+    width: 100%;
+
+    max-width: 400px; /* El botón no necesita ser gigante, se centra */
+
+    margin: 40px auto 0 auto;
+
+    display: block;
+
+    background: linear-gradient(135deg, var(--text) 0%, #0f172a 100%);
+
+    color: white;
+
+    padding: 16px;
+
+    border-radius: 12px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+
+    border: none;
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+}
+
+
+
+.btn-sos-submit:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+
+    background: var(--primary-dark);
+
+}
+
+
+
+/* Mini Cards de Resultados (Arriba del formulario si aplica) */
+
+.balance-global-mini-card {
+
+    display: flex;
+
+    gap: 20px;
+
+    margin-bottom: 30px;
+
+}
+
+
+
+.mini-stat {
+
+    background: var(--white);
+
+    padding: 15px 25px;
+
+    border-radius: 12px;
+
+    border-left: 4px solid var(--primary);
+
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+
+}
+
+/* Mobile Responsive */
+
+@media (max-width: 900px) {
+
+    .sos-dash-top {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    
+
+    .sos-q-item {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+
+
+    .sostener-grid-menu {
+
+        grid-template-columns: 1fr;
+
+    }
+
+} 
+
+/* =============================
+   ANIMACIONES
+============================= */
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================
+   HEADER
+============================= */
+
+.sostener-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 50px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 25px;
+}
+
+.sostener-header h2 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.btn-back-atlas {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-back-atlas:hover {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+/* =============================
+   MENU CARDS
+============================= */
+
+.sostener-grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 35px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sos-card-main {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 45px;
+    text-align: center;
+    border: 1px solid var(--border);
+    transition: all 0.35s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.sos-card-main::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--primary-soft), transparent 70%);
+    transform: rotate(25deg);
+}
+
+.sos-card-main:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 60px rgba(15,23,42,0.08);
+}
+
+.sos-icon {
+    font-size: 3.2rem;
+    margin-bottom: 25px;
+}
+
+.sos-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-sos-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 13px 28px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(197,160,89,0.25);
+}
+
+.btn-sos-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(197,160,89,0.35);
+}
+
+.btn-sos-secondary {
+    background: #f1f5f9;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 13px 28px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* =============================
+   DASHBOARD
+============================= */
+
+.sos-dash-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: 1150px;
+    margin: 30px auto;
+}
+
+.sos-dash-top {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 25px;
+}
+
+.sos-stat-card {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 30px rgba(15,23,42,0.04);
+    transition: all 0.3s ease;
+}
+
+.sos-stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.sos-stat-card.gold {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    border: none;
+}
+
+.sos-big-val {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+
+/* =============================
+   HISTORIAL / CARDS GRANDES
+============================= */
+
+.sos-history-chart {
+    background: var(--white);
+    padding: 35px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 35px rgba(15,23,42,0.05);
+}
+
+/* =============================
+   BOTÓN VOLVER
+============================= */
+
+.btn-sos-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 30px;
+    transition: 0.3s;
+}
+
+.btn-sos-back:hover {
+    transform: translateX(-6px);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+/* ================================================================
+   POPUP PREMIUM CORREGIDO (SIDEBAR FIX + ATMÓSFERA ATLAS)
+   ================================================================ */
+
+.atl-an-overlay,
+.atl-audit-popup-overlay {
+    position: fixed !important;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding-left: 280px;
+    padding-right: 40px;
+
+    z-index: 999999 !important;
+    box-sizing: border-box;
+}
+
+.atl-an-modal,
+.atl-audit-popup-container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 900px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 50px 120px -20px rgba(0, 0, 0, 0.7);
+    animation: modalEmerger 0.45s cubic-bezier(.16,1,.3,1);
+    border: 1px solid rgba(197,160,89,0.15);
+}
+
+@keyframes modalEmerger {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.atl-an-modal-head {
+    padding: 28px 35px;
+    background: linear-gradient(135deg, var(--slate-dark), #1e293b);
+    color: white;
+}
+
+.atl-an-modal-body {
+    padding: 40px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.atl-an-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.atl-an-close:hover {
+    background: var(--primary);
+}
+
+/* ================================================================
+   MEJORAS PANEL 1 Y CONTENEDORES DE DASHBOARD
+   ================================================================ */
+
+/* Panel 1: Ajuste de espaciado y jerarquía */
+.sos-stat-card.gold {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 30px; /* Aumentamos el padding para que no se pegue al top */
+    min-height: 250px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sos-stat-card.gold h4 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    opacity: 0.9;
+}
+
+.sos-big-val {
+    font-size: 3.5rem !important; /* Valor mucho más imponente */
+    margin: 15px 0;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.atl-an-btn-main {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: auto; /* Empuja el botón al final del card */
+}
+
+/* Identificador de Panel (Label superior) */
+.dash-lider-2026-panel-id {
+    background: rgba(197, 160, 89, 0.2);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+/* ================================================================
+   MEJORAS POP-UP: LEGIBILIDAD Y LÍNEAS DE DIMENSIONES
+   ================================================================ */
+
+.atl-an-modal-body {
+    color: #1e293b !important; /* Forzamos color oscuro para que SE LEA siempre */
+    background-color: white;
+}
+
+.atl-an-modal-sub {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Líneas de Dimensiones (Survey View) */
+.atl-an-bar-container-margin {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9; /* Línea divisoria suave entre dimensiones */
+}
+
+.atl-an-bar-label-row-bold {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #334155;
+}
+
+.atl-an-bar-bg-light {
+    background: #e2e8f0;
+    height: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.atl-an-bar-fill-primary {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease-in-out;
+}
+
+/* ================================================================
+   CORRECCIÓN DEFINITIVA DE POP-UPS (LEGIBILIDAD Y DISEÑO)
+   ================================================================ */
+
+/* 1. Fondo del modal y contraste de texto */
+.atl-an-modal-body {
+    background: #ffffff !important;
+    color: #1e293b !important; /* Texto azul oscuro profundo para lectura perfecta */
+    padding: 40px;
+}
+
+/* 2. Título del Modal (Evita que se pierda con el background) */
+.atl-an-modal-head h3 {
+    color: #ffffff !important;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.atl-an-modal-sub {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* 3. Diseño de Dimensiones y Líneas (Survey View) */
+.atl-an-bar-container-margin {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9; /* Línea divisoria entre dimensiones */
+}
+
+.atl-an-bar-label-row-bold {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.atl-an-bar-label-row-bold span:first-child {
+    color: #334155;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.atl-an-bar-label-row-bold span:last-child {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+/* 4. Barras de progreso con diseño Atlas */
+.atl-an-bar-bg-light {
+    background: #e2e8f0;
+    height: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.atl-an-bar-fill-primary {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    height: 100%;
+    border-radius: 20px;
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 5. Cards de Diagnóstico (Texto legible) */
+.atl-an-insight-card-individual, 
+.atl-an-insight-card-audit {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid var(--primary);
+    padding: 25px;
+    border-radius: 18px;
+    margin-top: 25px;
+}
+
+.insight-title, .insight-sub-title {
+    color: var(--slate-dark) !important;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.insight-text, .insight-sub-text {
+    color: #475569 !important; /* Gris oscuro legible */
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* 6. Tabs del Modal */
+.modal-tabs-margin {
+    display: flex;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.modal-tabs-margin button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    padding: 8px 0;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: 0.3s;
+}
+
+.modal-tabs-margin button.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* 7. Footer del Modal */
+.modal-footer {
+    padding: 20px 40px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.atl-an-btn-full {
+    width: 100%;
+    background: var(--slate-dark);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.atl-an-btn-full:hover {
+    background: #000;
+    transform: translateY(-2px);
+}
+
+/* ================================================================
+   ESTILIZACIÓN DE MÉTRICAS EN MODAL (MEDIA GLOBAL Y NIVEL)
+   ================================================================ */
+
+/* Contenedor de las dos cajas de métricas */
+.atl-an-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Divide en dos columnas iguales */
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Las cajas individuales (Media y Nivel) */
+.atl-an-mini-box-dark {
+    background: #f1f5f9; /* Gris muy suave profesional */
+    padding: 25px 15px;
+    border-radius: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.3s ease;
+}
+
+.atl-an-mini-box-dark:hover {
+    transform: translateY(-5px);
+    background: #ffffff;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+/* El número grande (85.0%) */
+.atl-an-val-primary {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary-dark);
+    display: block;
+    line-height: 1;
+}
+
+/* El texto del nivel (Docente Estratégico...) */
+.atl-an-val-small {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--slate-dark);
+    display: block;
+    line-height: 1.2;
+    margin-bottom: 5px;
+    padding: 0 10px;
+}
+
+/* Las etiquetas pequeñas (MEDIA GLOBAL / NIVEL ACTUAL) */
+.atl-an-lbl {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 10px;
+}
+
+.atl-an-btn-main:hover {
+    background: var(--primary) !important; /* Mantiene el dorado original */
+    color: white !important;               /* Mantiene el texto blanco */
+    transform: translateY(-2px);           /* Mantiene la elevación sutil sin cambiar color */
+    box-shadow: 0 8px 20px rgba(197, 160, 89, 0.4) !important; /* Sombra dorada, no azul */
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-width: 600px) {
+    .atl-an-metrics-grid {
+        grid-template-columns: 1fr; /* Se apilan en móvil */
+    }
+}
+
+/* ================================================================
+   PANELES DE AUDITORÍA Y RETOS (2, 3 y 4)
+   ================================================================ */
+
+/* ================================================================
+   PANEL 2: DIAGNÓSTICO PEDAGÓGICO (UNIFICADO CON CARD 1)
+   ================================================================ */
+
+/* Estructura del Card */
+.sos-stat-card.real-evidence {
+    cursor: pointer;
+    border-left: 6px solid var(--slate-dark) !important; /* Azul Pizarra de Card 1 */
+    background: #ffffff;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Título del Panel */
+.sos-stat-card.real-evidence h4 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--slate-dark);
+    margin-bottom: 20px;
+}
+
+/* Cajas de datos internas */
+.atl-an-mini-box {
+    background: #f8fafc; /* Fondo suave para resaltar el valor */
+    border: 1px solid var(--border);
+    padding: 18px 10px;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.atl-an-mini-box-val {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--slate-dark); /* Color unificado */
+    line-height: 1;
+}
+
+.atl-an-mini-box-lbl {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+}
+
+/* Botón de Acción con estilo Atlas Pro */
+.atl-an-btn-main-alt {
+    background: var(--slate-dark);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* Indicador visual de "Fase Activa" unificado */
+.real-evidence .dash-lider-2026-panel-id {
+    background: var(--gold-light);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-soft);
+}
+
+/* Panel 3: Dictamen Ético */
+.audit-ethic-border {
+    border-left: 6px solid #8b5cf6 !important;
+}
+
+.sos-dictamen-box {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 15px;
+    border: 1px dashed #cbd5e1;
+}
+
+/* Panel 4: Retos */
+.retos-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.reto-mini-card {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.status-pill {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.status-pill.completed { background: #dcfce7; color: #166534; }
+.status-pill.non-completed { background: #fee2e2; color: #991b1b; }
+
+/* ================================================================
+   PANEL 3: DICTAMEN DE LIDERAZGO (ESTILO ATLAS PRO)
+   ================================================================ */
+
+.sos-stat-card.liderazgo-panel {
+    border-left: 6px solid #8b5cf6 !important; /* Un morado vibrante para diferenciar Liderazgo */
+    position: relative;
+    padding: 30px;
+}
+
+/* 1. Título y Alerta de Riesgo */
+.liderazgo-panel h4 {
+    color: var(--atlas-blue);
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+.risk-badge-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7ed; /* Naranja muy suave */
+    padding: 6px 16px;
+    border-radius: 50px;
+    border: 1px solid #ffedd5;
+    margin-bottom: 20px;
+}
+
+.risk-badge-text {
+    color: #ea580c; /* Naranja de advertencia */
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 2. Grid de Métricas (Ética, Privacidad, etc.) */
+.liderazgo-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.liderazgo-metric-box {
+    background: var(--atlas-bg-light);
+    padding: 12px 15px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+}
+
+.metric-label {
+    font-weight: 700;
+    color: var(--atlas-text);
+    font-size: 0.9rem;
+}
+
+.metric-value {
+    font-weight: 900;
+    color: var(--atlas-blue);
+    background: white;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+}
+
+/* 3. Bloque de Hallazgos (El recuadro gris sutil) */
+.audit-hallazgos-box {
+    background: var(--glass-bg);
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    position: relative;
+}
+
+.audit-hallazgos-box h5 {
+    font-size: 0.8rem;
+    color: var(--atlas-gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hallazgos-text {
+    font-style: italic;
+    color: var(--atlas-text);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    border-left: 3px solid #e2e8f0;
+    padding-left: 15px;
+}
+
+/* 4. Alerta Crítica (Highlight) */
+.alerta-critica-banner {
+    background: #fef2f2;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    border: 1px solid #fee2e2;
+}
+
+.alerta-critica-banner span {
+    color: #b91c1c;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+/* ================================================================
+   PANEL 3: DICTAMEN DE LIDERAZGO (UNIFICADO CON AZUL ATLAS)
+   ================================================================ */
+
+   /* ================================================================
+   PANEL 3: DICTAMEN DE LIDERAZGO PEDAGÓGICO (ATLAS PRO)
+   ================================================================ */
+
+/* Contenedor Principal */
+.sos-history-chart.audit-ethic-border {
+    background: var(--atlas-white);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(16, 42, 67, 0.05);
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Tag superior "Panel 3" */
+.dash-lider-2026-panel-id {
+    display: inline-block;
+    background: var(--atlas-bg-light);
+    color: var(--atlas-text);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.sos-history-chart.audit-ethic-border h4 {
+    color: var(--atlas-blue);
+    font-size: 1.5rem;
+    font-weight: 850;
+    margin: 0 0 25px 0;
+    letter-spacing: -0.5px;
+}
+
+/* Header del Dictamen (Riesgo e ID) */
+.sos-audit-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: var(--atlas-bg-light);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    border: 1px solid #eef2f6;
+}
+
+.sos-audit-title {
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sos-audit-head-row small {
+    color: var(--atlas-text);
+    opacity: 0.7;
+    font-weight: 600;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ID del Prompt estilo "Badge" */
+.sos-audit-id-col {
+    text-align: right;
+}
+
+.sos-id-lbl {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--atlas-text);
+    margin-bottom: 4px;
+}
+
+.sos-id-code {
+    background: var(--atlas-blue);
+    color: var(--atlas-gold);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Grid de Mini Barras (Métricas de IA) */
+.sos-mini-grid-bars {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sos-mini-bar-item {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    padding: 15px;
+    border-radius: 14px;
+}
+
+.sos-mini-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.sos-mini-bar-labels span {
+    font-weight: 800;
+    color: var(--atlas-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sos-mini-bar-labels strong {
+    color: var(--atlas-text);
+}
+
+/* Estilo de la barra de progreso */
+.sos-mini-bar-bg {
+    background: #f1f5f9;
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sos-mini-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.1, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Caja de Hallazgos y Dictamen */
+.sos-dictamen-box {
+    background: var(--atlas-bg-light);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    border-left: 6px solid var(--atlas-gold); /* Acento en Dorado Atlas */
+}
+
+.sos-dictamen-tag {
+    display: block;
+    color: var(--atlas-gold);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+}
+
+.sos-prompt-preview {
+    font-style: italic;
+    color: var(--atlas-text);
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    border: 1px solid #f1f5f9;
+}
+
+.sos-dictamen-text {
+    font-size: 0.95rem;
+    color: var(--atlas-blue);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.sos-dictamen-text strong {
+    font-weight: 800;
+    color: var(--atlas-gold);
+}
+
+/* Estado Vacío */
+.sos-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 24px;
+    color: var(--atlas-text);
+}
+/* Contenedor Principal Unificado */
+.sos-history-chart.audit-ethic-border {
+    background: var(--atlas-white);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(16, 42, 67, 0.05);
+    border: 1px solid #e2e8f0;
+    /* Cambiado de morado al azul insignia de tu panel anterior */
+    border-left: 6px solid var(--atlas-blue) !important; 
+    position: relative;
+    overflow: hidden;
+}
+
+/* Tag de Fase */
+.dash-lider-2026-panel-id {
+    display: inline-block;
+    background: var(--atlas-bg-light);
+    color: var(--atlas-blue); /* Texto en azul */
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.sos-history-chart.audit-ethic-border h4 {
+    color: var(--atlas-blue);
+    font-size: 1.5rem;
+    font-weight: 850;
+    margin: 0 0 25px 0;
+    letter-spacing: -0.5px;
+}
+
+/* Header de Riesgo e ID */
+.sos-audit-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: var(--atlas-bg-light);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+    border: 1px solid #eef2f6;
+}
+
+/* Título de Riesgo Dinámico */
+.sos-audit-title {
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+/* Badge de ID Prompt */
+.sos-id-code {
+    background: var(--atlas-blue);
+    color: var(--atlas-gold);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Grid de Métricas (Barras) */
+.sos-mini-grid-bars {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sos-mini-bar-item {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    padding: 15px;
+    border-radius: 14px;
+    transition: transform 0.2s ease;
+}
+
+.sos-mini-bar-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--atlas-gold);
+}
+
+.sos-mini-bar-labels span {
+    font-weight: 800;
+    color: var(--atlas-blue); /* Etiquetas en azul */
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+/* Caja de Hallazgos con Acento Dorado */
+.sos-dictamen-box {
+    background: var(--atlas-bg-light);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    /* El dorado se mantiene como color de "Dictamen Oficial" */
+    border-left: 6px solid var(--atlas-gold); 
+}
+
+.sos-dictamen-tag {
+    display: block;
+    color: var(--atlas-gold);
+    font-weight: 900;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.sos-prompt-preview {
+    font-style: italic;
+    color: var(--atlas-text);
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    border: 1px solid #f1f5f9;
+}
+
+/* Texto de Alerta Crítica */
+.sos-dictamen-text {
+    font-size: 0.95rem;
+    color: var(--atlas-blue);
+    line-height: 1.6;
+}
+
+.sos-dictamen-text strong {
+    color: var(--atlas-gold);
+    font-weight: 800;
+}
+
+/* ================================================================
+   MODAL DE AUDITORÍA REAL (SISTEMA ATLAS PRO - COLORES INSIGNIA)
+   ================================================================ */
+
+.audit-modal-container {
+    background: var(--atlas-white);
+    width: 100%;
+    max-width: 850px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(16, 42, 67, 0.3); /* Sombra basada en atlas-blue */
+    border: 1px solid var(--border);
+}
+
+.audit-modal-head {
+    background: var(--atlas-blue); /* Tu azul insignia */
+    padding: 30px 40px;
+    color: var(--atlas-white);
+}
+
+.audit-modal-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.audit-modal-head h3 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.audit-modal-sub {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 5px 0 0 0;
+    font-weight: 500;
+}
+
+.audit-modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.audit-modal-close:hover {
+    background: var(--atlas-gold);
+}
+
+/* TABS ATLAS GOLD */
+.audit-modal-tabs {
+    display: flex;
+    gap: 25px;
+}
+
+.audit-modal-tabs button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 12px 0;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: 0.3s;
+}
+
+.audit-modal-tabs button.active {
+    color: var(--atlas-gold);
+    border-bottom-color: var(--atlas-gold);
+}
+
+/* CUERPO DEL MODAL */
+.audit-modal-body {
+    padding: 40px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: var(--atlas-white);
+    color: var(--atlas-text) !important; /* Tu color de texto oficial */
+}
+
+/* VISTA ESTADÍSTICAS */
+.audit-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.audit-stat-box {
+    background: var(--atlas-bg-light);
+    padding: 25px 15px;
+    border-radius: 18px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.3s ease;
+}
+
+.audit-stat-box:hover {
+    transform: translateY(-5px);
+    border-color: var(--atlas-gold);
+}
+
+.audit-val {
+    display: block;
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin-bottom: 5px;
+    color: var(--atlas-blue); /* Valores en azul insignia */
+}
+
+/* Mantengo los sutiles acentos lógicos pero bajo tu tono de texto */
+.audit-val.blue { color: var(--atlas-blue); } 
+.audit-val.green { color: #16a34a; } 
+.audit-val.orange { color: #d97706; }
+
+.audit-lbl {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--atlas-text);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.audit-insight-card {
+    background: var(--atlas-bg-light);
+    padding: 25px;
+    border-radius: 18px;
+    border-left: 6px solid var(--atlas-gold); /* Detalle en Dorado */
+}
+
+.audit-insight-card h4 {
+    color: var(--atlas-blue);
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+/* VISTA ITEMS (SURVEY) */
+.audit-item-row {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.audit-item-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-weight: 700;
+    color: var(--atlas-blue);
+}
+
+.audit-progress-bg {
+    background: #e2e8f0;
+    height: 10px;
+    border-radius: 10px;
+}
+
+.audit-progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--atlas-gold), #a8894a); /* Gradiente Dorado */
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* FOOTER */
+.audit-modal-footer {
+    padding: 25px 40px;
+    border-top: 1px solid #e2e8f0;
+    background: var(--atlas-bg-light);
+}
+
+.audit-btn-close-full {
+    width: 100%;
+    background: var(--atlas-blue);
+    color: var(--atlas-white);
+    border: none;
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* ================================================================
+   MEJORAS DE EXPLORACIÓN: DIAGNÓSTICO ATLAS PRO
+   ================================================================ */
+
+/* 1. Contenedor de Ítems (Survey View) */
+.audit-survey-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding-right: 10px; /* Espacio para el scroll */
+}
+
+.audit-item-row {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    padding: 20px;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.audit-item-row:hover {
+    border-color: var(--atlas-gold);
+    box-shadow: 0 5px 15px rgba(197, 160, 89, 0.08);
+}
+
+/* 2. Etiqueta del Indicador y Puntaje */
+.audit-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.audit-item-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--atlas-blue);
+    line-height: 1.4;
+    max-width: 80%; /* Evita que el texto choque con el número */
+}
+
+.audit-item-score {
+    background: var(--atlas-bg-light);
+    color: var(--atlas-blue);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    border: 1px solid #e2e8f0;
+}
+
+/* 3. Refinamiento de la Barra de Progreso */
+.audit-progress-bg {
+    background: #eef2f6;
+    height: 8px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.audit-progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(197, 160, 89, 0.2);
+    /* El color dinámico se maneja en el JS (style), pero aquí damos suavidad */
+    transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 4. Mejora en la Interpretación (Insight Card) */
+.audit-insight-card {
+    background: linear-gradient(135deg, var(--atlas-bg-light) 0%, #ffffff 100%);
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    border-left: 6px solid var(--atlas-gold);
+    margin-top: 30px;
+}
+
+.audit-insight-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    color: var(--atlas-gold);
+}
+
+.audit-insight-card p {
+    color: var(--atlas-text);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.audit-insight-card strong {
+    color: var(--atlas-blue);
+    font-weight: 800;
+}
+
+/* 5. Vista Compass (Badge Central) */
+.audit-compass-view {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.audit-compass-badge {
+    display: inline-block;
+    background: var(--atlas-blue);
+    color: var(--atlas-gold);
+    padding: 15px 40px;
+    border-radius: 50px;
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 25px rgba(16, 42, 67, 0.2);
+    border: 2px solid var(--atlas-gold);
+}
+
+.audit-compass-box {
+    background: var(--atlas-bg-light);
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px dashed var(--atlas-gold);
+}
+
+/* ================================================================
+   PANEL 4: MISIONES DE TRANSFORMACIÓN (GAMIFIED DESIGN)
+   ================================================================ */
+
+.retos-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.reto-mini-card {
+    background: #ffffff;
+    border: 1px solid #eef2f6;
+    padding: 20px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Efecto de elevación sutil */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.reto-mini-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(16, 42, 67, 0.08);
+    border-color: var(--atlas-gold);
+}
+
+/* Indicador lateral de estado */
+.reto-mini-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    height: 50%;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: #cbd5e1; /* Default neutro */
+    transition: all 0.3s ease;
+}
+
+.reto-mini-card:has(.status-pill.completado)::before,
+.reto-mini-card:has(.status-pill.completed)::before {
+    background: #22c55e; /* Verde éxito */
+}
+
+.reto-mini-card h5 {
+    font-size: 0.95rem;
+    font-weight: 850;
+    color: var(--atlas-blue);
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.2px;
+}
+
+/* Pills de Estado Estilo "Badge" */
+.status-pill {
+    font-size: 0.6rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 50px;
+    width: fit-content;
+    letter-spacing: 0.8px;
+    margin-top: 10px;
+}
+
+.status-pill.completado, .status-pill.completed {
+    background: rgba(34, 197, 94, 0.1);
+    color: #15803d;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.status-pill.pendiente, .status-pill.pending {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #ffedd5;
+}
+
+.reto-mini-card small {
+    font-size: 0.75rem;
+    color: var(--atlas-gold);
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+/* ================================================================
+   PANEL 5: EVOLUCIÓN HISTÓRICA (HIGH-TECH CHART)
+   ================================================================ */
+
+.sos-history-chart:has(.recharts-responsive-container) {
+    background: var(--atlas-white);
+    padding: 35px !important;
+    border-radius: 24px;
+    border-left: 8px solid var(--atlas-blue) !important;
+    /* Un gradiente radial muy sutil para dar profundidad a la gráfica */
+    background: radial-gradient(circle at top right, rgba(197, 160, 89, 0.03), transparent);
+}
+
+/* Mejoras en el área de la gráfica */
+.recharts-cartesian-grid-horizontal line {
+    stroke: #f1f5f9;
+    stroke-dasharray: 8 8;
+}
+
+/* Estilo del Tooltip Personalizado */
+.recharts-default-tooltip {
+    background: var(--atlas-blue) !important;
+    border: 1px solid var(--atlas-gold) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important;
+}
+
+.recharts-tooltip-label {
+    color: rgba(255,255,255,0.6) !important;
+    font-size: 0.7rem !important;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+/* Animación del Punto de la Gráfica */
+.recharts-line-dot {
+    stroke: var(--atlas-gold);
+    stroke-width: 3;
+    fill: #ffffff;
+}
+
+.recharts-line-curve {
+    filter: drop-shadow(0px 4px 8px rgba(197, 160, 89, 0.3));
+}
+
+
+
+/* ================================================================
+   ATLAS CIERRE - SISTEMA DE DISEÑO BLINDADO V3.0
+   Enfoque: Premium Dark & Gold / Espaciado de Retos
+   ================================================================ */
+
+:root {
+    --at-gold: #c5a059;
+    --at-dark: #0f172a;
+    --at-bg: #f1f5f9;
+    --at-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+}
+
+/* --- CONTENEDOR RAIZ (Limpieza de capas) --- */
+.at-cierre-fase-wrapper {
+    background: transparent; /* Permite que se vea el fondo limpio de la vista full */
+    padding: 40px 0;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* --- ENCABEZADO (Fase 1: El Origen) --- */
+.at-cierre-header-main {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.at-badge-gold {
+    background: var(--at-gold);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: inline-block;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+}
+
+.at-cierre-title {
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: var(--at-dark);
+    letter-spacing: -1.5px;
+    margin-bottom: 15px;
+}
+
+.at-cierre-subtitle {
+    font-size: 1.2rem;
+    color: #64748b;
+}
+
+/* --- GRID DE CARDS (Ordenado y Premium) --- */
+.at-cierre-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr; /* Proporción áurea para dashboard */
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.at-cierre-card-premium {
+    border-radius: 35px;
+    padding: 50px 40px;
+    box-shadow: var(--at-shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+/* Estilo Oscuro (Score) */
+.at-variant-dark {
+    background: var(--at-dark);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.at-card-tag {
+    position: absolute;
+    top: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 16px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.at-score-big-num {
+    font-size: 6.5rem;
+    font-weight: 900;
+    color: var(--at-gold);
+    line-height: 1;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.at-score-subtext {
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.at-level-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 25px 0 15px;
+    color: white;
+}
+
+.at-description-box p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+}
+
+/* Estilo Blanco (Gráfica) */
+.at-variant-white {
+    background: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.at-chart-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--at-dark);
+    margin-bottom: 40px;
+}
+
+/* --- GRÁFICA DE BARRAS REFORZADA --- */
+.at-vertical-chart-area {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 280px;
+    padding-bottom: 20px;
+}
+
+.at-chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 65px;
+}
+
+.at-col-val {
+    font-weight: 800;
+    color: var(--at-dark);
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.at-col-track {
+    width: 32px;
+    height: 200px;
+    background: #f1f5f9;
+    border-radius: 50px;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.at-col-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: linear-gradient(to top, var(--at-dark), #334155);
+    border-radius: 50px;
+    transition: height 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.at-col-fill.at-is-critical {
+    background: linear-gradient(to top, #ef4444, #f87171);
+}
+
+.at-col-label {
+    margin-top: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* --- ALERTA DE MEJORA (No pegada) --- */
+.at-critical-alert-box {
+    margin-top: 50px;
+    background: #fff1f2;
+    padding: 20px 25px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #fecdd3;
+}
+
+.at-alert-icon { font-size: 1.4rem; }
+.at-critical-alert-box p { color: #be123c; font-weight: 600; margin: 0; }
+
+/* --- SECCIÓN REFLEXIÓN (Diseño Retos Premium) --- */
+.at-cierre-reflection-section {
+    background: white;
+    border-radius: 35px;
+    padding: 60px;
+    box-shadow: var(--at-shadow);
+    border-left: 10px solid var(--at-gold);
+}
+
+.at-reflection-header h4 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--at-dark);
+    margin-bottom: 15px;
+}
+
+.at-reflection-question {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: #64748b;
+    font-style: italic;
+    max-width: 850px;
+}
+
+.at-reflection-textarea {
+    width: 100%;
+    min-height: 220px;
+    margin-top: 35px;
+    padding: 30px;
+    border-radius: 25px;
+    border: 2px solid #eef2f6;
+    background: #f8fafc;
+    font-size: 1.1rem;
+    color: var(--at-dark);
+    transition: all 0.3s ease;
+    resize: none;
+}
+
+.at-reflection-textarea:focus {
+    border-color: var(--at-gold);
+    background: white;
+    outline: none;
+    box-shadow: 0 10px 25px rgba(197, 160, 89, 0.1);
+}
+
+/* Contador de caracteres */
+.at-char-counter {
+    margin-top: 15px;
+    text-align: right;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.at-char-counter.at-ready {
+    color: #10b981;
+}
+
+.at-counter-number { font-size: 1.2rem; margin-right: 5px; }
+
+/* Animación del pulso crítico */
+.at-alert-pulse {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    animation: at-pulse 1.5s infinite;
+}
+
+@keyframes at-pulse {
+    0% { transform: translateX(-50%) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) scale(2.5); opacity: 0; }
+}
+
+/* ================================================================
+   ATLAS CIERRE - HEADER & STEPPER PREMIUM
+   ================================================================ */
+
+/* Contenedor Principal del Header */
+.cierre-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px); /* Efecto de cristal */
+    padding: 0 50px;
+    height: 90px;
+    border-bottom: 4px solid #c5a059; /* Tu Dorado Atlas */
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    box-shadow: 0 4px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* Botón Salir - Estilo Píldora Reto */
+.btn-sos-back {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    color: #0f172a;
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-sos-back:hover {
+    border-color: #c5a059;
+    color: #c5a059;
+    background: #fffdf9;
+    transform: translateX(-5px); /* Efecto de retroceso sutil */
+    box-shadow: 0 5px 15px rgba(197, 160, 89, 0.1);
+}
+
+/* --- STEPPER CORREGIDO (Horizontal) --- */
+.cierre-stepper {
+    display: flex !important;
+    flex-direction: row !important; /* Fuerza que sean una fila */
+    align-items: center;
+    gap: 15px; /* Espacio entre burbujas */
+    margin: 0;
+    padding: 0;
+}
+
+.step-pill {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    border: 2px solid transparent;
+}
+
+/* Estado Activo (El paso actual) */
+.step-pill.active {
+    background: #0f172a; /* Azul Profundo */
+    color: #c5a059; /* Dorado */
+    transform: scale(1.15);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.15);
+    border-color: rgba(197, 160, 89, 0.3);
+}
+
+/* Estado Completado */
+.step-pill.completed {
+    background: #c5a059;
+    color: white;
+}
+
+/* Línea conectora opcional entre burbujas (Toque Pro) */
+.step-pill:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -15px;
+    width: 10px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: -1;
+}
+
+/* --- OPTIMIZACIÓN DE FUENTES --- */
+.cierre-full-view {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================================
+   ATLAS CIERRE - SISTEMA DE DISEÑO COMPLETO V4.0
+   ================================================================ */
+
+:root {
+    --at-gold: #c5a059;
+    --at-dark: #0f172a;
+    --at-bg: #f8fafc;
+    --at-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+}
+
+/* --- ESTRUCTURA BASE --- */
+.cierre-full-view {
+    background-color: var(--at-bg);
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Contenedor de contenido con Padding y Curvas */
+.cierre-main-content {
+    padding: 60px 40px !important; /* Espaciado para que no esté pegado */
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    margin-top: 30px;
+    margin-bottom: 60px;
+    border-radius: 30px; /* Bordes curvos del contenedor blanco */
+    box-shadow: var(--at-shadow);
+    background-color: #ffffff !important;
+}
+
+/* --- HEADER & STEPPER --- */
+.cierre-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 0 50px;
+    height: 90px;
+    border-bottom: 4px solid var(--at-gold);
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}
+
+.btn-sos-back {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    color: var(--at-dark);
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-sos-back:hover {
+    border-color: var(--at-gold);
+    color: var(--at-gold);
+    transform: translateX(-5px);
+}
+
+.cierre-stepper {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 15px;
+}
+
+.step-pill {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.step-pill.active {
+    background: var(--at-dark);
+    color: var(--at-gold);
+    transform: scale(1.15);
+}
+
+.step-pill.completed {
+    background: var(--at-gold);
+    color: white;
+}
+
+/* --- FASE 1: CONTENIDO --- */
+.at-cierre-header-main {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.at-badge-gold {
+    background: var(--at-gold);
+    color: white;
+    padding: 8px 24px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.at-cierre-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--at-dark);
+    margin-bottom: 10px;
+}
+
+/* --- GRID Y CARDS --- */
+.at-cierre-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.at-cierre-card-premium {
+    border-radius: 25px; /* Bordes curvos en las cards */
+    padding: 45px 35px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.at-variant-dark {
+    background: var(--at-dark);
+    color: white;
+    text-align: center;
+}
+
+.at-score-big-num {
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--at-gold);
+    display: block;
+}
+
+.at-variant-white {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+}
+
+/* --- GRÁFICA --- */
+.at-vertical-chart-area {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 250px;
+}
+
+.at-col-track {
+    width: 28px;
+    height: 180px;
+    background: #f1f5f9;
+    border-radius: 50px;
+    position: relative;
+}
+
+.at-col-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: var(--at-dark);
+    border-radius: 50px;
+    transition: height 1s ease;
+}
+
+.at-col-fill.at-is-critical {
+    background: #ef4444;
+}
+
+/* --- REFLEXIÓN & INPUTS --- */
+.at-cierre-reflection-section {
+    background: #f8fafc;
+    border-radius: 25px;
+    padding: 40px;
+    border-left: 8px solid var(--at-gold);
+}
+
+.at-reflection-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 20px;
+    border-radius: 20px;
+    border: 2px solid #e2e8f0;
+    margin-top: 20px;
+    font-size: 1.05rem;
+    resize: none;
+}
+
+.at-reflection-textarea:focus {
+    outline: none;
+    border-color: var(--at-gold);
+}
+
+/* --- BOTÓN SIGUIENTE ETAPA (Estilo Reto 1) --- */
+button.at-btn-next-fase, 
+.sos-form-container button:last-of-type {
+    background: white;
+    border: 2px solid var(--at-gold);
+    color: var(--at-gold);
+    padding: 14px 40px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 30px;
+    display: inline-block;
+}
+
+button.at-btn-next-fase:hover {
+    background: var(--at-gold);
+    color: white;
+    box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2);
+}
+
+.cierre-nav-header {
+    display: flex;
+    align-items: center; /* Centra todos los elementos verticalmente */
+}
+
+.btn-sos-back {
+    margin: 0; /* Elimina márgenes que puedan desplazarlo */
+    display: flex;
+    align-items: center;
+    height: fit-content; /* Asegura que no se estire al alto del header */
+}
+
+/* --- CORRECCIÓN DE ESPACIADO EN CARD SCORE --- */
+
+/* 1. Separación entre el tag "Estado Inicial" y el número */
+.at-score-hero-layout {
+    margin-top: 30px; /* Genera el espacio que falta entre el tag y el número */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 2. Ajuste del Tag para que no flote demasiado pegado al borde superior */
+.at-card-tag {
+    margin-bottom: 10px;
+    display: inline-block; /* Asegura que el margen funcione correctamente */
+}
+
+/* 3. Opcional: Si quieres que el número grande respire mejor internamente */
+.at-score-big-num {
+    display: block;
+    line-height: 1;
+    margin-bottom: 5px;
+    font-size: 5rem; /* Ajuste para asegurar que el tamaño sea imponente pero armónico */
+}
+
+/* 4. Espaciado entre la Media Global y el título del Nivel (Exploración) */
+.at-score-subtext {
+    margin-bottom: 20px; /* Separa "Media Global" del nombre del nivel abajo */
+    display: block;
+    opacity: 0.8;
+}
+
+/* --- FOOTER DE ACCIONES CORREGIDO --- */
+.cierre-actions-footer {
+    display: flex;
+    justify-content: space-between; /* Empuja los botones a los extremos */
+    align-items: center;
+    margin-top: 40px;
+    padding: 25px 0;
+    border-top: 1px solid #e2e8f0;
+    width: 100%;
+}
+
+/* Si prefieres que estén juntos pero con espacio en el centro, 
+   cambia justify-content a 'center' y usa el gap de abajo */
+.cierre-actions-footer {
+    gap: 20px; /* Espacio real entre botones */
+}
+
+/* Estilo para los botones (basado en tus capturas) */
+.btn-sos-secondary, .btn-sos-primary {
+    padding: 14px 30px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px; /* Evita que se vean pequeños */
+}
+
+/* Botón Anterior */
+.btn-sos-secondary {
+    background: #f1f5f9;
+    color: #1e293b;
+    border: none;
+}
+
+.btn-sos-secondary:hover {
+    background: #e2e8f0;
+}
+
+/* Botón Siguiente / Finalizar */
+.btn-sos-primary {
+    background: white;
+    color: #c5a059;
+    border: 2px solid #c5a059;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.1);
+}
+
+.btn-sos-primary:hover {
+    background: #c5a059;
+    color: white;
+    box-shadow: 0 8px 20px rgba(197, 160, 89, 0.2);
+    transform: translateY(-2px);
+}
+
+
+/* --- CONTENEDOR BLOQUE 3 --- */
+.at-c3-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* --- GRID DE TARJETAS DE APRENDIZAJE --- */
+.at-c3-marco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.at-c3-marco-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Iconos de las tarjetas */
+.at-c3-card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    transition: transform 0.3s ease;
+}
+
+.at-c3-marco-card h4 {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.at-c3-marco-card p {
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* --- ESTADO SELECCIONADO (ELEGANCIA DORADA) --- */
+.at-c3-marco-card.at-selected {
+    border-color: #c5a059;
+    background: #fffcf5;
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(197, 160, 89, 0.2);
+}
+
+.at-c3-marco-card.at-selected .at-c3-card-icon {
+    transform: scale(1.2);
+}
+
+.at-c3-marco-card:hover:not(.at-selected) {
+    border-color: #cbd5e1;
+    transform: translateY(-4px);
+    background: #f8fafc;
+}
+
+/* Indicador de Check Circular */
+.at-c3-check-indicator {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #e2e8f0;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.at-selected .at-c3-check-indicator {
+    background: #c5a059;
+    border-color: #c5a059;
+    box-shadow: 0 0 10px rgba(197, 160, 89, 0.4);
+}
+
+.at-selected .at-c3-check-indicator::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+/* --- ÁREA DE REFLEXIÓN (Reutilizando Estilos Base) --- */
+.at-reflection-subtext {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* --- BADGE PÚRPURA ( UNESCO STYLE ) --- */
+.badge-fase.purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+    border: 1px solid #ddd6fe;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* --- BOTONES DE NAVEGACIÓN (Consistencia) --- */
+.at-c2-action-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.at-btn-nav {
+    padding: 14px 35px;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.at-btn-secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    border: none;
+}
+
+.at-btn-primary {
+    background: white;
+    color: #c5a059;
+    border: 2px solid #c5a059;
+}
+
+.at-btn-primary:hover {
+    background: #c5a059;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2);
+}
+
+/* ==========================================================================
+   ATLAS EVOLUTION - ETAPA 4: REPORTE MAESTRO INTEGRAL (CSS COMPLETO)
+   ========================================================================== */
+
+.at-c4-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-bottom: 50px;
+}
+
+/* --- HEADER PRINCIPAL --- */
+.at-c4-header-main {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.at-badge-gold {
+    background: linear-gradient(135deg, #c5a059 0%, #a38140 100%);
+    color: white;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+}
+
+.at-c4-title {
+    font-size: 2.5rem;
+    color: #0f172a;
+    margin: 15px 0 5px;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.at-c4-subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+/* --- EL CERTIFICADO (CARD PRINCIPAL) --- */
+.at-c4-report-card {
+    background: #ffffff;
+    border-radius: 35px;
+    padding: 60px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+    background-image: radial-gradient(#cbd5e1 0.6px, transparent 0.6px);
+    background-size: 30px 30px;
+}
+
+/* Cabecera del Certificado */
+.at-c4-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #0f172a;
+    padding-bottom: 30px;
+    margin-bottom: 50px;
+}
+
+.at-c4-brand {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -1.5px;
+}
+
+.at-c4-brand span { color: #c5a059; }
+
+.at-c4-docente-info {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.7;
+    margin-top: 10px;
+    font-family: 'Courier New', Courier, monospace; /* Toque de documento oficial */
+}
+
+/* Sello 2026 */
+.at-c4-stamp-seal {
+    width: 130px;
+    height: 130px;
+    border: 4px double #c5a059;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    transform: rotate(-10deg);
+    box-shadow: 0 10px 20px rgba(197, 160, 89, 0.15);
+}
+
+.seal-inner {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.at-c4-stamp-seal span {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #c5a059;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* --- SECCIÓN 1: COMPARATIVA DE DATOS --- */
+.at-c4-comparison-layout {
+    display: grid;
+    grid-template-columns: 1fr 160px 1fr;
+    gap: 25px;
+    align-items: flex-start;
+    margin-bottom: 50px;
+}
+
+.at-c4-col-before, .at-c4-col-after {
+    padding: 30px;
+    border-radius: 24px;
+    text-align: center;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.at-c4-col-before {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.at-c4-col-after {
+    background: #ffffff;
+    border: 2px solid #c5a05933;
+    box-shadow: 0 15px 40px rgba(197, 160, 89, 0.12);
+}
+
+.at-c4-col-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #94a3b8;
+    margin-bottom: 15px;
+}
+
+.at-c4-main-metric .at-val {
+    display: block;
+    font-size: 3.8rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.at-c4-main-metric.gold .at-val { color: #c5a059; }
+
+/* Textos de getCompassData */
+.at-c4-status-desc {
+    margin: 20px 0;
+}
+
+.at-c4-status-desc strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #1e293b;
+    margin-bottom: 8px;
+    text-transform: capitalize;
+}
+
+.at-c4-status-desc p {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.at-c4-mini-stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 15px;
+}
+
+/* Orbe Central */
+.at-c4-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 20px;
+}
+
+.at-c4-impact-orb {
+    width: 100px;
+    height: 100px;
+    background: #0f172a;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border: 8px solid #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.at-orb-val { font-size: 1.8rem; font-weight: 900; }
+.at-orb-pct { font-size: 0.8rem; opacity: 0.7; }
+
+/* --- SECCIÓN 2: NARRATIVA REFLEXIVA --- */
+.at-c4-narrative-section {
+    margin-bottom: 50px;
+    padding: 35px;
+    background: #f1f5f9;
+    border-radius: 24px;
+}
+
+.at-section-subtitle {
+    font-size: 0.85rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 800;
+}
+
+.at-narrative-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.at-narrative-box {
+    background: rgba(255, 255, 255, 0.6);
+    padding: 25px;
+    border-radius: 18px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: #334155;
+    font-style: italic;
+    border: 1px solid #e2e8f0;
+}
+
+.at-narrative-box.gold {
+    background: #fff;
+    border-color: #c5a059;
+    box-shadow: 0 10px 25px rgba(197, 160, 89, 0.1);
+}
+
+.at-narrative-box label {
+    display: block;
+    font-style: normal;
+    font-weight: 900;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: #0f172a;
+}
+
+/* --- SECCIÓN 3: BARRAS UNESCO --- */
+.at-c4-ethic-summary {
+    background: #fff;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 40px;
+}
+
+.at-c4-ethic-bars { margin: 30px 0; }
+
+.at-c4-bar-row { margin-bottom: 22px; }
+
+.at-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #1e293b;
+}
+
+.at-bar-track {
+    height: 12px;
+    background: #f1f5f9;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.at-bar-fill {
+    height: 100%;
+    transition: width 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.at-c4-hallazgo-box {
+    margin-top: 30px;
+    padding: 25px;
+    background: #f8fafc;
+    border-left: 5px solid #c5a059;
+    font-size: 0.95rem;
+    color: #1e293b;
+    line-height: 1.7;
+}
+
+/* --- SECCIÓN 4: LOGROS Y ALERTAS (DOUBLE BLOCK) --- */
+.at-c4-double-stats {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.at-c4-tags-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.at-mission-card-mini {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.at-mission-card-mini .check {
+    width: 22px;
+    height: 22px;
+    background: #10b981;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.at-mission-card-mini strong { font-size: 0.8rem; color: #0f172a; display: block; }
+.at-mission-card-mini small { font-size: 0.65rem; color: #94a3b8; }
+
+.at-alert-item-resolved {
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    padding: 15px;
+    border-radius: 14px;
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.at-alert-item-resolved p { font-size: 0.8rem; color: #166534; font-weight: 700; margin: 0; }
+
+/* --- FOOTER: QUALITY PILLS --- */
+.at-c4-quality-checks {
+    padding-top: 40px;
+    border-top: 2px solid #0f172a;
+    display: flex;
+    justify-content: center;
+}
+
+.at-check-row .pill {
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: #94a3b8;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    margin: 5px;
+    transition: all 0.5s ease;
+}
+
+.at-check-row .pill.on {
+    background: #0f172a;
+    color: #c5a059;
+    border-color: #c5a059;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* --- BOTONES --- */
+.at-c2-action-footer {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 50px;
+}
+
+.btn-sos-primary {
+    background: #0f172a;
+    color: #c5a059;
+    padding: 16px 40px;
+    border-radius: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid #c5a059;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-sos-primary:hover {
+    background: #c5a059;
+    color: #0f172a;
+    transform: translateY(-2px);
+}
+
+/* Animaciones */
+.animate-slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   ATLAS ROADMAP - ETAPA 5: HOJA DE RUTA (CSS COMPLETO)
+   ========================================================================== */
+
+.at-c5-roadmap-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+}
+
+/* --- CABECERA --- */
+.at-c5-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.at-c5-badge {
+    background: #0f172a;
+    color: #c5a059;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid #c5a059;
+}
+
+.at-c5-title {
+    font-size: 2.2rem;
+    color: #0f172a;
+    margin: 15px 0;
+    font-weight: 900;
+}
+
+.at-c5-insight-box {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    padding: 15px 25px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);
+}
+
+.at-c5-insight-label {
+    font-weight: 900;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.at-c5-insight-box p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #92400e;
+}
+
+/* --- CARD DEL FORMULARIO --- */
+.at-c5-roadmap-card {
+    background: #ffffff;
+    border-radius: 30px;
+    padding: 45px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.08);
+}
+
+.at-c5-instruction-text {
+    text-align: center;
+    font-style: italic;
+    color: #64748b;
+    margin-bottom: 40px;
+    font-size: 1rem;
+}
+
+/* --- GRID Y CAMPOS --- */
+.at-c5-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.at-c5-field.full {
+    grid-column: span 2;
+}
+
+.at-c5-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+/* Contadores de caracteres */
+.at-char-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.at-char-count.error {
+    color: #ef4444;
+}
+
+/* inputs y textareas */
+.at-c5-select, 
+.at-c5-textarea, 
+.at-c5-input, 
+.at-c5-input-date {
+    width: 100%;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 1rem;
+    color: #1e293b;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.at-c5-select:focus, 
+.at-c5-textarea:focus, 
+.at-c5-input:focus, 
+.at-c5-input-date:focus {
+    border-color: #c5a059;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.1);
+}
+
+.at-c5-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.at-c5-select {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* --- FOOTER QUOTE --- */
+.at-c5-footer-quote {
+    margin-top: 50px;
+    text-align: center;
+    position: relative;
+    padding-top: 30px;
+}
+
+.at-quote-line {
+    width: 60px;
+    height: 3px;
+    background: #c5a059;
+    margin: 0 auto 20px;
+    border-radius: 10px;
+}
+
+.at-main-quote {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin-bottom: 5px;
+}
+
+.at-sub-quote {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+
+/* ================================================================
+   DISEÑO DE DASHBOARD - PANEL DE ANÁLISIS INTELIGENTE
+   ================================================================ */
+
+/* 1. EL BOTÓN DE GENERAR ANÁLISIS (Centrado y Elegante) */
+.analysis-btn {
+    display: block !important;
+    margin: 20px auto 0 auto !important; /* Centrado horizontal */
+    background: white;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.analysis-btn:hover {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2);
+    transform: translateY(-2px);
+}
+
+/* 2. CAJA PRINCIPAL DE ANÁLISIS */
+.analysis-box {
+    background: white;
+    border-radius: 24px;
+    padding: 40px;
+    margin-top: 30px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+    animation: slideUp 0.5s ease-out;
+}
+
+.analysis-box h3 {
+    color: var(--at-dark);
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 3. BLOQUES POR DIMENSIÓN (Cards Internas) */
+.dimension-block {
+    background: #f8fafc;
+    border-radius: 18px;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-left: 5px solid var(--primary);
+    transition: transform 0.3s ease;
+}
+
+.dimension-block:hover {
+    transform: translateX(5px);
+    background: #f1f5f9;
+}
+
+.dimension-block h4 {
+    color: var(--primary-dark);
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.dimension-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dimension-block li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 10px;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.dimension-block li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: 900;
+}
+
+/* 4. SECCIÓN DE ALERTAS (Estilo de Emergencia) */
+.alerts-box {
+    margin-top: 40px;
+    padding: 30px;
+    background: #fff1f2; /* Rojo muy suave */
+    border-radius: 20px;
+    border: 1px solid #fee2e2;
+}
+
+.alerts-box h3 {
+    color: #991b1b; /* Rojo oscuro */
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.alerts-box li {
+    color: #b91c1c;
+    font-weight: 600;
+    padding: 12px;
+    background: white;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alerts-box li::before {
+    content: "⚠️";
+}
+
+/* Animación de entrada */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- CONTENEDOR Y TÍTULOS --- */
+.at-c2-wrapper { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.at-c2-header-main { text-align: center; margin-bottom: 40px; }
+
+.at-badge-success {
+    background: #0f172a;
+    color: #c5a059;
+    padding: 8px 24px;
+    border-radius: 50px;
+    border: 1px solid #c5a059;
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.at-c2-title { font-size: 2.5rem; font-weight: 900; color: #0f172a; margin-top: 20px; }
+.at-c2-subtitle { color: #64748b; font-size: 1.1rem; }
+
+/* --- DASHBOARD CARDS --- */
+.at-c2-impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.8fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.at-variant-dark-gold {
+    background: #0f172a;
+    color: white;
+    border-radius: 30px;
+    padding: 30px;
+    text-align: center;
+}
+
+.at-c2-growth-circle { color: #c5a059; display: flex; justify-content: center; align-items: baseline; }
+.at-c2-growth-num { font-size: 4.5rem; font-weight: 900; }
+.at-c2-plus, .at-c2-percent { font-size: 1.8rem; font-weight: 700; }
+
+.at-variant-white {
+    background: white;
+    border-radius: 30px;
+    padding: 25px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.at-c2-status-row { width: 100%; display: flex; justify-content: space-around; gap: 15px; }
+
+/* Corrección para Nivel Actual largo */
+.at-level-block { flex: 1.4; border-right: 1px solid #f1f5f9; padding-right: 10px; }
+.at-text-level { font-size: 1.05rem !important; line-height: 1.3; display: block; color: #0f172a; }
+
+.at-c2-status-item label { display: block; font-size: 0.65rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
+.at-c2-status-item strong { font-size: 1.2rem; font-weight: 900; }
+.at-text-gold { color: #c5a059 !important; }
+.at-text-forest { color: #15203c !important; }
+
+/* --- GRÁFICA DE DOBLE CARRIL (Verde corregido) --- */
+.at-c2-comparison-container {
+    background: white;
+    border-radius: 30px;
+    padding: 40px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 30px;
+}
+
+.at-c2-comp-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.at-c2-comp-label { font-weight: 800; color: #475569; font-size: 0.85rem; text-transform: uppercase; }
+
+.at-c2-dual-track-container { display: flex; flex-direction: column; gap: 6px; }
+
+.at-c2-track-path { background: #f8fafc; height: 16px; border-radius: 4px; overflow: hidden; width: 100%; }
+
+.at-c2-bar-before {
+    height: 100%; background: #c5a059;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px; transition: width 1s ease-in-out;
+}
+
+.at-c2-bar-after {
+    height: 100%; background: linear-gradient(90deg, #15203c); /* Verde Bosque Profesional */
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px; transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.at-c2-bar-label-val { color: white; font-size: 0.65rem; font-weight: 900; }
+
+.at-c2-chart-legend {
+    display: flex; justify-content: center; gap: 30px; margin-top: 20px;
+    font-size: 0.85rem; font-weight: 700; color: #64748b;
+}
+
+.at-leg-before::before { content: ''; display: inline-block; width: 12px; height: 12px; background: #c5a059; margin-right: 8px; border-radius: 3px; }
+.at-leg-after::before { content: ''; display: inline-block; width: 12px; height: 12px; background: #15203c; margin-right: 8px; border-radius: 3px; }
+
+/* --- ÁREA DE REFLEXIÓN --- */
+.at-c2-reflection-section {
+    background: white; border-radius: 30px; padding: 40px;
+    border: 1px solid #e2e8f0; border-left: 10px solid #0f172a; margin-bottom: 30px;
+}
+
+.at-reflection-header h4 { font-size: 1.3rem; font-weight: 900; color: #0f172a; margin-bottom: 10px; }
+.at-reflection-prompts { list-style: none; padding: 0; margin-bottom: 20px; color: #475569; font-size: 0.9rem; line-height: 1.6; }
+.at-reflection-prompts li::before { content: '→'; color: #c5a059; margin-right: 10px; font-weight: 900; }
+
+.at-reflection-textarea {
+    width: 100%; min-height: 160px; background: #f8fafc; border: 2px solid #e2e8f0;
+    border-radius: 20px; padding: 20px; font-size: 1rem; transition: all 0.3s ease; resize: none;
+}
+
+.at-reflection-textarea:focus { outline: none; border-color: #c5a059; background: white; }
+
+/* --- BOTONES DE NAVEGACIÓN --- */
+.at-c2-action-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 0; border-top: 1px solid #f1f5f9;
+}
+
+.at-btn-nav {
+    padding: 14px 35px; border-radius: 12px; font-weight: 800;
+    font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease;
+}
+
+.at-btn-secondary { background: #f1f5f9; color: #64748b; border: none; }
+.at-btn-primary { background: white; color: #c5a059; border: 2px solid #c5a059; }
+.at-btn-primary:hover { background: #c5a059; color: white; transform: translateY(-2px); }
+
+
+
+
+
+/* Contenedor General */
+.atl-q-page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.atl-q-main-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 50px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
+}
+
+/* Encabezado */
+.atl-q-title {
+    color: #1e293b;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.atl-q-dim-title {
+    color: #c5a059; /* Dorado ATLAS */
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin: 40px 0 20px 0;
+    border-bottom: 1px solid #f8fafc;
+    padding-bottom: 10px;
+}
+
+/* Filas de Preguntas */
+.atl-q-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.atl-q-question-text {
+    color: #475569;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    max-width: 65%;
+}
+
+/* Escala Likert */
+.atl-q-likert-scale {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.atl-q-likert-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* El 5 especial (Cápsula dorada) */
+.atl-q-likert-btn.is-premium {
+    width: 75px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid #c5a059;
+    color: #c5a059;
+}
+
+/* Estados Activos */
+.atl-q-likert-btn:hover {
+    border-color: #c5a059;
+    background: #fffdfa;
+}
+
+.atl-q-likert-btn.is-active {
+    background: #c5a059;
+    color: #fff !important;
+    border-color: #c5a059;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.2);
+}
+
+/* Botón Final */
+.atl-q-btn-submit {
+    width: 100%;
+    margin-top: 50px;
+    padding: 18px;
+    background: #1e293b;
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.atl-q-btn-submit:hover:not(:disabled) {
+    background: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.atl-q-btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Escala Likert - Contenedor */
+.atl-q-likert-scale {
+    display: flex;
+    gap: 12px; /* Aumentamos un poco el espacio para que respire */
+    align-items: center;
+}
+
+/* Botones base (1 al 4) */
+.atl-q-likert-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* Círculo perfecto */
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0; /* Evita que el texto mueva el círculo */
+}
+
+/* EL 5 ESPECIAL (Cápsula dorada de la Imagen 2) */
+.atl-q-likert-btn.is-premium {
+    width: 65px; /* Ajustado para parecerse más a la imagen */
+    height: 38px;
+    border-radius: 100px; /* Forzamos forma de píldora/cápsula */
+    border: 2px solid #c5a059; /* Borde un poco más grueso para destacar */
+    color: #c5a059;
+    background: transparent;
+}
+
+/* ESTADO ACTIVO (Cuando se selecciona) */
+/* Esto aplica para 1-4 y también para el 5 */
+.atl-q-likert-btn.is-active {
+    background: #c5a059 !important;
+    color: #ffffff !important;
+    border-color: #c5a059 !important;
+    box-shadow: 0 4px 10px rgba(197, 160, 89, 0.3);
+    transform: scale(1.05);
+}
+
+/* Hover suave para el 5 si no está activo */
+.atl-q-likert-btn.is-premium:hover:not(.is-active) {
+    background: rgba(197, 160, 89, 0.05);
+    border-color: #c5a059;
+}
+
+/* Ajuste para las filas de preguntas para que no se amontonen */
+.atl-q-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 0; /* Un poco más de aire vertical */
+    border-bottom: 1px solid #f1f5f9;
+}
+/* Escala Likert - Contenedor */
+.atl-q-likert-scale {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* TODOS los botones (1 al 5) ahora comparten la base circular */
+.atl-q-likert-btn {
+    width: 42px;         /* Ajusta el tamaño si los quieres más grandes o pequeños */
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;   /* Círculo perfecto para todos */
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+/* EL 5 ESPECIAL (Sigue siendo círculo, pero con borde dorado) */
+.atl-q-likert-btn.is-premium {
+    width: 42px;         /* MISMO ANCHO QUE LOS DEMÁS */
+    height: 42px;        /* MISMO ALTO QUE LOS DEMÁS */
+    border-radius: 50%;   /* FORZAMOS CÍRCULO */
+    border: 2px solid #c5a059; /* Borde más grueso para resaltar */
+    color: #c5a059;
+    background: transparent;
+}
+
+/* ESTADO ACTIVO (Cuando se selecciona cualquier número) */
+.atl-q-likert-btn.is-active {
+    background: #c5a059 !important;
+    color: #ffffff !important;
+    border-color: #c5a059 !important;
+    box-shadow: 0 4px 10px rgba(197, 160, 89, 0.3);
+    transform: scale(1.1); /* Crece un poquito al seleccionarlo */
+}
+
+/* Hover suave */
+.atl-q-likert-btn:hover {
+    border-color: #c5a059;
+    background: #fffdfa;
+}
+
+/* Escala Likert - Contenedor */
+.atl-q-likert-scale {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* TODOS los botones (1 al 5) ahora son círculos negros idénticos */
+.atl-q-likert-btn {
+    width: 40px;         
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;   /* Círculo perfecto */
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #1e293b;       /* Texto negro/gris oscuro como los demás */
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+/* Eliminamos el estilo de "cápsula" o "dorado" del 5 */
+.atl-q-likert-btn.is-premium {
+    width: 40px;          /* Mismo ancho */
+    height: 40px;         /* Mismo alto */
+    border-radius: 50%;    /* Mismo círculo */
+    border: 1px solid #e2e8f0; /* Mismo borde que el resto */
+    color: #1e293b;       /* Mismo color de texto */
+    background: #fff;
+}
+
+/* ESTADO ACTIVO: Cuando el usuario selecciona CUALQUIER número (incluido el 5) */
+.atl-q-likert-btn.is-active {
+    background: #c5a059 !important; /* Fondo dorado al marcar */
+    color: #ffffff !important;      /* Texto blanco al marcar */
+    border-color: #c5a059 !important;
+    box-shadow: 0 4px 10px rgba(197, 160, 89, 0.3);
+    transform: scale(1.1);
+}
+
+/* Hover general para todos */
+.atl-q-likert-btn:hover {
+    border-color: #c5a059;
+    background: #fffdfa;
+}
+
+/* Estilo Profesional para el Botón Volver */
+.atl-q-btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #ffffff;
+    color: #475569; /* Gris azulado profesional */
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Efecto al pasar el mouse (Hover) */
+.atl-q-btn-back:hover {
+    background-color: #f8fafc;
+    color: #1e293b;
+    border-color: #cbd5e1;
+    transform: translateX(-4px); /* Efecto visual de retroceso */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Efecto al hacer clic */
+.atl-q-btn-back:active {
+    transform: scale(0.96);
+}
+
+/* Contenedor principal */
+.at-c5-rutas-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    align-items: stretch; /* Obliga a igualar alturas */
+}
+
+/* El botón ahora se comporta como una Card */
+.at-c5-ruta-btn {
+    flex: 1;
+    min-width: 280px;
+    padding: 24px 20px; /* Más aire interno */
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.4;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Centrado de contenido */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 110px; /* Un poco más de altura para que respiren */
+}
+
+/* Efecto Hover para que se sienta interactivo */
+.at-c5-ruta-btn:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* Estado Activo (Seleccionado) */
+.at-c5-ruta-btn.active {
+    border-color: #15203c;
+    background: #f8fafc; /* Fondo sutilmente diferente */
+    color: #15203c;
+    box-shadow: inset 0 0 0 1px #15203c, 0 10px 15px -3px rgba(21, 32, 60, 0.1);
+}
+
+/* El Checkmark cuando está activo */
+.at-c5-ruta-btn.active::before {
+    content: "✓";
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #15203c;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+/* Badge de SUGERIDA (Más elegante) */
+.at-c5-sugerida-badge {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: #c5a059;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(197, 160, 89, 0.4);
+    z-index: 10;
+}
+
+.at-c5-ruta-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+
+
+
+/* Contenedor Blindado */
+.at-c5-v2-grid-wrapper {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Dos columnas iguales */
+    gap: 24px !important;
+    margin: 25px 0 !important;
+    width: 100% !important;
+}
+
+/* Botón Tarjeta Premium */
+.at-c5-v2-card-btn {
+    all: unset !important; /* Resetea cualquier estilo de botón previo */
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    position: relative !important;
+    background: #ffffff !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 40px 24px !important; /* Mucho aire */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 180px !important; /* Altura fija para que sean gemelos */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Efecto Hover */
+.at-c5-v2-card-btn:hover:not(:disabled) {
+    border-color: #15203c !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Estado Seleccionado */
+.at-c5-v2-card-btn.is-selected {
+    background: #f1f5f9 !important;
+    border-color: #15203c !important;
+    border-width: 3px !important;
+    box-shadow: inset 0 0 0 1px #15203c !important;
+}
+
+/* Icono circular de estado */
+.at-c5-v2-status-circle {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    border: 2px solid #cbd5e1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 16px !important;
+    font-weight: bold !important;
+    color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.at-c5-v2-card-btn.is-selected .at-c5-v2-status-circle {
+    background: #15203c !important;
+    border-color: #15203c !important;
+    color: white !important;
+}
+
+/* Texto de la Ruta */
+.at-c5-v2-route-title {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+}
+
+.at-c5-v2-card-btn.is-selected .at-c5-v2-route-title {
+    color: #15203c !important;
+}
+
+/* Badge de Recomendado */
+.at-c5-v2-badge-sugerida {
+    position: absolute !important;
+    top: -12px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: #c5a059 !important;
+    color: white !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    padding: 6px 16px !important;
+    border-radius: 50px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 4px 10px rgba(197, 160, 89, 0.4) !important;
+    white-space: nowrap !important;
+}
+
+
+/* =============================
+   RESPONSIVE
+============================= */
+
+@media (max-width: 1024px) {
+
+    .atl-an-overlay,
+    .atl-audit-popup-overlay {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .sos-dash-top {
+        grid-template-columns: 1fr;
+    }
+
+    .sostener-page-wrapper {
+        padding: 20px;
+    }
+}

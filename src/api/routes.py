@@ -12,7 +12,9 @@ from api.models import (
     db, Empresa, Usuario, ConfiguracionFaseEmpresa,
     Formulario, PreguntaFormulario, AsignacionFormulario,
     RetoPlantilla, AsignacionReto,
-    ProgresoFase, RespuestaFormulario, RetoTransformar
+    ProgresoFase, RespuestaFormulario, RetoTransformar, PromptLiderar, RetoLiderar, SeguimientoDirectivo,
+    AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan, AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan,
+    SostenerDocente, SostenerInstitucional
 )
 import uuid
 
@@ -839,14 +841,33 @@ def get_asignaciones_empresa(eid):
         "items_asignados": len(formularios_asignados),
         "peso_fase": PESOS_FASE["AUDITAR"],
     }
+    # LIDERAR se mide por el switch is_activa (no por retos asignados)
+    cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="LIDERAR").first()
+    liderar_activa = cfg_liderar.is_activa if cfg_liderar else False
+
+    cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="ASEGURAR").first()
+    asegurar_activa = cfg_asegurar.is_activa if cfg_asegurar else False
+
+    cfg_sostener = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="SOSTENER").first()
+    sostener_activa = cfg_sostener.is_activa if cfg_sostener else False
+
     for fase in ["TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
-        tiene_retos = len(retos_por_fase[fase]) > 0
-        progreso_fases[fase] = {
-            "completo": tiene_retos,
-            "porcentaje": 100 if tiene_retos else 0,
-            "items_asignados": len(retos_por_fase[fase]),
-            "peso_fase": PESOS_FASE[fase],
-        }
+        if fase in ("LIDERAR", "ASEGURAR", "SOSTENER"):
+            activa = liderar_activa if fase == "LIDERAR" else (asegurar_activa if fase == "ASEGURAR" else sostener_activa)
+            progreso_fases[fase] = {
+                "completo": activa,
+                "porcentaje": 100 if activa else 0,
+                "items_asignados": 1 if activa else 0,
+                "peso_fase": PESOS_FASE[fase],
+            }
+        else:
+            tiene_retos = len(retos_por_fase[fase]) > 0
+            progreso_fases[fase] = {
+                "completo": tiene_retos,
+                "porcentaje": 100 if tiene_retos else 0,
+                "items_asignados": len(retos_por_fase[fase]),
+                "peso_fase": PESOS_FASE[fase],
+            }
 
     # ── Porcentaje total ponderado por peso de cada fase ────────────────
     total_peso = sum(PESOS_FASE.values())
@@ -900,9 +921,24 @@ def get_resumen_todas_empresas():
             if rp:
                 fases_con_retos.add(rp.fase)
 
+        # LIDERAR por switch, el resto por retos asignados
+        cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="LIDERAR").first()
+        liderar_activa = cfg_liderar.is_activa if cfg_liderar else False
+
+        cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="ASEGURAR").first()
+        asegurar_activa = cfg_asegurar.is_activa if cfg_asegurar else False
+
         porcentajes_fase = {"AUDITAR": auditar_pct}
         for fase in ["TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
-            porcentajes_fase[fase] = 100 if fase in fases_con_retos else 0
+            if fase == "LIDERAR":
+                porcentajes_fase[fase] = 100 if liderar_activa else 0
+            elif fase == "ASEGURAR":
+                porcentajes_fase[fase] = 100 if asegurar_activa else 0
+            elif fase == "SOSTENER":
+                cfg_sos = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="SOSTENER").first()
+                porcentajes_fase[fase] = 100 if (cfg_sos and cfg_sos.is_activa) else 0
+            else:
+                porcentajes_fase[fase] = 100 if fase in fases_con_retos else 0
 
         total_peso = sum(PESOS_FASE.values())
         avance_ponderado = sum(
@@ -1247,3 +1283,778 @@ def get_retos_transformar_empresa():
     ids = [usr.id for usr in usuarios_empresa]
     registros = RetoTransformar.query.filter(RetoTransformar.usuario_id.in_(ids)).all()
     return jsonify([r.serialize() for r in registros]), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE LIDERAR — Progreso, Laboratorio de Prompt Ético, Panel Directivo
+# ══════════════════════════════════════════════════════════════════════
+
+# ── El docente ve/actualiza su progreso de LIDERAR (aceptar fase) ───────
+@api.route('/liderar/mi-progreso', methods=['GET'])
+@jwt_required()
+def liderar_mi_progreso():
+    """Devuelve el registro ProgresoFase de LIDERAR del usuario actual (o null)."""
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="LIDERAR").first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/liderar/aceptar', methods=['POST'])
+@jwt_required()
+def liderar_aceptar():
+    """
+    Marca Capa_1_Sentido = COMPLETADO para la fase LIDERAR (aceptar el reto).
+    Upsert sobre ProgresoFase (usuario + fase).
+    """
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="LIDERAR").first()
+    if not reg:
+        reg = ProgresoFase(usuario_id=u.id, fase="LIDERAR")
+        db.session.add(reg)
+    reg.capa_1_sentido = "COMPLETADO"
+    reg.fecha_actualizacion = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── Laboratorio de Prompt Ético: GET del prompt del docente ─────────────
+@api.route('/liderar/mi-prompt', methods=['GET'])
+@jwt_required()
+def liderar_mi_prompt():
+    """
+    Devuelve el PromptLiderar más reciente del usuario actual (o null).
+    Se usa tanto en FaseLiderar (para saber si ya completó) como en RetosLiderar
+    (para precargar el formulario).
+    """
+    u = get_usuario_actual()
+    reg = PromptLiderar.query.filter_by(usuario_id=u.id)\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/liderar/prompt', methods=['POST'])
+@jwt_required()
+def liderar_guardar_prompt():
+    """
+    SIEMPRE crea una fila nueva en PromptLiderar (historial de intentos).
+    El docente puede probar cuantos prompts quiera. Los GET devuelven el más reciente.
+    """
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+
+    if not data.get("prompt_original"):
+        return jsonify({"error": "prompt_original requerido"}), 400
+
+    reg = PromptLiderar(
+        usuario_id=u.id,
+        prompt_original=data["prompt_original"],
+        puntaje_etica=data.get("puntaje_etica", 0),
+        puntaje_privacidad=data.get("puntaje_privacidad", 0),
+        puntaje_agencia=data.get("puntaje_agencia", 0),
+        puntaje_dependencia=data.get("puntaje_dependencia", 0),
+        simulador_puntaje=data.get("simulador_puntaje", 0),
+        clasificacion_riesgo=data.get("clasificacion_riesgo"),
+        detalle_respuestas=data.get("detalle_respuestas", {}),
+        dimension_mas_baja=data.get("dimension_mas_baja"),
+        es_publico=data.get("es_publico", False),
+        status=data.get("status", "COMPLETADO"),
+        fecha_registro=datetime.now(timezone.utc),
+    )
+    db.session.add(reg)
+    db.session.flush()
+
+    # Espejo en RetoLiderar (para conteo). Aquí sí actualizamos el único espejo.
+    espejo = RetoLiderar.query.filter_by(usuario_id=u.id).first()
+    if not espejo:
+        espejo = RetoLiderar(usuario_id=u.id)
+        db.session.add(espejo)
+    espejo.respuesta_json = {"prompt_id": reg.id}
+    espejo.status = "COMPLETADO"
+
+    db.session.commit()
+    return jsonify(reg.serialize()), 201
+
+
+# ── Panel DIRECTIVO: agregación de toda la empresa ──────────────────────
+@api.route('/liderar/dashboard-directivo', methods=['GET'])
+@jwt_required()
+def liderar_dashboard_directivo():
+    """
+    Consolida el estado de TODOS los DOCENTE de la empresa del directivo actual.
+    Devuelve exactamente los datos que el front (AnalisisLiderazgo) espera:
+    cumplimiento por fase, promedios de riesgo, pendientes y ranking crítico.
+    """
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    if not u.empresa_id:
+        return jsonify({
+            "totalDocentes": 0,
+            "cumplimiento": {"auditar": 0, "transformar": 0, "liderar": 0},
+            "riesgos": {"etica": 0, "privacidad": 0, "agencia": 0, "cognitiva": 0, "altoRiesgoTotal": 0},
+            "pendientesPorFase": {"auditar": 0, "transformar": 0, "auditarIds": [], "transformarIds": []},
+            "rankingCritico": []
+        }), 200
+
+    docentes = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    total = len(docentes)
+
+    conteo_auditar = 0
+    conteo_transformar = 0
+    conteo_liderar = 0
+    suma = {"etica": 0.0, "priv": 0.0, "agen": 0.0, "cogn": 0.0, "n": 0}
+    alto_riesgo = 0
+    auditar_faltantes = []
+    transformar_faltantes = []
+    ranking = []
+
+    for d in docentes:
+        # AUDITAR: aceptó la capa 1 + respondió al menos un formulario
+        c1 = ProgresoFase.query.filter_by(
+            usuario_id=d.id, fase="AUDITAR", capa_1_sentido="COMPLETADO").first() is not None
+        c2 = RespuestaFormulario.query.filter_by(usuario_id=d.id).first() is not None
+        if c1 and c2:
+            conteo_auditar += 1
+        else:
+            auditar_faltantes.append(d.teacher_key)
+
+        # TRANSFORMAR: al menos un reto COMPLETADO (ajusta el número si exiges 3)
+        retos_ok = RetoTransformar.query.filter_by(
+            usuario_id=d.id, status_reto="COMPLETADO").count()
+        if retos_ok >= 1:
+            conteo_transformar += 1
+        else:
+            transformar_faltantes.append(d.teacher_key)
+
+        # LIDERAR: PromptLiderar COMPLETADO
+        prompt = PromptLiderar.query.filter_by(
+            usuario_id=d.id, status="COMPLETADO")\
+            .order_by(PromptLiderar.fecha_registro.desc()).first()
+        if prompt:
+            conteo_liderar += 1
+            e = float(prompt.puntaje_etica or 0)
+            p = float(prompt.puntaje_privacidad or 0)
+            a = float(prompt.puntaje_agencia or 0)
+            c = float(prompt.puntaje_dependencia or 0)
+            suma["etica"] += e; suma["priv"] += p
+            suma["agen"] += a; suma["cogn"] += c
+            suma["n"] += 1
+            if prompt.clasificacion_riesgo and "ALTO" in prompt.clasificacion_riesgo.upper():
+                alto_riesgo += 1
+            prom = (e + p + a + c) / 4
+            ranking.append({
+                "id": d.teacher_key,
+                "promedio": round(prom, 1),
+                "falla": prompt.dimension_mas_baja or "N/A",
+                "riesgo": "CRÍTICO" if prom < 2.5 else ("RIESGO" if prom < 3.5 else "ESTABLE")
+            })
+
+    n = suma["n"] or 1
+    ranking.sort(key=lambda x: x["promedio"])
+
+    return jsonify({
+        "totalDocentes": total,
+        "cumplimiento": {
+            "auditar": round((conteo_auditar / total) * 100) if total else 0,
+            "transformar": round((conteo_transformar / total) * 100) if total else 0,
+            "liderar": round((conteo_liderar / total) * 100) if total else 0,
+        },
+        "riesgos": {
+            "etica": round(suma["etica"] / n, 1),
+            "privacidad": round(suma["priv"] / n, 1),
+            "agencia": round(suma["agen"] / n, 1),
+            "cognitiva": round(suma["cogn"] / n, 1),
+            "altoRiesgoTotal": round((alto_riesgo / n) * 100) if suma["n"] else 0
+        },
+        "pendientesPorFase": {
+            "auditar": total - conteo_auditar,
+            "transformar": total - conteo_transformar,
+            "auditarIds": auditar_faltantes,
+            "transformarIds": transformar_faltantes
+        },
+        "rankingCritico": ranking[:5]
+    }), 200
+
+
+# ── Acciones de gobernanza del directivo (Notificar/Reporte/Mentoría) ───
+@api.route('/liderar/seguimiento', methods=['POST'])
+@jwt_required()
+def liderar_registrar_seguimiento():
+    """
+    Registra una acción de gobernanza del directivo.
+    Body: {
+      "accion_activada": "NOTIFICACIÓN REZAGADOS",
+      "dimension_priorizada": "CUMPLIMIENTO",
+      "docente_mentor_key": "TK-XXXX, TK-YYYY",
+      "riesgo_alto_actual": "12%"
+    }
+    """
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+
+    data = request.get_json() or {}
+    reg = SeguimientoDirectivo(
+        usuario_id=u.id,
+        accion_activada=data.get("accion_activada"),
+        dimension_priorizada=data.get("dimension_priorizada"),
+        docente_mentor_key=data.get("docente_mentor_key"),
+        riesgo_alto_actual=data.get("riesgo_alto_actual"),
+        fase_asegurar_status=data.get("fase_asegurar_status"),
+    )
+    db.session.add(reg)
+    db.session.commit()
+    return jsonify(reg.serialize()), 201
+
+
+# ── Historial completo de prompts del docente (para revisar sus intentos) ──
+@api.route('/liderar/mis-prompts', methods=['GET'])
+@jwt_required()
+def liderar_mis_prompts():
+    u = get_usuario_actual()
+    regs = PromptLiderar.query.filter_by(usuario_id=u.id)\
+        .order_by(PromptLiderar.fecha_registro.desc()).all()
+    return jsonify([r.serialize() for r in regs]), 200
+
+
+# ── Galería pública: prompts marcados es_publico=True de toda la empresa ──
+@api.route('/liderar/galeria', methods=['GET'])
+@jwt_required()
+def liderar_galeria():
+    """
+    Devuelve prompts públicos de la empresa del usuario, ordenados por
+    calificación promedio (de mayor a menor) para aprender de los mejores.
+    """
+    u = get_usuario_actual()
+    if not u.empresa_id:
+        return jsonify([]), 200
+
+    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id).all()]
+    regs = PromptLiderar.query.filter(
+        PromptLiderar.usuario_id.in_(docentes_ids),
+        PromptLiderar.es_publico == True,
+        PromptLiderar.status == "COMPLETADO"
+    ).all()
+
+    def promedio(r):
+        return (float(r.puntaje_etica or 0) + float(r.puntaje_privacidad or 0)
+                + float(r.puntaje_agencia or 0) + float(r.puntaje_dependencia or 0)) / 4
+
+    salida = [{**r.serialize(), "promedio_calificacion": round(promedio(r), 1)} for r in regs]
+    salida.sort(key=lambda x: x["promedio_calificacion"], reverse=True)
+    return jsonify(salida), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE ASEGURAR — Progreso, Taller Docente, Módulo Directivo (Panorama/Diag/Plan)
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Progreso de fase ASEGURAR (aceptar la fase) ─────────────────────────
+@api.route('/asegurar/mi-progreso', methods=['GET'])
+@jwt_required()
+def asegurar_mi_progreso():
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="ASEGURAR").first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/asegurar/aceptar', methods=['POST'])
+@jwt_required()
+def asegurar_aceptar():
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="ASEGURAR").first()
+    if not reg:
+        reg = ProgresoFase(usuario_id=u.id, fase="ASEGURAR")
+        db.session.add(reg)
+    reg.capa_1_sentido = "COMPLETADO"
+    reg.fecha_actualizacion = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── TALLER DOCENTE ──────────────────────────────────────────────────────
+@api.route('/asegurar/mi-taller', methods=['GET'])
+@jwt_required()
+def asegurar_mi_taller():
+    """
+    Devuelve el registro AsegurarDocente del usuario (o null).
+    Si no existe, incluye el prompt heredado del último PromptLiderar COMPLETADO
+    para que el taller lo precargue como punto de partida.
+    """
+    u = get_usuario_actual()
+    reg = AsegurarDocente.query.filter_by(usuario_id=u.id).first()
+    if reg:
+        return jsonify(reg.serialize()), 200
+
+    # No ha hecho ASEGURAR: heredamos el prompt de LIDERAR
+    prompt_liderar = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+    return jsonify({
+        "prompt_heredado": prompt_liderar.prompt_original if prompt_liderar else None,
+        "status": None
+    }), 200
+
+
+@api.route('/asegurar/taller', methods=['POST'])
+@jwt_required()
+def asegurar_guardar_taller():
+    """
+    Upsert del taller ASEGURAR del docente (un solo registro por usuario).
+    Body: {
+      "prompt_original": "...", "prompt_mejorado": "...",
+      "alertas_detectadas": [...], "bloques_activados": [...],
+      "riesgo_previo": {...}, "riesgo_final": {...},
+      "reflexion_1_cambios": "...", "reflexion_2_riesgos": "...",
+      "reflexion_3_supervision": "...", "reflexion_4_cognicion": "...",
+      "estandar_seleccionado": "std1 | std2",
+      "status": "COMPLETADO"
+    }
+    """
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+
+    reg = AsegurarDocente.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = AsegurarDocente(usuario_id=u.id)
+        db.session.add(reg)
+
+    reg.prompt_original       = data.get("prompt_original", reg.prompt_original)
+    reg.prompt_mejorado       = data.get("prompt_mejorado", reg.prompt_mejorado)
+    reg.alertas_detectadas    = data.get("alertas_detectadas", reg.alertas_detectadas)
+    reg.bloques_activados     = data.get("bloques_activados", reg.bloques_activados)
+    reg.riesgo_previo         = data.get("riesgo_previo")  # guardamos como string/JSON en el modelo (String)
+    reg.riesgo_final          = data.get("riesgo_final")
+    reg.reflexion_1_cambios   = data.get("reflexion_1_cambios", reg.reflexion_1_cambios)
+    reg.reflexion_2_riesgos   = data.get("reflexion_2_riesgos", reg.reflexion_2_riesgos)
+    reg.reflexion_3_supervision = data.get("reflexion_3_supervision", reg.reflexion_3_supervision)
+    reg.reflexion_4_cognicion = data.get("reflexion_4_cognicion", reg.reflexion_4_cognicion)
+    reg.estandar_seleccionado = data.get("estandar_seleccionado", reg.estandar_seleccionado)
+    reg.status                = data.get("status", "BORRADOR")
+    reg.constructor_prompt      = data.get("constructor_prompt", reg.constructor_prompt)
+    reg.reescrituras_aplicadas  = data.get("reescrituras_aplicadas", reg.reescrituras_aplicadas)
+    reg.lecciones_vistas        = data.get("lecciones_vistas", reg.lecciones_vistas)
+    reg.puntaje_rector          = data.get("puntaje_rector", reg.puntaje_rector)
+    reg.reduccion_riesgo_pct    = data.get("reduccion_riesgo_pct", reg.reduccion_riesgo_pct)
+    reg.compromiso_datos        = data.get("compromiso_datos", reg.compromiso_datos)
+    
+    if reg.status == "COMPLETADO":
+        reg.fecha_finalizacion = datetime.now(timezone.utc)
+
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DIRECTIVO: PANORAMA (4 bloques) ─────────────────────────────────────
+@api.route('/asegurar/directivo/panorama', methods=['GET'])
+@jwt_required()
+def asegurar_get_panorama():
+    u = get_usuario_actual()
+    reg = AsegurarDirectivoPanorama.query.filter_by(usuario_id=u.id).first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/asegurar/directivo/panorama', methods=['POST'])
+@jwt_required()
+def asegurar_guardar_panorama():
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+    reg = AsegurarDirectivoPanorama.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = AsegurarDirectivoPanorama(usuario_id=u.id)
+        db.session.add(reg)
+    reg.visto_bloque_1_regulatorio  = data.get("visto_bloque_1_regulatorio", reg.visto_bloque_1_regulatorio)
+    reg.visto_bloque_2_competencias = data.get("visto_bloque_2_competencias", reg.visto_bloque_2_competencias)
+    reg.visto_bloque_3_etica        = data.get("visto_bloque_3_etica", reg.visto_bloque_3_etica)
+    reg.visto_bloque_4_cultura      = data.get("visto_bloque_4_cultura", reg.visto_bloque_4_cultura)
+    reg.feedback_opcional_panorama  = data.get("feedback_opcional_panorama", reg.feedback_opcional_panorama)
+    reg.status = "COMPLETADO"
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DIRECTIVO: DIAGNÓSTICO (20 preguntas) ───────────────────────────────
+@api.route('/asegurar/directivo/diagnostico', methods=['GET'])
+@jwt_required()
+def asegurar_get_diagnostico():
+    u = get_usuario_actual()
+    reg = AsegurarDirectivoDiagnostico.query.filter_by(usuario_id=u.id).first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/asegurar/directivo/diagnostico', methods=['POST'])
+@jwt_required()
+def asegurar_guardar_diagnostico():
+    """
+    Body con las 20 preguntas (mismos nombres que el modelo) + puntaje y clasificación.
+    """
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+    reg = AsegurarDirectivoDiagnostico.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = AsegurarDirectivoDiagnostico(usuario_id=u.id)
+        db.session.add(reg)
+
+    campos = [
+        "gobernanza_1_politica", "gobernanza_2_responsable", "gobernanza_3_evaluacion_htas",
+        "gobernanza_4_protocolo_incidentes", "competencia_1_etica", "competencia_2_unesco_levels",
+        "competencia_3_plan_progresivo", "competencia_4_reflexion_critica", "datos_1_protocolo_estudiantes",
+        "datos_2_anonimizacion", "datos_3_terminos_htas", "datos_4_almacenamiento",
+        "supervision_1_decision_humana", "supervision_2_no_automatizada", "supervision_3_monitoreo_ia",
+        "supervision_4_revision_practicas", "transparencia_1_informa_estud", "transparencia_2_lineamientos_uso",
+        "transparencia_3_alfabetizacion", "transparencia_4_declaracion_pub",
+    ]
+    for c in campos:
+        if c in data:
+            setattr(reg, c, data[c])
+    reg.puntaje_total_radar = data.get("puntaje_total_radar", reg.puntaje_total_radar)
+    reg.clasificacion_final = data.get("clasificacion_final", reg.clasificacion_final)
+    reg.status = "COMPLETADO"
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DIRECTIVO: PLAN DE ACCIÓN ───────────────────────────────────────────
+@api.route('/asegurar/directivo/plan', methods=['GET'])
+@jwt_required()
+def asegurar_get_plan():
+    u = get_usuario_actual()
+    reg = AsegurarDirectivoPlan.query.filter_by(usuario_id=u.id).first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/asegurar/directivo/plan', methods=['POST'])
+@jwt_required()
+def asegurar_guardar_plan():
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+    reg = AsegurarDirectivoPlan.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = AsegurarDirectivoPlan(usuario_id=u.id)
+        db.session.add(reg)
+    reg.objetivo_estrategico     = data.get("objetivo_estrategico", reg.objetivo_estrategico)
+    reg.acciones_seleccionadas   = data.get("acciones_seleccionadas", reg.acciones_seleccionadas)
+    reg.responsables_asignados   = data.get("responsables_asignados", reg.responsables_asignados)
+    reg.cronograma_estimado      = data.get("cronograma_estimado", reg.cronograma_estimado)
+    reg.indicadores_exito        = data.get("indicadores_exito", reg.indicadores_exito)
+    reg.dimension_prioridad_1    = data.get("dimension_prioridad_1", reg.dimension_prioridad_1)
+    reg.dimension_prioridad_2    = data.get("dimension_prioridad_2", reg.dimension_prioridad_2)
+    reg.status = "COMPLETADO"
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DIRECTIVO: evidencia institucional (stats de prompts de la empresa) ──
+@api.route('/asegurar/directivo/evidencia', methods=['GET'])
+@jwt_required()
+def asegurar_evidencia_institucional():
+    """
+    Distribución de riesgo y promedios de los PromptLiderar de la empresa,
+    para alimentar el radar comparativo del ModuloDirectivo.
+    """
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    if not u.empresa_id:
+        return jsonify({
+            "totalDocentes": 0,
+            "distribucionRiesgo": {"alto": 0, "moderado": 0, "responsable": 0},
+            "distribucionPorcentaje": {"alto": 0, "moderado": 0, "responsable": 0},
+            "riesgosPromedio": {"etica": 0, "privacidad": 0, "agencia": 0, "cognitiva": 0},
+        }), 200
+
+    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()]
+    suma = {"e": 0.0, "p": 0.0, "a": 0.0, "c": 0.0, "n": 0}
+    dist = {"alto": 0, "moderado": 0, "responsable": 0}
+
+    for did in docentes_ids:
+        prompt = PromptLiderar.query.filter_by(usuario_id=did, status="COMPLETADO")\
+            .order_by(PromptLiderar.fecha_registro.desc()).first()
+        if not prompt:
+            continue
+        e = float(prompt.puntaje_etica or 0)
+        p = float(prompt.puntaje_privacidad or 0)
+        a = float(prompt.puntaje_agencia or 0)
+        c = float(prompt.puntaje_dependencia or 0)
+        avg = (e + p + a + c) / 4
+        suma["e"] += e; suma["p"] += p; suma["a"] += a; suma["c"] += c; suma["n"] += 1
+        if avg < 2.5: dist["alto"] += 1
+        elif avg < 3.8: dist["moderado"] += 1
+        else: dist["responsable"] += 1
+
+    n = suma["n"] or 1
+    return jsonify({
+        "totalDocentes": suma["n"],
+        "distribucionRiesgo": dist,
+        "distribucionPorcentaje": {
+            "alto": round((dist["alto"] / n) * 100),
+            "moderado": round((dist["moderado"] / n) * 100),
+            "responsable": round((dist["responsable"] / n) * 100),
+        },
+        "riesgosPromedio": {
+            "etica": round(suma["e"] / n, 1),
+            "privacidad": round(suma["p"] / n, 1),
+            "agencia": round(suma["a"] / n, 1),
+            "cognitiva": round(suma["c"] / n, 1),
+        },
+    }), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE SOSTENER — Progreso, Radar Docente (historial), Cierre Institucional
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Progreso de fase (aceptar) ──────────────────────────────────────────
+@api.route('/sostener/mi-progreso', methods=['GET'])
+@jwt_required()
+def sostener_mi_progreso():
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="SOSTENER").first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/sostener/aceptar', methods=['POST'])
+@jwt_required()
+def sostener_aceptar():
+    u = get_usuario_actual()
+    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="SOSTENER").first()
+    if not reg:
+        reg = ProgresoFase(usuario_id=u.id, fase="SOSTENER")
+        db.session.add(reg)
+    reg.capa_1_sentido = "COMPLETADO"
+    reg.fecha_actualizacion = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DOCENTE: historial de autoevaluaciones ──────────────────────────────
+@api.route('/sostener/mis-evaluaciones', methods=['GET'])
+@jwt_required()
+def sostener_mis_evaluaciones():
+    """Devuelve todas las evaluaciones del docente, la más reciente primero."""
+    u = get_usuario_actual()
+    regs = SostenerDocente.query.filter_by(usuario_id=u.id)\
+        .order_by(SostenerDocente.fecha_evaluacion.desc()).all()
+    return jsonify([r.serialize() for r in regs]), 200
+
+
+@api.route('/sostener/evaluacion', methods=['POST'])
+@jwt_required()
+def sostener_guardar_evaluacion():
+    """
+    Crea una nueva evaluación (historial por periodo).
+    Si se envía 'id' en el body, actualiza esa evaluación (para el cierre reflexivo).
+    """
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+
+    # Si viene id, es actualización (cierre reflexivo sobre una eval existente)
+    reg = None
+    if data.get("id"):
+        reg = SostenerDocente.query.filter_by(id=data["id"], usuario_id=u.id).first()
+
+    if not reg:
+        reg = SostenerDocente(usuario_id=u.id, empresa_id=u.empresa_id)
+        db.session.add(reg)
+
+    reg.periodo = data.get("periodo", reg.periodo or "2026-1")
+    if "respuestas" in data:
+        reg.respuestas = data["respuestas"]
+    reg.promedio_global = data.get("promedio_global", reg.promedio_global or 0)
+    reg.promedio_d1 = data.get("promedio_d1", reg.promedio_d1 or 0)
+    reg.promedio_d2 = data.get("promedio_d2", reg.promedio_d2 or 0)
+    reg.promedio_d3 = data.get("promedio_d3", reg.promedio_d3 or 0)
+    reg.promedio_d4 = data.get("promedio_d4", reg.promedio_d4 or 0)
+    reg.nivel_calculado = data.get("nivel_calculado", reg.nivel_calculado)
+    reg.alertas_activas = data.get("alertas_activas", reg.alertas_activas)
+    reg.porcentaje_crecimiento = data.get("porcentaje_crecimiento", reg.porcentaje_crecimiento)
+
+    # Campos de cierre (opcionales, llegan en la etapa 5)
+    reg.reflexion_antes = data.get("reflexion_antes", reg.reflexion_antes)
+    reg.reflexion_despues = data.get("reflexion_despues", reg.reflexion_despues)
+    reg.aprendizaje_clave = data.get("aprendizaje_clave", reg.aprendizaje_clave)
+    reg.prioridad_sostener = data.get("prioridad_sostener", reg.prioridad_sostener)
+    reg.compromiso_accion = data.get("compromiso_accion", reg.compromiso_accion)
+    reg.evidencia_mejora = data.get("evidencia_mejora", reg.evidencia_mejora)
+    reg.fecha_revision_plan = data.get("fecha_revision_plan", reg.fecha_revision_plan)
+    reg.status = data.get("status", "COMPLETADO")
+
+    db.session.commit()
+    return jsonify(reg.serialize()), 200
+
+
+# ── DOCENTE: evidencia integrada de fases previas (balance antes/ahora) ──
+@api.route('/sostener/mi-balance', methods=['GET'])
+@jwt_required()
+def sostener_mi_balance2():
+    """
+    Reúne evidencia de fases previas para el balance global del docente:
+    retos completados (TRANSFORMAR) y último prompt (LIDERAR).
+    """
+    u = get_usuario_actual()
+    retos_completados = RetoTransformar.query.filter_by(
+        usuario_id=u.id, status_reto="COMPLETADO").count()
+    prompt = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+
+    return jsonify({
+        "retos_completados": retos_completados,
+        "prompt_liderar": prompt.serialize() if prompt else None,
+    }), 200
+
+
+# ── DIRECTIVO: cierre institucional (upsert sobre SostenerInstitucional) ─
+@api.route('/sostener/directivo/cierre', methods=['GET'])
+@jwt_required()
+def sostener_get_cierre():
+    u = get_usuario_actual()
+    reg = SostenerInstitucional.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        return jsonify(None), 200
+    return jsonify(_serialize_sostener_inst(reg)), 200
+
+
+@api.route('/sostener/directivo/cierre', methods=['POST'])
+@jwt_required()
+def sostener_guardar_cierre():
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    data = request.get_json() or {}
+
+    reg = SostenerInstitucional.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = SostenerInstitucional(
+            usuario_id=u.id,
+            empresa_id=u.empresa_id,
+            id_sostener_inst=f"SOS-INST-{u.id}-{int(datetime.now(timezone.utc).timestamp())}",
+        )
+        db.session.add(reg)
+
+    reg.reflexion_punto_partida = data.get("reflexion_punto_partida", reg.reflexion_punto_partida)
+    reg.estado_cumplimiento_asegurar = data.get("estado_cumplimiento_asegurar", reg.estado_cumplimiento_asegurar)
+    reg.analisis_implementacion = data.get("analisis_implementacion", reg.analisis_implementacion)
+    reg.nivel_institucional_actual = data.get("nivel_institucional_actual", reg.nivel_institucional_actual)
+    reg.docentes_n1 = data.get("docentes_n1", reg.docentes_n1)
+    reg.porcentaje_reduccion_alertas = data.get("porcentaje_reduccion_alertas", reg.porcentaje_reduccion_alertas)
+    reg.ruta_elegida = data.get("ruta_elegida", reg.ruta_elegida)
+    reg.prioridad_estrategica_anual = data.get("prioridad_estrategica_anual", reg.prioridad_estrategica_anual)
+    reg.accion_gobernanza = data.get("accion_gobernanza", reg.accion_gobernanza)
+    reg.indicador_medible = data.get("indicador_medible", reg.indicador_medible)
+    reg.estrategia_comunicacion = data.get("estrategia_comunicacion", reg.estrategia_comunicacion)
+    db.session.commit()
+    return jsonify(_serialize_sostener_inst(reg)), 200
+
+
+def _serialize_sostener_inst(reg):
+    return {
+        "id": reg.id, "id_sostener_inst": reg.id_sostener_inst,
+        "empresa_id": reg.empresa_id, "usuario_id": reg.usuario_id,
+        "reflexion_punto_partida": reg.reflexion_punto_partida,
+        "estado_cumplimiento_asegurar": reg.estado_cumplimiento_asegurar,
+        "analisis_implementacion": reg.analisis_implementacion,
+        "nivel_institucional_actual": reg.nivel_institucional_actual,
+        "docentes_n1": reg.docentes_n1,
+        "porcentaje_reduccion_alertas": reg.porcentaje_reduccion_alertas,
+        "ruta_elegida": reg.ruta_elegida,
+        "prioridad_estrategica_anual": reg.prioridad_estrategica_anual,
+        "accion_gobernanza": reg.accion_gobernanza,
+        "indicador_medible": reg.indicador_medible,
+        "estrategia_comunicacion": reg.estrategia_comunicacion,
+    }
+
+
+# ── DIRECTIVO: datos grupales institucionales (radar de toda la empresa) ─
+@api.route('/sostener/directivo/grupales', methods=['GET'])
+@jwt_required()
+def sostener_datos_grupales():
+    """
+    Agrega la última evaluación SostenerDocente de cada docente de la empresa,
+    para el radar institucional y la distribución de niveles.
+    """
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    if not u.empresa_id:
+        return jsonify({
+            "totalDocentes": 0, "promedioGlobal": 0,
+            "promedioD1": 0, "promedioD2": 0, "promedioD3": 0, "promedioD4": 0,
+            "distribucionNiveles": {"N1": 0, "N2": 0, "N3": 0, "N4": 0},
+        }), 200
+
+    docentes = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    suma = {"g": 0.0, "d1": 0.0, "d2": 0.0, "d3": 0.0, "d4": 0.0, "n": 0}
+    dist = {"N1": 0, "N2": 0, "N3": 0, "N4": 0}
+
+    for d in docentes:
+        ev = SostenerDocente.query.filter_by(usuario_id=d.id)\
+            .order_by(SostenerDocente.fecha_evaluacion.desc()).first()
+        if not ev:
+            continue
+        suma["g"] += float(ev.promedio_global or 0)
+        suma["d1"] += float(ev.promedio_d1 or 0)
+        suma["d2"] += float(ev.promedio_d2 or 0)
+        suma["d3"] += float(ev.promedio_d3 or 0)
+        suma["d4"] += float(ev.promedio_d4 or 0)
+        suma["n"] += 1
+        g = float(ev.promedio_global or 0)
+        if g >= 4.3: dist["N4"] += 1
+        elif g >= 3.5: dist["N3"] += 1
+        elif g >= 2.5: dist["N2"] += 1
+        else: dist["N1"] += 1
+
+    n = suma["n"] or 1
+    return jsonify({
+        "totalDocentes": suma["n"],
+        "promedioGlobal": round(suma["g"] / n, 2),
+        "promedioD1": round(suma["d1"] / n, 2),
+        "promedioD2": round(suma["d2"] / n, 2),
+        "promedioD3": round(suma["d3"] / n, 2),
+        "promedioD4": round(suma["d4"] / n, 2),
+        "distribucionNiveles": dist,
+    }), 200
+
+@api.route('/sostener/mi-balance', methods=['GET'])
+@jwt_required()
+def sostener_mi_balance():
+    """
+    Evidencia integrada para el balance global del docente:
+    - Auditar: promedio de puntos_ganados en formularios de fase AUDITAR (base 5)
+    - Transformar: retos completados
+    - Liderar: último prompt
+    """
+    u = get_usuario_actual()
+
+    # AUDITAR: promedio de puntos de respuestas en formularios AUDITAR
+    respuestas = db.session.query(RespuestaFormulario).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == u.id,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+
+    puntajes = [float(r.puntos_ganados or 0) for r in respuestas]
+    if puntajes:
+        media_auditar = sum(puntajes) / len(puntajes)
+        n = len(puntajes)
+        varianza = sum((p - media_auditar) ** 2 for p in puntajes) / n
+        desviacion = varianza ** 0.5
+    else:
+        media_auditar = 0
+        desviacion = 0
+        n = 0
+
+    retos_completados = RetoTransformar.query.filter_by(
+        usuario_id=u.id, status_reto="COMPLETADO").count()
+    prompt = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+
+    return jsonify({
+        "auditar": {
+            "media_base5": round(media_auditar, 2),
+            "media_base100": round(media_auditar * 20, 1),
+            "desviacion": round(desviacion, 2),
+            "total_items": n,
+        },
+        "retos_completados": retos_completados,
+        "prompt_liderar": prompt.serialize() if prompt else None,
+    }), 200
