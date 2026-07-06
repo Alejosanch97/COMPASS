@@ -16,6 +16,10 @@ import FaseAsegurar from "./FaseAsegurar";
 import TallerMejoraAsegurar from "./TallerMejoraAsegurar";
 import ModuloDirectivoEstrategico from "./ModuloDirectivoEstrategico";
 
+import FaseSostener from "./FaseSostener";
+import ModuloSostener from "./ModuloSostener";
+import ModuloSostenerDirectivo from "./ModuloSostenerDirectivo";
+
 import "../Styles/dashboard.css";
 
 // ─── URL del backend ──────────────────────────────────────────────────────────
@@ -46,6 +50,9 @@ export const Dashboard = ({ onLogout }) => {
     // ── Estado principal ──────────────────────────────────────────────────────
     const [userData, setUserData] = useState(null);   // usuario del localStorage
     const [huella, setHuella] = useState(null);   // GET /api/huella
+    const [isCompassInfoExpanded, setIsCompassInfoExpanded] = useState(false);
+    const [infoSeccion, setInfoSeccion] = useState('evalua');
+    const [showImprovement, setShowImprovement] = useState(false);
     const [historial, setHistorial] = useState([]);     // GET /api/huella/historial
     const [fases, setFases] = useState([]);     // GET /api/mi-empresa/fases
     const [misRetos, setMisRetos] = useState([]);     // GET /api/mis-retos
@@ -60,6 +67,10 @@ export const Dashboard = ({ onLogout }) => {
     const [faseRespondiendo, setFaseRespondiendo] = useState("AUDITAR");
     const [retoEjecutando, setRetoEjecutando] = useState(null);
     const [retoLiderarId, setRetoLiderarId] = useState(null);
+
+    const [fasesEstado, setFasesEstado] = useState([]);
+
+    const [modoResponder, setModoResponder] = useState(null); // 'auditar2' | null
 
     const handleNavigateFase = (tab, fase) => {
         if (fase) setFaseRespondiendo(fase);
@@ -77,6 +88,16 @@ export const Dashboard = ({ onLogout }) => {
     };
 
     const handleNavigateAsegurar = (tab) => {
+        switchTab(tab);
+    };
+
+    const handleNavigateSostener = (tab, id) => {
+        if (tab === "responder_auditar2") {
+            setModoResponder("auditar2");
+            switchTab("responder_fase");   // reusa el tab de ResponderFormularios
+            return;
+        }
+        if (tab === "modulo_sostener") setModoResponder(null); // reset al volver
         switchTab(tab);
     };
 
@@ -110,16 +131,17 @@ export const Dashboard = ({ onLogout }) => {
 
             // Fases y retos solo si tiene empresa asignada
             if (user.empresa_id) {
-                const [fasesData, retosData, formsData] = await Promise.all([
+                const [fasesData, retosData, formsData, fasesEstadoData] = await Promise.all([
                     apiFetch("/api/mi-empresa/fases").catch(() => []),
                     apiFetch("/api/mis-retos").catch(() => []),
                     apiFetch("/api/formularios").catch(() => []),
+                    apiFetch("/api/mi-empresa/fases-estado").catch(() => []),
                 ]);
                 setFases(Array.isArray(fasesData) ? fasesData : []);
                 setMisRetos(Array.isArray(retosData) ? retosData : []);
                 setMisFormularios(Array.isArray(formsData) ? formsData : []);
+                setFasesEstado(Array.isArray(fasesEstadoData) ? fasesEstadoData : []);
             }
-
             // Notificaciones solo para docentes
             if (user.rol === "DOCENTE") {
                 const notifData = await apiFetch("/api/mis-notificaciones").catch(() => []);
@@ -139,7 +161,7 @@ export const Dashboard = ({ onLogout }) => {
         localStorage.removeItem("token");
         localStorage.removeItem("userATLAS");
         if (onLogout) onLogout();
-        navigate("/");
+        navigate("/", { replace: true });
     };
 
     // ── Toggle menú ───────────────────────────────────────────────────────────
@@ -154,6 +176,102 @@ export const Dashboard = ({ onLogout }) => {
         if (pct >= 40) return { label: "Uso emergente", color: "#f59e0b" };
         return { label: "Exploración inicial", color: "#94a3b8" };
     };
+
+    // Índice de nivel según porcentaje (0=Exploración ... 4=Certificación)
+    const getCompassIndex = (pct) => {
+        if (pct >= 90) return 4;
+        if (pct >= 75) return 3;
+        if (pct >= 60) return 2;
+        if (pct >= 40) return 1;
+        return 0;
+    };
+
+    const getCompassData = (pct) => {
+        const info = [
+            {
+                range: "0–39%",
+                title: "Exploración inicial",
+                subtitle: "Nivel actual basado en evidencia documentada en la plataforma.",
+                body: `Tu COMPASS de IA muestra el nivel de evidencia que has documentado sobre el uso pedagógico de la inteligencia artificial. Actualmente estás en una etapa inicial de exploración, lo que indica que aún no has registrado suficiente evidencia sobre cómo la integras o regulas en el aula. ATLAS no mide entusiasmo ni formación, sino decisiones pedagógicas demostradas. A medida que documentes diagnósticos, planeaciones o reflexiones, tu nivel avanzará.`,
+                footer: "El objetivo no es usar más IA. Es usarla con criterio, ética y coherencia pedagógica. ATLAS está aquí para acompañarte paso a paso.",
+                howToImprove: [
+                    "Completa tu diagnóstico inicial + declara tu postura y criterios de uso responsable de IA. (AUDITAR).",
+                    "Realiza retos pedagógicos (TRANSFORMAR).",
+                    "Diseña experiencia de aprendizaje con IA responsable (ASEGURAR).",
+                    "Comparte evidencias pedagógicas reales (SOSTENER)."
+                ],
+                extraNote: "Tu compass está alineado con marcos internacionales de uso responsable de IA en educación y evalúa evidencia en las cinco fases del Marco ATLAS."
+            },
+            {
+                range: "40–59%",
+                title: "Uso emergente",
+                subtitle: "Nivel basado en evidencia pedagógica documentada.",
+                body: `Tu COMPASS de IA indica que has comenzado a integrar la inteligencia artificial en tu práctica de manera más consciente. 
+            Ya no se trata solo de exploración: has documentado decisiones pedagógicas, planeaciones o evidencias donde la IA cumple un propósito educativo claro. Esto muestra criterio en construcción. 
+            En esta etapa, el desafío no es usar más herramientas, sino profundizar en la coherencia pedagógica.`,
+                footer: "Tu práctica muestra intención. Ahora el siguiente paso es consolidar consistencia.",
+                howToImprove: [
+                    "Fortalece la evidencia en evaluación y retroalimentación (ASEGURAR).",
+                    "Documenta explícitamente tus criterios éticos y pedagógicos de uso de IA.",
+                    "Asegura que tus decisiones estén alineadas con marcos de referencia institucionales.",
+                    "Reflexiona sobre riesgos, sesgos y supervisión humana en tus actividades."
+                ],
+                extraNote: "Estás pasando de un uso ocasional a una práctica con criterio. La madurez no está en la frecuencia de uso, sino en la claridad de tus decisiones."
+            },
+            {
+                range: "60–74%",
+                title: "Práctica consciente",
+                subtitle: "Nivel basado en evidencia pedagógica validada en el Marco ATLAS.",
+                body: `Tu COMPASS de IA muestra que has desarrollado una práctica intencional y documentada en el uso pedagógico de la inteligencia artificial. 
+            La IA en tu aula ya no es intuitiva ni ocasional. Has demostrado planeaciones con propósito, criterios explícitos y evidencias de evaluación mediadas con supervisión docente. 
+            En esta etapa, la clave es coherencia y profundidad.`,
+                footer: "Tu práctica es consistente. El siguiente paso es integrarla de manera transversal y sostenible.",
+                howToImprove: [
+                    "Asegura evidencia en las cinco fases ATLAS (incluyendo LIDERAR y SOSTENER).",
+                    "Documenta cómo tus decisiones se alínean con marcos y lineamientos institucionales.",
+                    "Incorpora análisis de riesgos o sesgos cuando la IA interviene en evaluación.",
+                    "Demuestra impacto observable en el aprendizaje."
+                ],
+                extraNote: "Has pasado de experimentar con IA a gobernarla en tu práctica. Ahora el reto es consolidar coherencia sistémica y liderazgo pedagógico."
+            },
+            {
+                range: "75–89%",
+                title: "Práctica alineada",
+                subtitle: "Nivel avanzado de coherencia pedagógica en el uso de IA.",
+                body: `Tu COMPASS de IA indica que has alcanzado un nivel de práctica alineada y consistente. 
+            La integración de la inteligencia artificial en tu aula demuestra coherencia entre objetivos, actividades y evaluación bajo supervisión humana explícita. 
+            En esta etapa, tu práctica no solo es consciente, sino estructurada. La IA actúa como herramienta mediada por criterio profesional.`,
+                footer: "El siguiente paso es integrar de manera transversal las cinco fases ATLAS y consolidar evidencia sólida.",
+                howToImprove: [
+                    "Evidencia validada en las cinco fases ATLAS.",
+                    "Documentación consistente de impacto en aprendizaje.",
+                    "Integración de criterios éticos y de privacidad en tus decisiones.",
+                    "Claridad institucional o de liderazgo frente al uso de IA."
+                ],
+                extraNote: "Tu práctica muestra madurez profesional frente a la IA. El reto ahora no es hacer más, sino demostrar consistencia y profundidad."
+            },
+            {
+                range: "90–100%",
+                title: "Capacidad ATLAS demostrada",
+                subtitle: "Elegible para proceso de certificación ATLAS.",
+                body: `Tu COMPASS de IA indica que has alcanzado un nivel de integración pedagógica avanzada y coherente. 
+            Has demostrado evidencia sólida en las cinco fases: AUDITAR, TRANSFORMAR, LEDERAR, ASEGURAR y SOSTENER. 
+            La inteligencia artificial en tu práctica está mediada por criterio profesional, alineada con estándares de calidad y documentada.`,
+                /*
+footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de validación de coherencia e impacto.",
+*/
+                howToImprove: [
+                    "Evidencia transversal en las cinco fases.",
+                    "Coherencia entre práctica declarada y práctica observada.",
+                    "Supervisión humana efectiva.",
+                    "Impacto pedagógico verificable."
+                ],
+                extraNote: "La certificación ATLAS reconoce competencia profesional demostrada, no trayectoria recorrida."
+            }
+        ];;
+        return info[getCompassIndex(pct)] || info[0];
+    };
+
 
     const getFaseIcon = (fase) => {
         const m = { AUDITAR: "🔍", TRANSFORMAR: "⚡", LIDERAR: "🧭", ASEGURAR: "🛡️", SOSTENER: "🌱" };
@@ -172,6 +290,45 @@ export const Dashboard = ({ onLogout }) => {
 
     const huellaTotal = huella?.huella_total ?? 0;
     const compass = getCompassLevel(huellaTotal);
+
+    const getHeaderContent = () => {
+        switch (activeTab) {
+            case "talentos": return { title: "Gestión de Talentos", subtitle: "L - Liderar: Administración de Usuarios" };
+            case "formularios": return { title: "Arquitecto de Instrumentos", subtitle: "A - Auditar: Gestión de Formularios" };
+            case "explorador": return { title: "Explorador de Evidencias", subtitle: "Centro de Respuesta" };
+            case "analisis": return { title: "Análisis Estratégico", subtitle: "Data e Insights" };
+            case "retos": return { title: "Mis Retos Estratégicos", subtitle: "L - Liderar: Seguimiento de Objetivos" };
+            case "fase_transformar": return { title: "Fase: Transformar", subtitle: "Estrategia Pedagógica UNESCO" };
+            case "ejecutar_reto": return { title: `Mision ${activeRetoId}`, subtitle: "Consignación de Evidencia Pedagógica" };
+            case "fase_auditar": return { title: "Fase: Auditar", subtitle: "Gobernanza y Sentido Crítico de la IA" };
+            case "responder_fase": 
+            case "fase_liderar": return { title: "Fase: Liderar", subtitle: "Gobernanza y Ética de la IA" };
+            case "retos_liderar": return { title: `Misión`, subtitle: "Auditoría de Responsabilidad Pedagógica" };
+            case "fase_asegurar":
+                return { title: "Fase: Asegurar", subtitle: "Gobernanza y Sostenibilidad de la IA" };
+            case "taller_asegurar":
+                return { title: "Taller de Mejora Guiada", subtitle: "Refactorización Ética de Prácticas" };
+            case "fase_sostener":
+                return { title: "Fase: Sostener", subtitle: "S - Sostener: Radar de Madurez y Diario Reflexivo" };
+            case "modulo_sostener_directivo":
+                return { title: "Panel de Impacto", subtitle: "S - Sostener: Proyección y Sostenibilidad Institucional" };
+            case "analisis_liderazgo":
+                return {
+                    title: "Dashboard de Gobernanza",
+                    subtitle: "Monitoreo Institucional de Riesgo Ético"
+                };
+            case "diagnostico_directivo":
+                return {
+                    title: "Diagnóstico de Gobernanza IA",
+                    subtitle: "A - Asegurar: Radar de Sostenibilidad Institucional"
+                };
+            case "fase_asegurar":
+                return { title: "Fase: Asegurar", subtitle: "Gobernanza y Sostenibilidad de la IA" };
+                const faseTxt = filterPhase === "A" ? "AUDITAR" : filterPhase === "T" ? "TRANSFORMAR" : "LIDERAR";
+                return { title: `Fase ${faseTxt}`, subtitle: `Instrumentos de la Etapa ${filterPhase}` };
+            default: return { title: "Bienvenido al Marco COMPASS", subtitle: "Modelo de Madurez y Gobernanza en IA Educativa" };
+        }
+    };
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
@@ -238,23 +395,6 @@ export const Dashboard = ({ onLogout }) => {
                                         >
                                             Asignación de Retos
                                         </button>
-                                    </>
-                                )}
-
-                                {(userData.rol === "ADMIN" || userData.rol === "DIRECTIVO") && (
-                                    <button className={activeTab === "analisis" ? "active" : ""} onClick={() => switchTab("analisis")}>
-                                        Análisis
-                                    </button>
-                                )}
-                                {userData.rol === "ADMIN" && (
-                                    <>
-                                        <button className={activeTab === "talentos" ? "active" : ""} onClick={() => switchTab("talentos")}>
-                                            Gestión de Talentos
-                                        </button>
-                                        <button className={activeTab === "formularios" ? "active" : ""} onClick={() => switchTab("formularios")}>
-                                            Arquitecto de Instrumentos
-                                        </button>
-
                                     </>
                                 )}
                             </div>
@@ -383,8 +523,10 @@ export const Dashboard = ({ onLogout }) => {
                             {activeTab === "fase_asegurar" && ""}
                             {activeTab === "taller_asegurar" && "Taller de Mejora ASEGURAR"}
                             {activeTab === "diagnostico_directivo" && "Módulo de Gobernanza"}
+                            {activeTab === "modulo_sostener" && "Radar y Autoevaluación"}
+                            {activeTab === "modulo_sostener_directivo" && "Cierre Institucional COMPASS"}
                         </h1>
-                        <p className="header-subtitle">Modelo de Madurez y Gobernanza en IA Educativa</p>
+                        <p className="header-subtitle">{getHeaderContent().subtitle}</p>
                     </div>
 
                 </header>
@@ -393,14 +535,90 @@ export const Dashboard = ({ onLogout }) => {
                 {activeTab === "overview" && (
                     <section className="dashboard-grid">
 
+                        {/* CARD 2: ¿QUÉ ES EL COMPASS DE IA? (explicativo colapsable) */}
+                        <div className={`info-card wide-card compass-explainer-card ${!isCompassInfoExpanded ? 'collapsed' : ''}`}>
+                            <div className="compass-header-unique" onClick={() => setIsCompassInfoExpanded(!isCompassInfoExpanded)}>
+                                <div className="compass-title-group-unique">
+                                    <div className="compass-text-stack-unique">
+                                        <h2 className="compass-h2-unique">
+                                            {userData.rol === "DIRECTIVO" ? "¿Qué es el COMPASS institucional de IA?" : "¿Qué es el COMPASS de IA?"}
+                                        </h2>
+                                        {!isCompassInfoExpanded && <p className="compass-tap-unique">Instrumento de madurez pedagógica basado en el modelo ATLAS</p>}
+                                    </div>
+                                </div>
+                                <div className={`compass-toggle-unique ${isCompassInfoExpanded ? 'active' : ''}`}>
+                                    {isCompassInfoExpanded ? "▲" : "▼"}
+                                </div>
+                            </div>
+                            {isCompassInfoExpanded && (
+                                <div className="compass-body-interactive">
+                                    <div className="compass-full-intro">
+                                        {userData.rol === "DIRECTIVO" ? (
+                                            <>
+                                                <h3>Panorama Estratégico</h3>
+                                                <p>El <strong>COMPASS Institucional</strong> es el sistema integral de medición del modelo ATLAS. No mide herramientas; mide cultura, gobernanza y sostenibilidad del uso de la IA en toda la organización.</p>
+                                                <p>Evalúa cinco dimensiones clave: gobernanza, competencia docente, gestión de datos, supervisión humana y transparencia. Su propósito es determinar si la institución ha pasado de iniciativas individuales a una arquitectura formal y sostenible.</p>
+                                                <p><em>No certifica innovación aislada. Demuestra madurez organizacional.</em></p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h3>Protocolos y Mejora</h3>
+                                                <p>El <strong>COMPASS de IA</strong> es el instrumento de madurez pedagógica basado en el modelo ATLAS. No mide cuánto usas la inteligencia artificial; mide cómo la <strong>integras, la regulas y la documentas</strong> en tu práctica educativa.</p>
+                                                <p>Funciona como una brújula profesional: cada avance se basa en <strong>evidencia demostrada</strong>, no en tiempo invertido ni en cantidad de herramientas. Alineado con estándares internacionales de IA confiable y gobernanza educativa.</p>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="compass-nav-pills">
+                                        <button type="button" className={infoSeccion === 'evalua' ? 'active' : ''} onClick={(e) => { e.stopPropagation(); setInfoSeccion('evalua'); }}>¿Qué evalúa?</button>
+                                        <button type="button" className={infoSeccion === 'no-es' ? 'active' : ''} onClick={(e) => { e.stopPropagation(); setInfoSeccion('no-es'); }}>¿Qué NO es?</button>
+                                        <button type="button" className={infoSeccion === 'sirve' ? 'active' : ''} onClick={(e) => { e.stopPropagation(); setInfoSeccion('sirve'); }}>¿Para qué sirve?</button>
+                                    </div>
+                                    <div className="compass-dynamic-content fade-in">
+                                        {infoSeccion === 'evalua' && (
+                                            <div className="section-content">
+                                                <p className="section-intro-text">El COMPASS analiza tu práctica en cinco dimensiones del modelo ATLAS:</p>
+                                                <ul className="compass-list-clean">
+                                                    <li><strong>• AUDITAR</strong> – Diagnóstico y conciencia crítica.</li>
+                                                    <li><strong>• TRANSFORMAR</strong> – Rediseño pedagógico intencional.</li>
+                                                    <li><strong>• LIDERAR</strong> – Gobernanza y toma de decisiones explícitas.</li>
+                                                    <li><strong>• ASEGURAR</strong> – Evaluación y evidencia de impacto.</li>
+                                                    <li><strong>• SOSTENER</strong> – Sostenibilidad, ética y mejora continua.</li>
+                                                </ul>
+                                                <div className="highlight-note-box">Tu porcentaje refleja el nivel de evidencia documentada en estas dimensiones.</div>
+                                            </div>
+                                        )}
+                                        {infoSeccion === 'no-es' && (
+                                            <div className="section-content">
+                                                <ul className="compass-list-clean">
+                                                    <li>• No es una calificación.</li>
+                                                    <li>• No es una evaluación de desempeño laboral.</li>
+                                                    <li>• No mide entusiasmo tecnológico.</li>
+                                                    <li>• No premia el uso frecuente de herramientas.</li>
+                                                </ul>
+                                                <div className="highlight-note-box gold">Mide criterio, evidencia y coherencia pedagógica.</div>
+                                            </div>
+                                        )}
+                                        {infoSeccion === 'sirve' && (
+                                            <div className="section-content">
+                                                <p className="section-intro-text">El COMPASS te permite:</p>
+                                                <ul className="compass-list-clean">
+                                                    <li>• Visualizar tu madurez pedagógica en el uso de IA.</li>
+                                                    <li>• Documentar evidencia real de tus decisiones.</li>
+                                                    <li>• Orientar tu crecimiento profesional con criterio.</li>
+                                                    <li>• Alinear tu práctica con marcos internacionales.</li>
+                                                </ul>
+                                                <div className="highlight-note-box">Una brújula, no una nota: te orienta hacia dónde crecer.</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         {/* CARD: COMPASS VISUAL */}
                         <div className="info-card huella-card">
                             <h3>Compass de IA</h3>
-                            {isLoading ? (
-                                <div style={{ textAlign: "center", padding: "40px" }}>
-                                    <div className="atlas-loader" />
-                                </div>
-                            ) : (
+                            {(
                                 <>
                                     <div className="atlas-a-container">
                                         <svg viewBox="0 0 100 100" className="atlas-svg-shape">
@@ -436,6 +654,44 @@ export const Dashboard = ({ onLogout }) => {
                                     </div>
                                 </>
                             )}
+                        </div>
+
+                        {/* CARD 1: NIVEL COMPASS ACTUAL (Exploración inicial 0-39%, etc.) */}
+                        <div className="info-card prompt-card professional-upgrade">
+                            <div className="card-header-flex">
+                                <div className="title-group-main">
+                                    <h3>COMPASS: {getCompassData(huellaTotal).title} ({getCompassData(huellaTotal).range})</h3>
+                                    <p className="subtitle-compass-mini">{getCompassData(huellaTotal).subtitle}</p>
+                                </div>
+                            </div>
+                            <div className="prompt-content-rich">
+                                <div className="main-compass-text-body">
+                                    <p className="intro-text-dark">{getCompassData(huellaTotal).body}</p>
+                                    <p className="footer-text-highlight">{getCompassData(huellaTotal).footer}</p>
+                                </div>
+                                <div className="improvement-action-container">
+                                    <button
+                                        className={`btn-how-to-improve ${showImprovement ? 'active' : ''}`}
+                                        onClick={() => setShowImprovement(!showImprovement)}
+                                    >
+                                        {getCompassIndex(huellaTotal) === 4 ? "💎 ¿Qué te acerca a la certificación?" : "¿Cómo subir mi COMPASS?"}
+                                        <span>{showImprovement ? "▲" : "▼"}</span>
+                                    </button>
+                                    {showImprovement && (
+                                        <div className="improvement-dropdown fade-in">
+                                            <h4>{getCompassIndex(huellaTotal) === 4 ? "Requisitos para Certificación:" : "¿Cómo aumentar tu nivel?"}</h4>
+                                            <ul className="improvement-list">
+                                                {getCompassData(huellaTotal).howToImprove.map((step, i) => (
+                                                    <li key={i}><span>→</span> {step}</li>
+                                                ))}
+                                            </ul>
+                                            <div className="improvement-note">
+                                                {getCompassData(huellaTotal).extraNote}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* CARD: DATOS DEL USUARIO */}
@@ -477,31 +733,45 @@ export const Dashboard = ({ onLogout }) => {
                                     <p style={{ color: "#94a3b8", textAlign: "center", padding: "20px" }}>
                                         No hay fases configuradas aún. El administrador debe activarlas.
                                     </p>
-                                ) : (
-                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginTop: "16px" }}>
-                                        {fases.map((f, i) => (
-                                            <div key={i} style={{
-                                                background: f.esta_abierta ? "#f0fdf4" : "#f8fafc",
-                                                border: `2px solid ${f.esta_abierta ? "#22c55e" : "#e2e8f0"}`,
-                                                borderRadius: "12px", padding: "16px", textAlign: "center"
-                                            }}>
-                                                <div style={{ fontSize: "1.8rem", marginBottom: "8px" }}>{getFaseIcon(f.fase)}</div>
-                                                <p style={{ fontWeight: "800", fontSize: "0.8rem", color: "#1e293b", margin: 0 }}>{f.fase}</p>
-                                                <span style={{
-                                                    display: "inline-block", marginTop: "6px",
-                                                    fontSize: "0.65rem", fontWeight: "700",
-                                                    padding: "3px 8px", borderRadius: "20px",
-                                                    background: f.esta_abierta ? "#22c55e" : "#94a3b8",
-                                                    color: "white"
+                                ) : (() => {
+                                    // Solo fases activas y NO completadas, en orden fijo
+                                    const pendientes = fasesEstado.filter(f => f.activa && !f.completada);
+
+                                    if (pendientes.length === 0) {
+                                        return (
+                                            <p style={{ color: "#22c55e", textAlign: "center", padding: "20px", fontWeight: 600 }}>
+                                                🎉 ¡Has completado todas tus fases disponibles! No tienes fases pendientes.
+                                            </p>
+                                        );
+                                    }
+
+                                    return (
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginTop: "16px" }}>
+                                            {pendientes.map((f, i) => (
+                                                <div key={i} style={{
+                                                    background: "#f0fdf4",
+                                                    border: "2px solid #22c55e",
+                                                    borderRadius: "12px", padding: "16px", textAlign: "center"
                                                 }}>
-                                                    {f.esta_abierta ? "ACTIVA" : "PENDIENTE"}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                                    <div style={{ fontSize: "1.8rem", marginBottom: "8px" }}>{getFaseIcon(f.fase)}</div>
+                                                    <p style={{ fontWeight: "800", fontSize: "0.8rem", color: "#1e293b", margin: 0 }}>{f.fase}</p>
+                                                    <span style={{
+                                                        display: "inline-block", marginTop: "6px",
+                                                        fontSize: "0.65rem", fontWeight: "700",
+                                                        padding: "3px 8px", borderRadius: "20px",
+                                                        background: "#f59e0b", color: "white"
+                                                    }}>
+                                                        PENDIENTE
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
+
+                        
 
                         {/* CARD: HISTORIAL DE HUELLA */}
                         {historial.length > 0 && (
@@ -583,39 +853,53 @@ export const Dashboard = ({ onLogout }) => {
                                         <h3>Centro de Notificaciones ATLAS</h3>
                                         <p className="subtitle-compass-mini">Avisos de seguimiento institucional</p>
                                     </div>
-                                    <span className="notification-badge-count">{notificaciones.length} Mensajes</span>
+                                    <span className="notification-badge-count">
+                                        {notificaciones.filter(n => {
+                                            const a = String(n.accion_activada || "").toUpperCase();
+                                            return !a.includes("EXPORTACIÓN") && !a.includes("EXPORTACION") && !a.includes("REPORTE");
+                                        }).length} Mensajes
+                                    </span>
                                 </div>
                                 <div className="notifications-container">
-                                    {notificaciones.length === 0 ? (
+                                    {notificaciones.filter(n => {
+                                        const a = String(n.accion_activada || "").toUpperCase();
+                                        return !a.includes("EXPORTACIÓN") && !a.includes("EXPORTACION") && !a.includes("REPORTE");
+                                    }).length === 0 ? (
                                         <p className="notif-empty">No tienes mensajes pendientes.</p>
-                                    ) : notificaciones.map((n, i) => {
-                                        const accion = String(n.accion_activada || "").toUpperCase();
-                                        const esRezagado = accion.includes("REZAGADOS");
-                                        const esAyuda = accion.includes("AYUDA") || accion.includes("MENTOR");
-                                        return (
-                                            <div key={i} className={`notification-item ${esRezagado ? 'alert' : esAyuda ? 'help' : ''}`}>
-                                                <div className="notif-icon">{esRezagado ? "⚠️" : esAyuda ? "🤝" : "🔔"}</div>
-                                                <div className="notif-content">
-                                                    <p className="notif-text">
-                                                        {esRezagado
-                                                            ? "Atención: tienes tareas pendientes en tus fases. Es importante retomar el proceso."
-                                                            : esAyuda
-                                                                ? "Tu directivo activó una sesión de mentoría / ayuda presencial para ti."
-                                                                : (n.accion_activada || "Notificación institucional")}
-                                                    </p>
-                                                    <div className="notif-footer-meta">
-                                                        <span className="notif-tag-dim">{n.dimension_priorizada || "INSTITUCIONAL"}</span>
-                                                        <span className="notif-date">
-                                                            {n.fecha_accion ? new Date(n.fecha_accion).toLocaleDateString() : "—"}
-                                                        </span>
+                                    ) : notificaciones
+                                        .filter(n => {
+                                            const a = String(n.accion_activada || "").toUpperCase();
+                                            return !a.includes("EXPORTACIÓN") && !a.includes("EXPORTACION") && !a.includes("REPORTE");
+                                        })
+                                        .map((n, i) => {
+                                            const accion = String(n.accion_activada || "").toUpperCase();
+                                            const esRezagado = accion.includes("REZAGADOS");
+                                            const esAyuda = accion.includes("AYUDA") || accion.includes("MENTOR");
+                                            return (
+                                                <div key={i} className={`notification-item ${esRezagado ? 'alert' : esAyuda ? 'help' : ''}`}>
+                                                    <div className="notif-icon">{esRezagado ? "⚠️" : esAyuda ? "🤝" : "🔔"}</div>
+                                                    <div className="notif-content">
+                                                        <p className="notif-text">
+                                                            {esRezagado
+                                                                ? "Atención: tienes tareas pendientes en tus fases. Es importante retomar el proceso."
+                                                                : esAyuda
+                                                                    ? "Tu directivo activó una sesión de mentoría / ayuda presencial para ti."
+                                                                    : (n.accion_activada || "Notificación institucional")}
+                                                        </p>
+                                                        <div className="notif-footer-meta">
+                                                            <span className="notif-tag-dim">{n.dimension_priorizada || "INSTITUCIONAL"}</span>
+                                                            <span className="notif-date">
+                                                                {n.fecha_accion ? new Date(n.fecha_accion).toLocaleDateString() : "—"}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
                                 </div>
                             </div>
                         )}
+
                         {/* CARD: FORMULARIOS DISPONIBLES */}
                         {misFormularios.length > 0 && (
                             <div className="info-card wide-card">
@@ -666,7 +950,15 @@ export const Dashboard = ({ onLogout }) => {
                     <>
                         {/* 1. Fases con su propio layout — SIN wrapper grid, ocupan el ancho completo */}
                         {activeTab === "fase_auditar" && <FaseAuditar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateFase} />}
-                        {activeTab === "responder_fase" && <ResponderFormularios userData={userData} apiFetch={apiFetch} filterPhase={faseRespondiendo} onNavigate={handleNavigateFase} />}
+                        {activeTab === "responder_fase" && (
+                            <ResponderFormularios
+                                userData={userData}
+                                apiFetch={apiFetch}
+                                filterPhase={modoResponder === "auditar2" ? "AUDITAR" : faseRespondiendo}
+                                modoAuditar2={modoResponder === "auditar2"}
+                                onNavigate={modoResponder === "auditar2" ? handleNavigateSostener : handleNavigateFase}
+                            />
+                        )}
                         {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} />}
                         {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} />}
                         {activeTab === "fase_liderar" && <FaseLiderar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
@@ -675,6 +967,9 @@ export const Dashboard = ({ onLogout }) => {
                         {activeTab === "fase_asegurar" && <FaseAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
                         {activeTab === "taller_asegurar" && <TallerMejoraAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
                         {activeTab === "diagnostico_directivo" && <ModuloDirectivoEstrategico userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
+                        {activeTab === "fase_sostener" && <FaseSostener userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "modulo_sostener" && <ModuloSostener userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} />}
+                        {activeTab === "modulo_sostener_directivo" && <ModuloSostenerDirectivo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} />}
 
                         {/* 2. Páginas tipo panel/admin que sí usan el grid de cards de 2 columnas */}
                         {["creador_retos", "gestion_empresas", "asignacion_retos"].includes(activeTab) && (
@@ -686,7 +981,7 @@ export const Dashboard = ({ onLogout }) => {
                         )}
 
                         {/* 3. Bloque genérico (placeholders restantes: talentos, formularios, analisis, etc.) */}
-                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto", "fase_liderar", "retos_liderar", "analisis_liderazgo", "fase_asegurar", "taller_asegurar", "diagnostico_directivo"].includes(activeTab) && (
+                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto", "fase_liderar", "retos_liderar", "analisis_liderazgo", "fase_asegurar", "taller_asegurar", "diagnostico_directivo", "fase_sostener", "modulo_sostener", "modulo_sostener_directivo"].includes(activeTab) && (
                             <section className="dashboard-grid">
                                 <div className="info-card wide-card" style={{ textAlign: "center", padding: "60px 20px" }}>
                                     <div style={{ fontSize: "3rem", marginBottom: "16px" }}>

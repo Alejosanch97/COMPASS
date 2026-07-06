@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { 
-    Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, 
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend 
+import React, { useState, useEffect, useRef } from "react";
+import {
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+    BarChart, Bar, Cell
 } from "recharts";
 import Swal from "sweetalert2";
-import "../Styles/moduloSostener.css"; 
+import "../Styles/moduloSostener.css";
 
 const ModuloSostener = ({ userData, apiFetch, onNavigate, datosExistentes }) => {
-    const [view, setView] = useState("menu"); 
+    const [view, setView] = useState("menu");
     const [respuestas, setRespuestas] = useState({});
     const [loading, setLoading] = useState(false);
     const [historial, setHistorial] = useState(datosExistentes || []);
-    
+
     // Estados para la integración de Retos y Prompts
     const [retos, setRetos] = useState([]);
     const [promptData, setPromptData] = useState(null);
@@ -23,7 +24,13 @@ const ModuloSostener = ({ userData, apiFetch, onNavigate, datosExistentes }) => 
 
     const [showModalReal, setShowModalReal] = useState(false);
 
-    
+    const [auditarDosMedia, setAuditarDosMedia] = useState(null);
+
+    const [huellaCompleta, setHuellaCompleta] = useState(null);
+
+    const cierreTopRef = useRef(null);
+
+
     const [balanceGlobal, setBalanceGlobal] = useState({
         antes: { nivel: "Cargando...", dimensionBaja: "...", puntaje: 0 },
         ahora: { nivel: "...", dimensionAlta: "...", puntaje: 0 },
@@ -44,40 +51,50 @@ const ModuloSostener = ({ userData, apiFetch, onNavigate, datosExistentes }) => 
         fechaRevision: ""
     });
 
+    const [auditarDos, setAuditarDos] = useState(null);   // {existe, auditar, detalle}
+
 
     const dimensiones = [
-        { id: "D1", nombre: "Uso Pedagógico Estratégico", preguntas: [
-            { id: 1, text: "Utilizo IA con un propósito pedagógico claramente definido." },
-            { id: 2, text: "La IA apoya objetivos de aprendizaje explícitos, no solo tareas administrativas." },
-            { id: 3, text: "Reviso críticamente los resultados generados por la IA antes de usarlos." },
-            { id: 4, text: "Ajusto el uso de IA según el perfil y necesidades de mis estudiantes." },
-            { id: 5, text: "Integro la IA como complemento, no como reemplazo de mi criterio profesional." },
-            { id: 6, text: "Evalúo si el uso de IA realmente mejora la experiencia de aprendizaje." }
-        ]},
-        { id: "D2", nombre: "Ética y Protección de Datos", preguntas: [
-            { id: 7, text: "Verifico que las herramientas de IA respeten principios de privacidad." },
-            { id: 8, text: "Evito compartir datos sensibles de estudiantes en plataformas externas." },
-            { id: 9, text: "Informo a mis estudiantes cuando utilizo IA en procesos pedagógicos." },
-            { id: 10, text: "Identifico posibles sesgos en los resultados generados por IA." },
-            { id: 11, text: "Intervengo cuando detecto contenido potencialmente inadecuado." },
-            { id: 12, text: "Conozco las políticas institucionales sobre uso de IA." }
-        ]},
-        { id: "D3", nombre: "Impacto en el Aprendizaje", preguntas: [
-            { id: 13, text: "La IA me permite ofrecer retroalimentación más personalizada." },
-            { id: 14, text: "He observado mejoras en autonomía estudiantil gracias al uso de IA." },
-            { id: 15, text: "Uso IA para diferenciar actividades según niveles." },
-            { id: 16, text: "La IA reduce carga operativa sin afectar calidad pedagógica." },
-            { id: 17, text: "Evalúo periódicamente si el uso de IA está generando resultados positivos." },
-            { id: 18, text: "Ajusto mi práctica cuando la IA no aporta valor real." }
-        ]},
-        { id: "D4", nombre: "Desarrollo Profesional", preguntas: [
-            { id: 19, text: "Me actualizo sobre nuevas aplicaciones educativas de IA." },
-            { id: 20, text: "Participo en conversaciones o comunidades sobre uso responsable de IA." },
-            { id: 21, text: "Reflexiono sobre mi dependencia o equilibrio frente a la tecnología." },
-            { id: 22, text: "Comparto buenas prácticas con otros docentes." },
-            { id: 23, text: "Documento experiencias significativas de uso." },
-            { id: 24, text: "Busco formación adicional cuando identifico vacíos en mi competencia." }
-        ]}
+        {
+            id: "D1", nombre: "Uso Pedagógico Estratégico", preguntas: [
+                { id: 1, text: "Utilizo IA con un propósito pedagógico claramente definido." },
+                { id: 2, text: "La IA apoya objetivos de aprendizaje explícitos, no solo tareas administrativas." },
+                { id: 3, text: "Reviso críticamente los resultados generados por la IA antes de usarlos." },
+                { id: 4, text: "Ajusto el uso de IA según el perfil y necesidades de mis estudiantes." },
+                { id: 5, text: "Integro la IA como complemento, no como reemplazo de mi criterio profesional." },
+                { id: 6, text: "Evalúo si el uso de IA realmente mejora la experiencia de aprendizaje." }
+            ]
+        },
+        {
+            id: "D2", nombre: "Ética y Protección de Datos", preguntas: [
+                { id: 7, text: "Verifico que las herramientas de IA respeten principios de privacidad." },
+                { id: 8, text: "Evito compartir datos sensibles de estudiantes en plataformas externas." },
+                { id: 9, text: "Informo a mis estudiantes cuando utilizo IA en procesos pedagógicos." },
+                { id: 10, text: "Identifico posibles sesgos en los resultados generados por IA." },
+                { id: 11, text: "Intervengo cuando detecto contenido potencialmente inadecuado." },
+                { id: 12, text: "Conozco las políticas institucionales sobre uso de IA." }
+            ]
+        },
+        {
+            id: "D3", nombre: "Impacto en el Aprendizaje", preguntas: [
+                { id: 13, text: "La IA me permite ofrecer retroalimentación más personalizada." },
+                { id: 14, text: "He observado mejoras en autonomía estudiantil gracias al uso de IA." },
+                { id: 15, text: "Uso IA para diferenciar actividades según niveles." },
+                { id: 16, text: "La IA reduce carga operativa sin afectar calidad pedagógica." },
+                { id: 17, text: "Evalúo periódicamente si el uso de IA está generando resultados positivos." },
+                { id: 18, text: "Ajusto mi práctica cuando la IA no aporta valor real." }
+            ]
+        },
+        {
+            id: "D4", nombre: "Desarrollo Profesional", preguntas: [
+                { id: 19, text: "Me actualizo sobre nuevas aplicaciones educativas de IA." },
+                { id: 20, text: "Participo en conversaciones o comunidades sobre uso responsable de IA." },
+                { id: 21, text: "Reflexiono sobre mi dependencia o equilibrio frente a la tecnología." },
+                { id: 22, text: "Comparto buenas prácticas con otros docentes." },
+                { id: 23, text: "Documento experiencias significativas de uso." },
+                { id: 24, text: "Busco formación adicional cuando identifico vacíos en mi competencia." }
+            ]
+        }
     ];
 
     const getCompassData = (score) => {
@@ -336,18 +353,25 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
 
     const getMetricasAuditoria = () => {
         const r = respuestasAuditarReal;
-        const getProm = (ids) => {
-            const filtradas = r.filter(q => ids.includes(q.ID_Pregunta)); // Asumiendo que tienes ID_Pregunta en el objeto
+
+        // Promedia los puntos de las preguntas cuyo orden cae en el rango dado
+        const promPorOrden = (ordenes) => {
+            const filtradas = r.filter(q => ordenes.includes(Number(q.Orden_Pregunta)));
             if (filtradas.length === 0) return 0;
-            const suma = filtradas.reduce((acc, curr) => acc + parseFloat(String(curr.Puntos_Ganados || 0).replace(',', '.')), 0);
+            const suma = filtradas.reduce(
+                (acc, curr) => acc + parseFloat(String(curr.Puntos_Ganados || 0).replace(',', '.')),
+                0
+            );
             return (suma / filtradas.length).toFixed(2);
         };
 
+        const rango = (ini, fin) => Array.from({ length: fin - ini + 1 }, (_, i) => ini + i);
+
         return {
-            desarrollo: getProm(['Q-A3-09', 'Q-A3-10', 'Q-A3-11', 'Q-A3-12','Q-A6-23', 'Q-A6-24', 'Q-A6-25', 'Q-A6-26',]),
-            etica: getProm(['Q-A4-13', 'Q-A4-14', 'Q-A4-15', 'Q-A4-16', 'Q-A4-17']),
-            impacto: getProm(['Q-A5-18', 'Q-A5-19', 'Q-A5-20', 'Q-A5-21', 'Q-A5-22']),
-            uso: getProm(['Q-A2-04', 'Q-A2-05', 'Q-A2-06', 'Q-A2-07', 'Q-A2-08' ])
+            uso: promPorOrden(rango(4, 8)),
+            desarrollo: promPorOrden([...rango(9, 12), ...rango(23, 26)]),
+            etica: promPorOrden(rango(13, 17)),
+            impacto: promPorOrden(rango(18, 22)),
         };
     };
 
@@ -481,9 +505,13 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                     puntosMedia: balance.auditar.media_base5.toFixed(2),
                     promedioEscala100: balance.auditar.media_base100.toFixed(1),
                     desviacion: balance.auditar.desviacion.toFixed(2),
+                    puntosModa: balance.auditar.moda.toFixed(2),          // ← MODA ya no sale vacío
+                    puntajeTotal: balance.auditar.puntaje_total,
                     totalItems: balance.auditar.total_items,
                     analisis: { nivel: "Evidencia de Auditoría", color: "#4c51bf" }
                 });
+
+                if (balance.auditar_dos) setAuditarDosMedia(balance.auditar_dos);
 
                 // Prompt de Liderar (para el análisis individual)
                 if (balance.prompt_liderar) setPromptData(balance.prompt_liderar);
@@ -514,6 +542,53 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
         };
         integrarFases();
     }, [userData, historial]);
+
+    useEffect(() => {
+        const cargarAuditarReal = async () => {
+            try {
+                const data = await apiFetch("/api/sostener/mis-respuestas-auditar").catch(() => []);
+                if (Array.isArray(data)) {
+                    setRespuestasAuditarReal(data);
+                }
+            } catch (e) {
+                console.error("Error cargando respuestas auditar:", e);
+            }
+        };
+        cargarAuditarReal();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await apiFetch("/api/sostener/auditar-dos/estado").catch(() => null);
+                if (data) setAuditarDos(data);
+            } catch (e) {
+                console.error("Error cargando auditar-dos:", e);
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await apiFetch("/api/sostener/mis-retos-transformar").catch(() => []);
+                if (Array.isArray(data)) setRetos(data);
+            } catch (e) {
+                console.error("Error cargando retos transformar:", e);
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await apiFetch("/api/sostener/mi-huella-completa").catch(() => null);
+                if (data) setHuellaCompleta(data);
+            } catch (e) {
+                console.error("Error cargando huella completa:", e);
+            }
+        })();
+    }, []);
 
     // --- LÓGICA HEURÍSTICA PROMPTING INDIVIDUAL ---
     const analizarPromptIndiv = (p) => {
@@ -601,22 +676,22 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
     };
 
     const toPct = (val) => ((val / 5) * 100).toFixed(1);
-    const pD = historial[0]?.["Promedio_D1, Promedio_D2, Promedio_D3, Promedio_D4"]?.split(',').map(v => parseFloat(v)) || [0,0,0,0];
+    const pD = historial[0]?.["Promedio_D1, Promedio_D2, Promedio_D3, Promedio_D4"]?.split(',').map(v => parseFloat(v)) || [0, 0, 0, 0];
 
     const handleFinalSaveCierre = async () => {
-    // 1. Validaciones de calidad antes de procesar
-    if (!formDataCierre.compromisoAccion || formDataCierre.compromisoAccion.length < 150) {
-        Swal.fire("Acción Incompleta", "Tu compromiso debe tener al menos 150 caracteres para ser transformador.", "warning");
-        return;
-    }
+        // 1. Validaciones de calidad antes de procesar
+        if (!formDataCierre.compromisoAccion || formDataCierre.compromisoAccion.length < 150) {
+            Swal.fire("Acción Incompleta", "Tu compromiso debe tener al menos 150 caracteres para ser transformador.", "warning");
+            return;
+        }
 
-    setLoading(true);
-    
-    // Obtenemos los cálculos ponderados que corregimos (Evita el 0% en la DB)
-    const comp = getComparativoAtlas();
-    const idAUsar = historial[0]?.ID_Sostener;
+        setLoading(true);
 
-    // 2. Construcción del payload de cierre (snake_case para el backend)
+        // Obtenemos los cálculos ponderados que corregimos (Evita el 0% en la DB)
+        const comp = getComparativoAtlas();
+        const idAUsar = historial[0]?.ID_Sostener;
+
+        // 2. Construcción del payload de cierre (snake_case para el backend)
         const payloadCierre = {
             id: historial[0]?._id || historial[0]?.ID_Sostener,
             reflexion_antes: formDataCierre.reflexionAntes,
@@ -668,38 +743,30 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
     const valorMinimo = Math.min(...datasetAuditoria.map(d => d.valor));
 
     const getComparativoAtlas = () => {
-    // 1. Ejecutamos tu función de métricas (la que no querías cambiar)
-        const m = getMetricasAuditoria();
+        // PUNTO DE PARTIDA = puntaje inicial de AUDITAR (base 100 vía Compass)
+        // getCompassData usa puntaje_total; para % usamos media_base100 como referencia 0-100.
+        const inicialPct = parseFloat(selectedFormReal?.promedioEscala100 || 0); // 0-100
+        const inicialBase5 = parseFloat(selectedFormReal?.puntosMedia || 0);
 
-        // 2. CÁLCULO PONDERADO (EL ANTES)
-        // Aplicamos los pesos: Uso (25%), Ética (25%), Impacto/Gobernanza (25%), Desarrollo (25%)*
-        // Nota: Como tienes 4 categorías en la función y 5 pesos en la tabla, 
-        // agrupamos según la lógica de tus IDs.
+        // MADUREZ ACTUAL = huella ponderada de las 5 fases (0-100)
+        const actualPct = huellaCompleta
+            ? parseFloat(huellaCompleta.huella_total)
+            : inicialPct;
 
-        const scoreAntesPct = (
-            (parseFloat(m.uso) / 5) * 25 +        // Uso pedagógico (25%)
-            (parseFloat(m.etica) / 5) * 25 +      // Ética y riesgo (25%)
-            (parseFloat(m.impacto) / 5) * 25 +    // Gobernanza/Impacto (25%)
-            (parseFloat(m.desarrollo) / 5) * 25   // Desarrollo/Fundamentos (25%)
-        );
-
-        // Convertimos a base 5 para textos y compatibilidad
-        const scoreAntesBase5 = scoreAntesPct / 20;
-        const nivelAntes = getCompassData(scoreAntesPct).nivel;
-
-        // 3. DATOS DE SOSTENER (EL AHORA)
-        const scoreAhoraBase5 = parseFloat(historial[0]?.Promedio_Global || 0);
-        const scoreAhoraPct = scoreAhoraBase5 * 20;
-
-        // 4. CRECIMIENTO REAL (Diferencia de porcentajes)
-        const crecimiento = (scoreAhoraPct - scoreAntesPct).toFixed(1);
+        // CRECIMIENTO = huella final − inicial
+        const crecimiento = (actualPct - inicialPct).toFixed(1);
 
         return {
-            scoreAntes: scoreAntesBase5,
-            nivelAntes,
-            scoreAhora: scoreAhoraBase5,
-            nivelAhora: historial[0]?.Nivel_Calculado || "En proceso",
-            crecimiento
+            scoreAntes: inicialBase5,
+            scoreAntesPct: inicialPct.toFixed(1),
+            nivelAntes: getCompassData(selectedFormReal?.puntajeTotal).nivel,
+            scoreAhora: actualPct / 20,            // base 5 aproximada para textos
+            scoreAhoraPct: actualPct.toFixed(1),
+            nivelAhora: huellaCompleta
+                ? `${huellaCompleta.fases_completas}/5 fases · ${actualPct.toFixed(0)}/100`
+                : "Huella en progreso",
+            crecimiento,
+            hayHuella: !!huellaCompleta,
         };
     };
 
@@ -1034,6 +1101,14 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                                             <button className={viewModeReal === 'stats' ? 'active' : ''} onClick={() => setViewModeReal('stats')}>📊 Estadísticas</button>
                                             <button className={viewModeReal === 'survey' ? 'active' : ''} onClick={() => setViewModeReal('survey')}>📝 Puntos por Ítem</button>
                                             <button className={`compass-tab-unique ${viewModeReal === 'compass' ? 'active' : ''}`} onClick={() => setViewModeReal('compass')}>🧭 Análisis Compass</button>
+                                            {auditarDos?.existe && (
+                                                <button
+                                                    className={`compass-tab-unique ${viewModeReal === 'compass2' ? 'active' : ''}`}
+                                                    onClick={() => setViewModeReal('compass2')}
+                                                >
+                                                    ✨ Análisis Compass Nuevo
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1089,20 +1164,64 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                                         {viewModeReal === 'compass' && (
                                             <div className="audit-compass-view animate-slide-up">
                                                 <div className="audit-compass-badge">
-                                                    {getCompassData(selectedFormReal?.porcentajeGlobal).nivel}
+                                                    {getCompassData(selectedFormReal?.puntajeTotal).nivel}
                                                 </div>
                                                 <div className="audit-compass-box">
                                                     <h4>Diagnóstico Compass (Auditoría)</h4>
-                                                    <p>{getCompassData(selectedFormReal?.porcentajeGlobal).desc}</p>
+                                                    <p>{getCompassData(selectedFormReal?.puntajeTotal).desc}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {viewModeReal === 'compass2' && auditarDos?.existe && (
+                                            <div className="audit-compass-view animate-slide-up">
+                                                <div className="audit-compass-badge">
+                                                    {getCompassData(auditarDos.auditar.puntaje_total).nivel}
+                                                </div>
+
+                                                {/* Comparativa antes vs ahora */}
+                                                <div className="audit-metrics-grid" style={{ marginBottom: '16px' }}>
+                                                    <div className="audit-stat-box">
+                                                        <span className="audit-val blue">{selectedFormReal?.puntosMedia}</span>
+                                                        <span className="audit-lbl">MEDIA ANTES</span>
+                                                    </div>
+                                                    <div className="audit-stat-box">
+                                                        <span className="audit-val green">{auditarDos.auditar.media_base5.toFixed(2)}</span>
+                                                        <span className="audit-lbl">MEDIA AHORA</span>
+                                                    </div>
+                                                    <div className="audit-stat-box">
+                                                        {(() => {
+                                                            const delta = (auditarDos.auditar.puntaje_total - (selectedFormReal?.puntajeTotal || 0));
+                                                            const signo = delta > 0 ? "+" : "";
+                                                            return (
+                                                                <span className="audit-val orange">{signo}{delta.toFixed(1)}</span>
+                                                            );
+                                                        })()}
+                                                        <span className="audit-lbl">Δ PUNTOS</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="audit-compass-box">
+                                                    <h4>Análisis Compass Nuevo (Reevaluación)</h4>
+                                                    <p>{getCompassData(auditarDos.auditar.puntaje_total).desc}</p>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="audit-modal-footer">
+                                    <div className="audit-modal-footer" style={{ display: 'flex', gap: '10px' }}>
                                         <button className="audit-btn-close-full" onClick={() => setShowModalReal(false)}>
                                             Cerrar Diagnóstico
                                         </button>
+                                        {!auditarDos?.existe && (
+                                            <button
+                                                className="audit-btn-close-full"
+                                                style={{ background: '#c5a059', color: '#fff' }}
+                                                onClick={() => onNavigate('responder_auditar2')}
+                                            >
+                                                🔄 Iniciar Nuevo Diagnóstico
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1118,7 +1237,7 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                                     <div className="sos-audit-head-row">
                                         <div>
                                             <h5 className="sos-audit-title" style={{ color: statsPrompt?.color }}>
-                                                {promptData.Clasificacion_Riesgo?.split('|')[0] || "Análisis en curso"}
+                                                {promptData.clasificacion_riesgo?.split('|')[0] || promptData.categoria_uso || "Dictamen Ético"}
                                             </h5>
                                             <small>Auditoría bajo Marco UNESCO 2024 & AI Act</small>
                                         </div>
@@ -1146,7 +1265,7 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                                     <div className="sos-dictamen-box">
                                         <strong className="sos-dictamen-tag">🔍 Hallazgos de la Auditoría:</strong>
                                         <p className="sos-prompt-preview">
-                                            "{promptData.Prompt_Original?.substring(0, 800)}"
+                                            "{promptData.prompt_original?.substring(0, 800)}"
                                         </p>
                                         <p className="sos-dictamen-text">
                                             {promptData.puntaje_agencia <= 2
@@ -1172,9 +1291,9 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                             <div className="retos-summary-grid">
                                 {retos.length > 0 ? retos.map((r, i) => (
                                     <div key={i} className="reto-mini-card">
-                                        <h5>{r.Nombre_Reto}</h5>
-                                        <span className={`status-pill ${r.Status_Reto}`}>{r.Status_Reto}</span>
-                                        <small>{r.Nivel_UNESCO}</small>
+                                        <h5>{r.nombre_reto || `Reto ${r.numero_reto}`}</h5>
+                                        <span className={`status-pill ${r.status_reto}`}>{r.status_reto}</span>
+                                        <small>{r.nivel_unesco}</small>
                                     </div>
                                 )) : <p>No hay retos registrados.</p>}
                             </div>
@@ -1183,645 +1302,704 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                         {/* EVOLUCIÓN */}
                         <div className="sos-history-chart">
                             <span className="dash-lider-2026-panel-id">Panel 5</span>
-                            <h4>Evolución Histórica ATLAS</h4>
-                            <ResponsiveContainer width="100%" height={180}>
-                                <LineChart data={[...historial].reverse()}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="Fecha_Evaluacion" />
-                                    <YAxis domain={[0, 5]} hide />
-                                    <Tooltip />
-                                    <Line type="monotone" dataKey="Promedio_Global" stroke="#c5a059" strokeWidth={3} />
-                                </LineChart>
-                            </ResponsiveContainer>
+
+                            {auditarDosMedia?.media_base5 != null ? (
+                                <>
+                                    <h4>Progreso de Auditoría (Antes vs Después)</h4>
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <BarChart
+                                            data={[
+                                                { etapa: "1er Diagnóstico", media: parseFloat(selectedFormReal?.puntosMedia || 0), fill: "#94a3b8" },
+                                                { etapa: "2do Diagnóstico", media: auditarDosMedia.media_base5, fill: "#c5a059" },
+                                            ]}
+                                            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="etapa" tick={{ fontSize: 12 }} />
+                                            <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
+                                            <Tooltip formatter={(v) => [`${v} / 5`, "Media"]} />
+                                            <Bar dataKey="media" radius={[6, 6, 0, 0]}>
+                                                {[
+                                                    { fill: "#94a3b8" },
+                                                    { fill: "#c5a059" },
+                                                ].map((c, i) => <Cell key={i} fill={c.fill} />)}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+
+                                    {(() => {
+                                        const antes = parseFloat(selectedFormReal?.puntosMedia || 0);
+                                        const despues = auditarDosMedia.media_base5;
+                                        const delta = (despues - antes).toFixed(2);
+                                        const subio = despues >= antes;
+                                        return (
+                                            <div className="sos-dictamen-box" style={{ marginTop: '12px' }}>
+                                                <p className="sos-dictamen-text">
+                                                    {subio ? "📈" : "📉"} Tu media pasó de <strong>{antes.toFixed(2)}</strong> a{" "}
+                                                    <strong>{despues.toFixed(2)}</strong> (base 5).
+                                                    {subio
+                                                        ? ` Mejoraste ${delta} puntos. Tu práctica con IA muestra progreso.`
+                                                        : ` Variación de ${delta} puntos. Revisa las áreas donde bajaste.`}
+                                                </p>
+                                            </div>
+                                        );
+                                    })()}
+                                </>
+                            ) : (
+                                <>
+                                    <h4>Evolución Histórica ATLAS</h4>
+                                    {historial && historial.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={180}>
+                                            <LineChart data={[...historial].reverse()}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                                <XAxis dataKey="Fecha_Evaluacion" tick={{ fontSize: 12 }} />
+                                                <YAxis domain={[0, 5]} hide />
+                                                <Tooltip />
+                                                <Line type="monotone" dataKey="Promedio_Global" stroke="#c5a059" strokeWidth={3} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="sos-empty-state">
+                                            <p>Aún no has hecho tu segundo diagnóstico. <br />
+                                                Complétalo para comparar tu progreso Antes vs Después.</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
 
             {view === "cierre" && (
-                <div className="sostener-cuestionario animate-fade-in cierre-full-view">
-                    {/* Header Fijo */}
-                    <div className="cierre-nav-header">
-                        <button className="btn-sos-back" onClick={() => setView("menu")}>⬅ Salir del Cierre</button>
-                        <div className="cierre-stepper">
-                            {[1, 2, 3, 4, 5].map(s => (
-                                <div key={s} className={`step-pill ${cierreStep >= s ? 'active' : ''} ${cierreStep > s ? 'completed' : ''}`}>
-                                    {s < cierreStep ? '✓' : s}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                <div ref={cierreTopRef} className="sostener-cuestionario animate-fade-in cierre-full-view">
 
-                    <div className="sos-form-container cierre-main-content">
-
-                        {/* FASE 1: EL ORIGEN - DISEÑO BLINDADO */}
-                        {cierreStep === 1 && (
-                            <div className="at-cierre-fase-wrapper animate-slide-up">
-
-                                {/* ENCABEZADO CENTRADO Y LIMPIO */}
-                                <header className="at-cierre-header-main">
-                                    <div className="at-cierre-badge-container">
-                                        <span className="at-badge-gold">Fase 1: El Origen</span>
+                    <div className="sostener-cuestionario animate-fade-in cierre-full-view">
+                        {/* Header Fijo */}
+                        <div className="cierre-nav-header">
+                            <button className="btn-sos-back" onClick={() => setView("menu")}>⬅ Salir del Cierre</button>
+                            <div className="cierre-stepper">
+                                {[1, 2, 3, 4, 5].map(s => (
+                                    <div key={s} className={`step-pill ${cierreStep >= s ? 'active' : ''} ${cierreStep > s ? 'completed' : ''}`}>
+                                        {s < cierreStep ? '✓' : s}
                                     </div>
-                                    <h2 className="at-cierre-title">¿Dónde comenzó tu viaje?</h2>
-                                    <p className="at-cierre-subtitle">
-                                        Análisis retrospectivo basado en el <strong>Diagnóstico de Auditoría</strong>.
-                                    </p>
-                                </header>
+                                ))}
+                            </div>
+                        </div>
 
-                                {/* GRID DE RESULTADOS (DIAGNÓSTICO) */}
-                                <div className="at-cierre-grid-container">
+                        <div className="sos-form-container cierre-main-content">
 
-                                    {/* CARD IZQUIERDA: SCORE GLOBAL (AZUL PREMIUM) */}
-                                    <section className="at-cierre-card-premium at-variant-dark">
-                                        <div className="at-card-tag">Estado Inicial</div>
+                            {/* FASE 1: EL ORIGEN - DISEÑO BLINDADO */}
+                            {cierreStep === 1 && (
+                                <div className="at-cierre-fase-wrapper animate-slide-up">
 
-                                        <div className="at-score-hero-layout">
-                                            <div className="at-score-circle">
-                                                <span className="at-score-big-num">{selectedFormReal?.puntosMedia}</span>
-                                                <span className="at-score-subtext">Media Global</span>
+                                    {/* ENCABEZADO CENTRADO Y LIMPIO */}
+                                    <header className="at-cierre-header-main">
+                                        <div className="at-cierre-badge-container">
+                                            <span className="at-badge-gold">Fase 1: El Origen</span>
+                                        </div>
+                                        <h2 className="at-cierre-title">¿Dónde comenzó tu viaje?</h2>
+                                        <p className="at-cierre-subtitle">
+                                            Análisis retrospectivo basado en el <strong>Diagnóstico de Auditoría</strong>.
+                                        </p>
+                                    </header>
+
+                                    {/* GRID DE RESULTADOS (DIAGNÓSTICO) */}
+                                    <div className="at-cierre-grid-container">
+
+                                        {/* CARD IZQUIERDA: SCORE GLOBAL (AZUL PREMIUM) */}
+                                        <section className="at-cierre-card-premium at-variant-dark">
+                                            <div className="at-card-tag">Estado Inicial</div>
+
+                                            <div className="at-score-hero-layout">
+                                                <div className="at-score-circle">
+                                                    <span className="at-score-big-num">{selectedFormReal?.puntajeTotal ?? 0}</span>
+                                                    <span className="at-score-subtext">Puntaje Inicial (Auditar)</span>
+                                                </div>
+
+                                                <h3 className="at-level-title">
+                                                    {getCompassData(selectedFormReal?.puntajeTotal).nivel}
+                                                </h3>
                                             </div>
 
-                                            <h3 className="at-level-title">
-                                                {getCompassData(selectedFormReal?.porcentajeGlobal).nivel}
-                                            </h3>
+                                            <div className="at-description-box">
+                                                <p>{getCompassData(selectedFormReal?.puntajeTotal).desc}</p>
+                                            </div>
+                                        </section>
+
+                                        {/* CARD DERECHA: GRÁFICA DE BARRAS (ESTILO DASHBOARD) */}
+                                        <section className="at-cierre-card-premium at-variant-white">
+                                            <h4 className="at-chart-title">Desempeño por Dimensión (Inicial)</h4>
+
+                                            <div className="at-vertical-chart-area">
+                                                {datasetAuditoria.map((item, idx) => {
+                                                    const isMin = item.valor === valorMinimo && item.valor < 5;
+                                                    return (
+                                                        <div key={idx} className="at-chart-col">
+                                                            <span className="at-col-val">{item.valor.toFixed(1)}</span>
+                                                            <div className="at-col-track">
+                                                                <div
+                                                                    className={`at-col-fill ${isMin ? 'at-is-critical' : ''}`}
+                                                                    style={{ height: `${(item.valor / 5) * 100}%` }}
+                                                                >
+                                                                    {isMin && <span className="at-alert-pulse"></span>}
+                                                                </div>
+                                                            </div>
+                                                            <span className="at-col-label">{item.label}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {valorMinimo < 3 && (
+                                                <div className="at-critical-alert-box">
+                                                    <span className="at-alert-icon">⚠️</span>
+                                                    <p>Punto de mejora crítico: <strong>{datasetAuditoria.find(d => d.valor === valorMinimo)?.label}</strong></p>
+                                                </div>
+                                            )}
+                                        </section>
+                                    </div>
+
+                                    {/* SECCIÓN DE REFLEXIÓN (INDETERMINADA POR EL DISEÑO DE RETOS) */}
+                                    <div className="at-cierre-reflection-section">
+                                        <div className="at-reflection-header">
+                                            <h4>Guía de Reflexión</h4>
+                                            <ul className="at-reflection-prompts">
+                                                <li>¿Qué prácticas eran más funcionales que estratégicas?</li>
+                                                <li>¿Dónde delegabas más de lo necesario?</li>
+                                                <li>¿Qué riesgos no habías identificado aún?</li>
+                                            </ul>
                                         </div>
 
-                                        <div className="at-description-box">
-                                            <p>{getCompassData(selectedFormReal?.porcentajeGlobal).desc}</p>
+                                        <div className="at-reflection-input-group">
+                                            <textarea
+                                                className="at-reflection-textarea"
+                                                readOnly={isReadOnly}
+                                                placeholder="Escribe tu análisis aquí..."
+                                                value={formDataCierre.reflexionAntes}
+                                                onChange={(e) => setFormDataCierre({ ...formDataCierre, reflexionAntes: e.target.value })}
+                                            />
+                                            <div className={`at-char-counter ${formDataCierre.reflexionAntes.length >= 200 ? 'at-ready' : ''}`}>
+                                                <span className="at-counter-number">
+                                                    {formDataCierre.reflexionAntes.length} / 200
+                                                </span>
+                                                <span className="at-counter-label">caracteres requeridos</span>
+                                            </div>
                                         </div>
-                                    </section>
+                                    </div>
+                                </div>
+                            )}
 
-                                    {/* CARD DERECHA: GRÁFICA DE BARRAS (ESTILO DASHBOARD) */}
-                                    <section className="at-cierre-card-premium at-variant-white">
-                                        <h4 className="at-chart-title">Desempeño por Dimensión (Inicial)</h4>
+                            {/* ETAPA 2: LA TRANSFORMACIÓN (SOSTENER) - DISEÑO COMPARATIVO EVOLUTIVO */}
+                            {cierreStep === 2 && (
+                                <div className="at-c2-wrapper animate-slide-up">
 
-                                        <div className="at-vertical-chart-area">
-                                            {datasetAuditoria.map((item, idx) => {
-                                                const isMin = item.valor === valorMinimo && item.valor < 5;
-                                                return (
-                                                    <div key={idx} className="at-chart-col">
-                                                        <span className="at-col-val">{item.valor.toFixed(1)}</span>
-                                                        <div className="at-col-track">
+                                    {/* ENCABEZADO DE ÉXITO */}
+                                    <header className="at-c2-header-main">
+                                        <div className="at-c2-badge-container">
+                                            <span className="at-badge-success">Fase 2: Consolidación</span>
+                                        </div>
+                                        <h2 className="at-c2-title">Tu evolución tangible</h2>
+                                        <p className="at-c2-subtitle">
+                                            Has completado el ciclo de Sostenibilidad. Mira cuánto has avanzado desde tu diagnóstico inicial:
+                                        </p>
+                                    </header>
+
+                                    {/* DASHBOARD DE MÉTRICAS DE IMPACTO */}
+                                    <div className="at-c2-impact-grid">
+
+                                        {/* INDICADOR DE CRECIMIENTO (+X%) */}
+                                        <div className="at-c2-card-stats at-variant-dark-gold">
+                                            <div className="at-c2-growth-circle">
+                                                <span className="at-c2-plus">+</span>
+                                                <span className="at-c2-growth-num">{getComparativoAtlas().crecimiento}</span>
+                                                <span className="at-c2-percent">%</span>
+                                            </div>
+                                            <h4>Crecimiento Global</h4>
+                                            <p>Incremento en madurez pedagógica</p>
+                                        </div>
+
+                                        {/* STATUS ACTUAL AUTOMÁTICO - CORREGIDO PARA TEXTO LARGO */}
+                                        <div className="at-c2-card-stats at-variant-white">
+                                            <div className="at-c2-status-row">
+                                                <div className="at-c2-status-item at-level-block">
+                                                    <label>Estado Alcanzado</label>
+                                                    <strong className="at-text-level">{getComparativoAtlas().nivelAhora}</strong>
+                                                </div>
+                                                <div className="at-c2-status-item">
+                                                    <label>Fortaleza</label>
+                                                    <strong className="at-text-gold">{getComparativoAtlas().dimensionCrecimiento || "Impacto"}</strong>
+                                                </div>
+                                                <div className="at-c2-status-item">
+                                                    <label>Riesgos</label>
+                                                    <strong className="at-text-forest">-{alerts.length || 0} mitigados</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* PANTALLA COMPARATIVA: DOBLE CARRIL */}
+                                    <div className="at-c2-comparison-container">
+                                        <h4 className="at-c2-chart-title">Análisis Comparativo: Punto de Partida | Nivel Actual</h4>
+                                        <div className="at-c2-comparison-chart">
+                                            {datasetAuditoria.map((item, idx) => (
+                                                <div key={idx} className="at-c2-comp-row">
+                                                    <div className="at-c2-comp-label">{item.label}</div>
+
+                                                    <div className="at-c2-dual-track-container">
+                                                        {/* Carril Superior: EL ANTES (Dorado) */}
+                                                        <div className="at-c2-track-path">
                                                             <div
-                                                                className={`at-col-fill ${isMin ? 'at-is-critical' : ''}`}
-                                                                style={{ height: `${(item.valor / 5) * 100}%` }}
+                                                                className="at-c2-bar-before"
+                                                                style={{ width: `${(item.valor / 5) * 100}%` }}
                                                             >
-                                                                {isMin && <span className="at-alert-pulse"></span>}
+                                                                <span className="at-c2-bar-label-val">{item.valor.toFixed(1)}</span>
                                                             </div>
                                                         </div>
-                                                        <span className="at-col-label">{item.label}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
 
-                                        {valorMinimo < 3 && (
-                                            <div className="at-critical-alert-box">
-                                                <span className="at-alert-icon">⚠️</span>
-                                                <p>Punto de mejora crítico: <strong>{datasetAuditoria.find(d => d.valor === valorMinimo)?.label}</strong></p>
-                                            </div>
-                                        )}
-                                    </section>
-                                </div>
-
-                                {/* SECCIÓN DE REFLEXIÓN (INDETERMINADA POR EL DISEÑO DE RETOS) */}
-                                <div className="at-cierre-reflection-section">
-                                    <div className="at-reflection-header">
-                                        <h4>Guía de Reflexión</h4>
-                                        <ul className="at-reflection-prompts">
-                                            <li>¿Qué prácticas eran más funcionales que estratégicas?</li>
-                                            <li>¿Dónde delegabas más de lo necesario?</li>
-                                            <li>¿Qué riesgos no habías identificado aún?</li>
-                                        </ul>
-                                    </div>
-
-                                    <div className="at-reflection-input-group">
-                                        <textarea
-                                            className="at-reflection-textarea"
-                                            readOnly={isReadOnly}
-                                            placeholder="Escribe tu análisis aquí..."
-                                            value={formDataCierre.reflexionAntes}
-                                            onChange={(e) => setFormDataCierre({ ...formDataCierre, reflexionAntes: e.target.value })}
-                                        />
-                                        <div className={`at-char-counter ${formDataCierre.reflexionAntes.length >= 200 ? 'at-ready' : ''}`}>
-                                            <span className="at-counter-number">
-                                                {formDataCierre.reflexionAntes.length} / 200
-                                            </span>
-                                            <span className="at-counter-label">caracteres requeridos</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ETAPA 2: LA TRANSFORMACIÓN (SOSTENER) - DISEÑO COMPARATIVO EVOLUTIVO */}
-                        {cierreStep === 2 && (
-                            <div className="at-c2-wrapper animate-slide-up">
-
-                                {/* ENCABEZADO DE ÉXITO */}
-                                <header className="at-c2-header-main">
-                                    <div className="at-c2-badge-container">
-                                        <span className="at-badge-success">Fase 2: Consolidación</span>
-                                    </div>
-                                    <h2 className="at-c2-title">Tu evolución tangible</h2>
-                                    <p className="at-c2-subtitle">
-                                        Has completado el ciclo de Sostenibilidad. Mira cuánto has avanzado desde tu diagnóstico inicial:
-                                    </p>
-                                </header>
-
-                                {/* DASHBOARD DE MÉTRICAS DE IMPACTO */}
-                                <div className="at-c2-impact-grid">
-
-                                    {/* INDICADOR DE CRECIMIENTO (+X%) */}
-                                    <div className="at-c2-card-stats at-variant-dark-gold">
-                                        <div className="at-c2-growth-circle">
-                                            <span className="at-c2-plus">+</span>
-                                            <span className="at-c2-growth-num">{getComparativoAtlas().crecimiento}</span>
-                                            <span className="at-c2-percent">%</span>
-                                        </div>
-                                        <h4>Crecimiento Global</h4>
-                                        <p>Incremento en madurez pedagógica</p>
-                                    </div>
-
-                                    {/* STATUS ACTUAL AUTOMÁTICO - CORREGIDO PARA TEXTO LARGO */}
-                                    <div className="at-c2-card-stats at-variant-white">
-                                        <div className="at-c2-status-row">
-                                            <div className="at-c2-status-item at-level-block">
-                                                <label>Estado Alcanzado</label>
-                                                <strong className="at-text-level">{getComparativoAtlas().nivelAhora}</strong>
-                                            </div>
-                                            <div className="at-c2-status-item">
-                                                <label>Fortaleza</label>
-                                                <strong className="at-text-gold">{getComparativoAtlas().dimensionCrecimiento || "Impacto"}</strong>
-                                            </div>
-                                            <div className="at-c2-status-item">
-                                                <label>Riesgos</label>
-                                                <strong className="at-text-forest">-{alerts.length || 0} mitigados</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* PANTALLA COMPARATIVA: DOBLE CARRIL */}
-                                <div className="at-c2-comparison-container">
-                                    <h4 className="at-c2-chart-title">Análisis Comparativo: Punto de Partida | Nivel Actual</h4>
-                                    <div className="at-c2-comparison-chart">
-                                        {datasetAuditoria.map((item, idx) => (
-                                            <div key={idx} className="at-c2-comp-row">
-                                                <div className="at-c2-comp-label">{item.label}</div>
-
-                                                <div className="at-c2-dual-track-container">
-                                                    {/* Carril Superior: EL ANTES (Dorado) */}
-                                                    <div className="at-c2-track-path">
-                                                        <div
-                                                            className="at-c2-bar-before"
-                                                            style={{ width: `${(item.valor / 5) * 100}%` }}
-                                                        >
-                                                            <span className="at-c2-bar-label-val">{item.valor.toFixed(1)}</span>
+                                                        {/* Carril Inferior: EL AHORA (Verde Bosque) */}
+                                                        <div className="at-c2-track-path">
+                                                            <div
+                                                                className="at-c2-bar-after"
+                                                                style={{ width: `${(pD[idx] / 5) * 100}%` }}
+                                                            >
+                                                                <span className="at-c2-bar-label-val">{(pD[idx] || 0).toFixed(1)}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-
-                                                    {/* Carril Inferior: EL AHORA (Verde Bosque) */}
-                                                    <div className="at-c2-track-path">
-                                                        <div
-                                                            className="at-c2-bar-after"
-                                                            style={{ width: `${(pD[idx] / 5) * 100}%` }}
-                                                        >
-                                                            <span className="at-c2-bar-label-val">{(pD[idx] || 0).toFixed(1)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="at-c2-chart-legend">
-                                        <span className="at-leg-before">Diagnóstico Inicial</span>
-                                        <span className="at-leg-after">Estado de Sostenibilidad</span>
-                                    </div>
-                                </div>
-
-                                {/* SECCIÓN DE REFLEXIÓN EVOLUTIVA */}
-                                <div className="at-c2-reflection-section">
-                                    <div className="at-reflection-header">
-                                        <h4>Tu evolución: Describe tu cambio</h4>
-                                        <ul className="at-reflection-prompts">
-                                            <li>¿Qué cambió en tu manera de diseñar experiencias con IA?</li>
-                                            <li>¿Cómo garantizas ahora supervisión humana explícita?</li>
-                                            <li>¿Qué haces diferente para reducir riesgos y promover autonomía estudiantil?</li>
-                                        </ul>
-                                    </div>
-
-                                    <div className="at-reflection-input-group">
-                                        <textarea
-                                            className="at-reflection-textarea"
-                                            readOnly={isReadOnly}
-                                            placeholder="Describe tu transformación (mínimo 300 caracteres)..."
-                                            value={formDataCierre.reflexionDespues}
-                                            onChange={(e) => setFormDataCierre({ ...formDataCierre, reflexionDespues: e.target.value })}
-                                        />
-                                        <div className={`at-char-counter ${formDataCierre.reflexionDespues.length >= 300 ? 'at-ready' : ''}`}>
-                                            <span className="at-counter-number">
-                                                {formDataCierre.reflexionDespues.length} / 300
-                                            </span>
-                                            <span className="at-counter-label">caracteres requeridos</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ETAPA 3: MARCO ÉTICO (UNESCO) - APRENDIZAJES DE IMPACTO */}
-                        {cierreStep === 3 && (
-                            <div className="at-c3-wrapper animate-slide-up">
-
-                                {/* ENCABEZADO */}
-                                <header className="at-c2-header-main">
-                                    <div className="at-c2-badge-container">
-                                        <span className="at-badge-success">
-                                            Fase 3: Marco Internacional
-                                        </span>
-                                    </div>
-                                    <h2 className="at-c2-title">Aprendizajes de Impacto Global</h2>
-                                    <p className="at-c2-subtitle">
-                                        Durante este proceso comprendiste que integrar IA no es solo usar herramientas.
-                                        <strong> Selecciona el aprendizaje que más impactó tu práctica:</strong>
-                                    </p>
-                                </header>
-
-                                {/* GRID DE SELECCIÓN DE APRENDIZAJE */}
-                                <div className="at-c3-marco-grid">
-                                    {[
-                                        { id: 'A1', t: 'Agencia Humana', d: 'Mantener el control y la supervisión en las decisiones pedagógicas.', icon: '👤' },
-                                        { id: 'A2', t: 'Ética y Datos', d: 'Reducir riesgos, proteger la privacidad y mitigar sesgos algorítmicos.', icon: '⚖️' },
-                                        { id: 'A3', t: 'Propósito Pedagógico', d: 'Diseñar experiencias donde la IA potencie el aprendizaje activo.', icon: '🎯' },
-                                        { id: 'A4', t: 'Pensamiento Crítico', d: 'Fomentar la evaluación reflexiva y crítica de los estudiantes hacia la IA.', icon: '🧠' }
-                                    ].map(item => (
-                                        <div
-                                            key={item.id}
-                                            className={`at-c3-marco-card ${formDataCierre.aprendizajeClave === item.t ? 'at-selected' : ''}`}
-                                            onClick={() => setFormDataCierre({ ...formDataCierre, aprendizajeClave: item.t })}
-                                        >
-                                            <div className="at-c3-card-icon">{item.icon}</div>
-                                            <h4>{item.t}</h4>
-                                            <p>{item.d}</p>
-                                            <div className="at-c3-check-indicator"></div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* JUSTIFICACIÓN */}
-                                <div className="at-c2-reflection-section" style={{ marginTop: '30px' }}>
-                                    <div className="at-reflection-header">
-                                        <h4>Justifica tu elección</h4>
-                                        <p className="at-reflection-subtext">Explica por qué este pilar es fundamental para tu nueva etapa docente.</p>
-                                    </div>
-                                    <div className="at-reflection-input-group">
-                                        <textarea
-                                            className="at-reflection-textarea"
-                                            readOnly={isReadOnly}
-                                            placeholder="Describe el impacto de este aprendizaje (mínimo 150 caracteres)..."
-                                            value={formDataCierre.aprendizajeDetalle}
-                                            onChange={(e) => setFormDataCierre({ ...formDataCierre, aprendizajeDetalle: e.target.value })}
-                                        />
-                                        <div className={`at-char-counter ${formDataCierre.aprendizajeDetalle.length >= 150 ? 'at-ready' : ''}`}>
-                                            <span className="at-counter-number">{formDataCierre.aprendizajeDetalle.length} / 150</span>
-                                            <span className="at-counter-label">caracteres</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ETAPA 4: REPORTE MAESTRO DE EVOLUCIÓN ATLAS */}
-                        {cierreStep === 4 && (
-                            <div className="at-c4-wrapper animate-slide-up">
-                                <header className="at-c4-header-main">
-                                    <div className="at-c4-badge-container">
-                                        <span className="at-badge-gold">Certificación de Huella Pedagógica 2026</span>
-                                    </div>
-                                    <h2 className="at-c4-title">Tu Evolución ATLAS</h2>
-                                    <p className="at-c4-subtitle">Consolidación de evidencias: De la Auditoría Técnica a la Sostenibilidad Ética.</p>
-                                </header>
-
-                                <div className="at-c4-report-card">
-                                    {/* CABECERA INSTITUCIONAL */}
-                                    <div className="at-c4-report-header">
-                                        <div className="at-c4-logo-section">
-                                            <div className="at-c4-brand">ATLAS <span>PROJECT</span></div>
-                                            <div className="at-c4-docente-info">
-                                                <strong>DOCENTE:</strong> {userData.nombre_completo} <br />
-                                                <strong>ID:</strong> {userData.teacher_key} | {new Date().toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                        <div className="at-c4-stamp-seal">
-                                            <div className="seal-inner">2026</div>
-                                            <span>CERTIFICADO</span>
-                                        </div>
-                                    </div>
-
-                                    {/* SECCIÓN 1: EL SALTO CUÁNTICO (COMPARATIVA EN PORCENTAJES) */}
-                                    {(() => {
-                                        const comp = getComparativoAtlas();
-                                        const pctInicial = (comp.scoreAntes * 20).toFixed(1);
-                                        const pctActual = (comp.scoreAhora * 20).toFixed(1);
-
-                                        return (
-                                            <div className="at-c4-comparison-layout">
-                                                {/* ESTADO INICIAL (PORCENTAJE PONDERADO) */}
-                                                <div className="at-c4-col-before">
-                                                    <h4 className="at-c4-col-title">Fase 1: Punto de Partida</h4>
-                                                    <div className="at-c4-main-metric">
-                                                        <span className="at-val">
-                                                            {pctInicial}
-                                                            <small className="at-symbol-pct">%</small>
-                                                        </span>
-                                                        <span className="at-lbl">Calificación Inicial</span>
-                                                    </div>
-                                                    <div className="at-c4-status-desc">
-                                                        <strong>Nivel: {comp.nivelAntes}</strong>
-                                                        <p>{getCompassData(comp.scoreAntes * 20).desc}</p>
-                                                    </div>
-                                                    <div className="at-c4-mini-stats">
-                                                        <span>Consistencia: {parseFloat(selectedFormReal?.desviacion || 0) < 1.0 ? "Estable" : "Variable"}</span>
-                                                        <span>Media: {comp.scoreAntes.toFixed(2)} / 5</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* MÉTRICA DE IMPACTO CENTRAL */}
-                                                <div className="at-c4-divider">
-                                                    <div className="at-c4-impact-orb">
-                                                        <span className="at-orb-plus">+</span>
-                                                        <span className="at-orb-val">{comp.crecimiento}</span>
-                                                        <span className="at-orb-pct">%</span>
-                                                    </div>
-                                                    <div className="at-c4-missions-badge">
-                                                        <strong>{retos.filter(r => ['COMPLETADO', 'COMPLETED'].includes(r.Status_Reto?.toUpperCase())).length}</strong>
-                                                        <span>Misiones</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* ESTADO ACTUAL (PORCENTAJE) */}
-                                                <div className="at-c4-col-after">
-                                                    <h4 className="at-c4-col-title">Fase 4: Madurez Actual</h4>
-                                                    <div className="at-c4-main-metric gold">
-                                                        <span className="at-val">
-                                                            {pctActual}
-                                                            <small className="at-symbol-pct">%</small>
-                                                        </span>
-                                                        <span className="at-lbl">Sostenibilidad Alcanzada</span>
-                                                    </div>
-                                                    <div className="at-c4-status-desc">
-                                                        <strong>{comp.nivelAhora}</strong>
-                                                        <p>{generarDiagnostico(pctActual).texto}</p>
-                                                    </div>
-                                                    <div className="at-c4-mini-stats">
-                                                        <span className="at-text-gold">Pilar: {formDataCierre.aprendizajeClave || "General"}</span>
-                                                        <span className="at-text-gold">Media Actual: {comp.scoreAhora.toFixed(2)} / 5</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
-                                    {/* SECCIÓN 2: NARRATIVA DE TRANSFORMACIÓN */}
-                                    <div className="at-c4-narrative-section">
-                                        <h5 className="at-section-subtitle">Trayectoria Reflexiva</h5>
-                                        <div className="at-narrative-grid">
-                                            <div className="at-narrative-box">
-                                                <label>Visión Inicial</label>
-                                                {/* Si no hay reflexión escrita, sacamos la data de la dimensión más baja del dataset inicial */}
-                                                <p>
-                                                    {formDataCierre.reflexionAntes.length > 5
-                                                        ? `"${formDataCierre.reflexionAntes}"`
-                                                        : `Al inicio, mi práctica presentaba una brecha crítica en ${datasetAuditoria.find(d => d.valor === Math.min(...datasetAuditoria.map(i => i.valor)))?.label}, con un desempeño basado más en la funcionalidad que en la estrategia ética.`}
-                                                </p>
-                                            </div>
-                                            <div className="at-narrative-box gold">
-                                                <label>Visión Transformada</label>
-                                                <p>
-                                                    {formDataCierre.reflexionDespues.length > 5
-                                                        ? `"${formDataCierre.reflexionDespues}"`
-                                                        : "A través de la implementación de protocolos de sostenibilidad, he consolidado una supervisión humana activa, reduciendo la dependencia de la automatización."}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* SECCIÓN 3: AUDITORÍA ÉTICA UNESCO */}
-                                    <div className="at-c4-ethic-summary">
-                                        <h5><span className="dot l"></span> Dictamen de Liderazgo Ético UNESCO</h5>
-                                        <div className="at-c4-ethic-bars">
-                                            {[
-                                                { l: 'Privacidad y Seguridad', v: promptData?.puntaje_privacidad, c: '#06b6d4' },
-                                                { l: 'Agencia Humana', v: promptData?.puntaje_agencia, c: '#f59e0b' },
-                                                { l: 'Propósito Pedagógico', v: promptData?.puntaje_etica, c: '#8b5cf6' }
-                                            ].map(d => (
-                                                <div key={d.l} className="at-c4-bar-row">
-                                                    <div className="at-bar-label"><span>{d.l}</span> <strong>{d.v}/5</strong></div>
-                                                    <div className="at-bar-track">
-                                                        <div className="at-bar-fill" style={{ width: `${(d.v / 5) * 100}%`, backgroundColor: d.c }}></div>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="at-c4-hallazgo-box">
-                                            <strong>Análisis UNESCO 2026:</strong> {promptData?.puntaje_agencia <= 2
-                                                ? "Se detectó inicialmente una delegación de juicio docente. El ciclo ATLAS ha fortalecido la autonomía, permitiéndote usar la IA como copiloto sin ceder el control pedagógico."
-                                                : "Tu evolución demuestra una agencia humana sólida. Mantienes la autoridad en el diseño de experiencias, cumpliendo con los estándares de integridad digital de la UNESCO."}
+
+                                        <div className="at-c2-chart-legend">
+                                            <span className="at-leg-before">Diagnóstico Inicial</span>
+                                            <span className="at-leg-after">Estado de Sostenibilidad</span>
                                         </div>
                                     </div>
 
-                                    {/* SECCIÓN 4: LOGROS Y RIESGOS */}
-                                    <div className="at-c4-double-stats">
-                                        <div className="at-c4-tech-block">
-                                            <h5><span className="dot t"></span> Misiones Superadas</h5>
-                                            <div className="at-c4-tags-container">
-                                                {retos.filter(r => r.Status_Reto?.toUpperCase() === 'COMPLETADO' || r.Status_Reto === 'completed').length > 0 ? (
-                                                    retos.filter(r => r.Status_Reto?.toUpperCase() === 'COMPLETADO' || r.Status_Reto === 'completed').map((r, i) => (
-                                                        <div key={i} className="at-mission-card-mini">
-                                                            <span className="check">✓</span>
-                                                            <div className="info">
-                                                                <strong>{r.Nombre_Reto}</strong>
-                                                                <small>{r.Nivel_UNESCO || 'Nivel Avanzado'}</small>
-                                                            </div>
-                                                        </div>
-                                                    ))
-                                                ) : <p className="at-empty-text">No se registraron misiones externas.</p>}
-                                            </div>
+                                    {/* SECCIÓN DE REFLEXIÓN EVOLUTIVA */}
+                                    <div className="at-c2-reflection-section">
+                                        <div className="at-reflection-header">
+                                            <h4>Tu evolución: Describe tu cambio</h4>
+                                            <ul className="at-reflection-prompts">
+                                                <li>¿Qué cambió en tu manera de diseñar experiencias con IA?</li>
+                                                <li>¿Cómo garantizas ahora supervisión humana explícita?</li>
+                                                <li>¿Qué haces diferente para reducir riesgos y promover autonomía estudiantil?</li>
+                                            </ul>
                                         </div>
 
-                                        <div className="at-c4-alerts-section">
-                                            <h5><span className="dot a"></span> Gestión de Riesgos</h5>
-                                            <div className="at-c4-alerts-grid">
-                                                {alerts.length > 0 ? alerts.slice(0, 2).map((a, i) => (
-                                                    <div key={i} className="at-alert-item-resolved">
-                                                        <span className="icon">🛡️</span>
-                                                        <p>{a}</p>
-                                                    </div>
-                                                )) : (
-                                                    <div className="at-alert-item-resolved success">
-                                                        <span className="icon">✅</span>
-                                                        <p>Ciclo finalizado sin brechas de seguridad activas.</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* SECCIÓN 5: INDICADORES TÉCNICOS FINALES */}
-                                    <div className="at-c4-quality-checks">
-                                        <div className="at-check-row">
-                                            <span className={`pill ${promptData?.puntaje_privacidad >= 3 ? 'on' : ''}`}>🛡️ Privacidad UNESCO</span>
-                                            <span className={`pill ${promptData?.puntaje_agencia >= 3 ? 'on' : ''}`}>👤 Agencia Humana</span>
-                                            <span className={`pill ${parseFloat(selectedFormReal?.desviacion) < 1.8 ? 'on' : ''}`}>📊 Consistencia ATLAS</span>
-                                            <span className={`pill ${historial.length > 0 ? 'on' : ''}`}>♻️ Sostenibilidad</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ETAPA 5: HOJA DE RUTA (PLAN DE MEJORA) */}
-                        {cierreStep === 5 && (() => {
-                            // Calculamos automáticamente la dimensión con mayor oportunidad (la más baja)
-                            const m = getMetricasAuditoria();
-                            const dimensiones = [
-                                { nombre: 'Uso Pedagógico', valor: parseFloat(m.uso) },
-                                { nombre: 'Ética y Privacidad', valor: parseFloat(m.etica) },
-                                { nombre: 'Impacto en el Aprendizaje', valor: parseFloat(m.impacto) },
-                                { nombre: 'Desarrollo y Fundamentos', valor: parseFloat(m.desarrollo) }
-                            ];
-                            // Ordenamos de menor a mayor y tomamos la primera
-                            const oportunidad = dimensiones.sort((a, b) => a.valor - b.valor)[0]?.nombre;
-
-                            return (
-                                <div className="at-c5-roadmap-container animate-slide-up">
-                                    {/* CABECERA ESTRATÉGICA */}
-                                    <div className="at-c5-header">
-                                        <span className="at-c5-badge">Fase 5: Sostener el Cambio</span>
-                                        <h2 className="at-c5-title">Hoja de Ruta de Sostenibilidad</h2>
-                                        <div className="at-c5-insight-box">
-                                            <span className="at-c5-insight-label">Hallazgo del Ciclo:</span>
-                                            <p>Tu dimensión con mayor oportunidad de consolidación es: <strong>{oportunidad}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div className="at-c5-roadmap-card">
-                                        <div className="at-c5-instruction-text">
-                                            <p>"Sostener implica mejorar de manera consciente. Define un compromiso realista para los próximos meses."</p>
-                                        </div>
-
-                                        <div className="at-c5-form-grid">
-                                            {/* 1. PRIORIDAD */}
-                                            <div className="at-c5-field full">
-                                                <label className="at-c5-label">1. Mi prioridad será fortalecer:</label>
-                                                <select
-                                                    className="at-c5-select"
-                                                    value={formDataCierre.prioridadSostener}
-                                                    onChange={(e) => setFormDataCierre({ ...formDataCierre, prioridadSostener: e.target.value })}
-                                                >
-                                                    <option value="">Selecciona una dimensión...</option>
-                                                    <option value="Uso Pedagógico">Uso Pedagógico Intencional</option>
-                                                    <option value="Ética">Ética y Privacidad</option>
-                                                    <option value="Impacto">Impacto en el Aprendizaje</option>
-                                                    <option value="Desarrollo">Desarrollo y Fundamentos</option>
-                                                </select>
-                                            </div>
-
-                                            {/* 2. ACCIÓN CONCRETA */}
-                                            <div className="at-c5-field full">
-                                                <label className="at-c5-label">
-                                                    2. Acción concreta que implementaré:
-                                                    <span className={formDataCierre.compromisoAccion?.length < 150 ? "at-char-count error" : "at-char-count"}>
-                                                        ({formDataCierre.compromisoAccion?.length || 0}/150 caracteres)
-                                                    </span>
-                                                </label>
-                                                <textarea
-                                                    className="at-c5-textarea"
-                                                    placeholder="Describe detalladamente cómo aplicarás esto en tus clases..."
-                                                    value={formDataCierre.compromisoAccion}
-                                                    onChange={(e) => setFormDataCierre({ ...formDataCierre, compromisoAccion: e.target.value })}
-                                                />
-                                            </div>
-
-                                            {/* 3. EVIDENCIA */}
-                                            <div className="at-c5-field">
-                                                <label className="at-c5-label">
-                                                    3. Evidencia de mejora:
-                                                    <span className={formDataCierre.evidenciaMejora?.length < 100 ? "at-char-count error" : "at-char-count"}>
-                                                        ({formDataCierre.evidenciaMejora?.length || 0}/100)
-                                                    </span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    className="at-c5-input"
-                                                    placeholder="Ej: Portafolio de evidencias, resultados de examen..."
-                                                    value={formDataCierre.evidenciaMejora}
-                                                    onChange={(e) => setFormDataCierre({ ...formDataCierre, evidenciaMejora: e.target.value })}
-                                                />
-                                            </div>
-
-                                            {/* 4. FECHA */}
-                                            <div className="at-c5-field">
-                                                <label className="at-c5-label">4. Fecha de revisión:</label>
-                                                <input
-                                                    type="date"
-                                                    className="at-c5-input-date"
-                                                    value={formDataCierre.fechaRevision}
-                                                    onChange={(e) => setFormDataCierre({ ...formDataCierre, fechaRevision: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* MENSAJE FINAL INSPIRACIONAL */}
-                                        <div className="at-c5-footer-quote">
-                                            <div className="at-quote-line"></div>
-                                            <p className="at-main-quote">"No necesitas hacer más. Necesitas hacer mejor."</p>
-                                            <p className="at-sub-quote">Este plan será tu guía para el siguiente ciclo ATLAS.</p>
-
-                                            {/* Nueva sección de encuesta */}
-                                            <div className="at-survey-section" style={{ marginTop: '20px' }}>
-                                                <p className="at-survey-text">
-                                                    ¡Hola! Espero estés muy bien hoy. Por favor, llena esta última encuesta para saber de tu experiencia:
-                                                </p>
-                                                <a
-                                                    href="https://tinyurl.com/cierre-piloto"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="at-survey-link"
-                                                    style={{ color: '#007bff', fontWeight: 'bold', textDecoration: 'underline' }}
-                                                >
-                                                    tinyurl.com/cierre-piloto
-                                                </a>
+                                        <div className="at-reflection-input-group">
+                                            <textarea
+                                                className="at-reflection-textarea"
+                                                readOnly={isReadOnly}
+                                                placeholder="Describe tu transformación (mínimo 300 caracteres)..."
+                                                value={formDataCierre.reflexionDespues}
+                                                onChange={(e) => setFormDataCierre({ ...formDataCierre, reflexionDespues: e.target.value })}
+                                            />
+                                            <div className={`at-char-counter ${formDataCierre.reflexionDespues.length >= 300 ? 'at-ready' : ''}`}>
+                                                <span className="at-counter-number">
+                                                    {formDataCierre.reflexionDespues.length} / 300
+                                                </span>
+                                                <span className="at-counter-label">caracteres requeridos</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            );
-                        })()}
-
-                        {/* Navegación Inferior */}
-                        <div className="cierre-actions-footer">
-                            {cierreStep > 1 && (
-                                <button className="btn-sos-secondary" onClick={() => setCierreStep(cierreStep - 1)}>Anterior</button>
                             )}
-                            <button
-                                className="btn-sos-primary btn-large"
-                                onClick={() => {
-                                    if (cierreStep === 5) {
-                                        // Si estamos en modo lectura (viendo respuestas), solo volvemos al menú.
-                                        // Si es un ciclo nuevo, ejecutamos el guardado real.
-                                        isReadOnly ? setView("menu") : handleFinalSaveCierre();
-                                    } else {
-                                        setCierreStep(cierreStep + 1);
-                                    }
-                                }}
-                            >
-                                {cierreStep === 5
-                                    ? (isReadOnly ? "Finalizar Consulta" : "Finalizar Ciclo e Integrar")
-                                    : "Siguiente Etapa"}
-                            </button>
+
+                            {/* ETAPA 3: MARCO ÉTICO (UNESCO) - APRENDIZAJES DE IMPACTO */}
+                            {cierreStep === 3 && (
+                                <div className="at-c3-wrapper animate-slide-up">
+
+                                    {/* ENCABEZADO */}
+                                    <header className="at-c2-header-main">
+                                        <div className="at-c2-badge-container">
+                                            <span className="at-badge-success">
+                                                Fase 3: Marco Internacional
+                                            </span>
+                                        </div>
+                                        <h2 className="at-c2-title">Aprendizajes de Impacto Global</h2>
+                                        <p className="at-c2-subtitle">
+                                            Durante este proceso comprendiste que integrar IA no es solo usar herramientas.
+                                            <strong> Selecciona el aprendizaje que más impactó tu práctica:</strong>
+                                        </p>
+                                    </header>
+
+                                    {/* GRID DE SELECCIÓN DE APRENDIZAJE */}
+                                    <div className="at-c3-marco-grid">
+                                        {[
+                                            { id: 'A1', t: 'Agencia Humana', d: 'Mantener el control y la supervisión en las decisiones pedagógicas.', icon: '👤' },
+                                            { id: 'A2', t: 'Ética y Datos', d: 'Reducir riesgos, proteger la privacidad y mitigar sesgos algorítmicos.', icon: '⚖️' },
+                                            { id: 'A3', t: 'Propósito Pedagógico', d: 'Diseñar experiencias donde la IA potencie el aprendizaje activo.', icon: '🎯' },
+                                            { id: 'A4', t: 'Pensamiento Crítico', d: 'Fomentar la evaluación reflexiva y crítica de los estudiantes hacia la IA.', icon: '🧠' }
+                                        ].map(item => (
+                                            <div
+                                                key={item.id}
+                                                className={`at-c3-marco-card ${formDataCierre.aprendizajeClave === item.t ? 'at-selected' : ''}`}
+                                                onClick={() => setFormDataCierre({ ...formDataCierre, aprendizajeClave: item.t })}
+                                            >
+                                                <div className="at-c3-card-icon">{item.icon}</div>
+                                                <h4>{item.t}</h4>
+                                                <p>{item.d}</p>
+                                                <div className="at-c3-check-indicator"></div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* JUSTIFICACIÓN */}
+                                    <div className="at-c2-reflection-section" style={{ marginTop: '30px' }}>
+                                        <div className="at-reflection-header">
+                                            <h4>Justifica tu elección</h4>
+                                            <p className="at-reflection-subtext">Explica por qué este pilar es fundamental para tu nueva etapa docente.</p>
+                                        </div>
+                                        <div className="at-reflection-input-group">
+                                            <textarea
+                                                className="at-reflection-textarea"
+                                                readOnly={isReadOnly}
+                                                placeholder="Describe el impacto de este aprendizaje (mínimo 150 caracteres)..."
+                                                value={formDataCierre.aprendizajeDetalle}
+                                                onChange={(e) => setFormDataCierre({ ...formDataCierre, aprendizajeDetalle: e.target.value })}
+                                            />
+                                            <div className={`at-char-counter ${formDataCierre.aprendizajeDetalle.length >= 150 ? 'at-ready' : ''}`}>
+                                                <span className="at-counter-number">{formDataCierre.aprendizajeDetalle.length} / 150</span>
+                                                <span className="at-counter-label">caracteres</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ETAPA 4: REPORTE MAESTRO DE EVOLUCIÓN ATLAS */}
+                            {cierreStep === 4 && (
+                                <div className="at-c4-wrapper animate-slide-up">
+                                    <header className="at-c4-header-main">
+                                        <div className="at-c4-badge-container">
+                                            <span className="at-badge-gold">Certificación de Huella Pedagógica 2026</span>
+                                        </div>
+                                        <h2 className="at-c4-title">Tu Evolución ATLAS</h2>
+                                        <p className="at-c4-subtitle">Consolidación de evidencias: De la Auditoría Técnica a la Sostenibilidad Ética.</p>
+                                    </header>
+
+                                    <div className="at-c4-report-card">
+                                        {/* CABECERA INSTITUCIONAL */}
+                                        <div className="at-c4-report-header">
+                                            <div className="at-c4-logo-section">
+                                                <div className="at-c4-brand">ATLAS <span>PROJECT</span></div>
+                                                <div className="at-c4-docente-info">
+                                                    <strong>DOCENTE:</strong> {userData.nombre_completo} <br />
+                                                    <strong>ID:</strong> {userData.teacher_key} | {new Date().toLocaleDateString()}
+                                                </div>
+                                            </div>
+                                            <div className="at-c4-stamp-seal">
+                                                <div className="seal-inner">2026</div>
+                                                <span>CERTIFICADO</span>
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN 1: EL SALTO CUÁNTICO (COMPARATIVA EN PORCENTAJES) */}
+                                        {(() => {
+                                            const comp = getComparativoAtlas();
+                                            const pctInicial = comp.scoreAntesPct;   // inicial AUDITAR
+                                            const pctActual = comp.scoreAhoraPct;
+
+                                            return (
+                                                <div className="at-c4-comparison-layout">
+                                                    {/* ESTADO INICIAL (PORCENTAJE PONDERADO) */}
+                                                    <div className="at-c4-col-before">
+                                                        <h4 className="at-c4-col-title">Fase 1: Punto de Partida</h4>
+                                                        <div className="at-c4-main-metric">
+                                                            <span className="at-val">
+                                                                {pctInicial}
+                                                                <small className="at-symbol-pct">%</small>
+                                                            </span>
+                                                            <span className="at-lbl">Calificación Inicial</span>
+                                                        </div>
+                                                        <div className="at-c4-status-desc">
+                                                            <strong>Nivel: {comp.nivelAntes}</strong>
+                                                            <p>{getCompassData(comp.scoreAntes * 20).desc}</p>
+                                                        </div>
+                                                        <div className="at-c4-mini-stats">
+                                                            <span>Consistencia: {parseFloat(selectedFormReal?.desviacion || 0) < 1.0 ? "Estable" : "Variable"}</span>
+                                                            <span>Media: {comp.scoreAntes.toFixed(2)} / 5</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* MÉTRICA DE IMPACTO CENTRAL */}
+                                                    <div className="at-c4-divider">
+                                                        <div className="at-c4-impact-orb">
+                                                            <span className="at-orb-plus">+</span>
+                                                            <span className="at-orb-val">{comp.crecimiento}</span>
+                                                            <span className="at-orb-pct">%</span>
+                                                        </div>
+                                                        <div className="at-c4-missions-badge">
+                                                            <strong>{retos.filter(r => r.status_reto?.toUpperCase() === 'COMPLETADO').length}</strong>
+                                                            <span>Misiones</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* ESTADO ACTUAL (PORCENTAJE) */}
+                                                    <div className="at-c4-col-after">
+                                                        <h4 className="at-c4-col-title">Fase 4: Madurez Actual</h4>
+                                                        <div className="at-c4-main-metric gold">
+                                                            <span className="at-val">
+                                                                {pctActual}
+                                                                <small className="at-symbol-pct">%</small>
+                                                            </span>
+                                                            <span className="at-lbl">Sostenibilidad Alcanzada</span>
+                                                        </div>
+                                                        <div className="at-c4-status-desc">
+                                                            <strong>{comp.nivelAhora}</strong>
+                                                            <p>{generarDiagnostico(pctActual).texto}</p>
+                                                        </div>
+                                                        <div className="at-c4-mini-stats">
+                                                            <span className="at-text-gold">Pilar: {formDataCierre.aprendizajeClave || "General"}</span>
+                                                            <span className="at-text-gold">Media Actual: {comp.scoreAhora.toFixed(2)} / 5</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                        {/* SECCIÓN 2: NARRATIVA DE TRANSFORMACIÓN */}
+                                        <div className="at-c4-narrative-section">
+                                            <h5 className="at-section-subtitle">Trayectoria Reflexiva</h5>
+                                            <div className="at-narrative-grid">
+                                                <div className="at-narrative-box">
+                                                    <label>Visión Inicial</label>
+                                                    {/* Si no hay reflexión escrita, sacamos la data de la dimensión más baja del dataset inicial */}
+                                                    <p>
+                                                        {formDataCierre.reflexionAntes.length > 5
+                                                            ? `"${formDataCierre.reflexionAntes}"`
+                                                            : `Al inicio, mi práctica presentaba una brecha crítica en ${datasetAuditoria.find(d => d.valor === Math.min(...datasetAuditoria.map(i => i.valor)))?.label}, con un desempeño basado más en la funcionalidad que en la estrategia ética.`}
+                                                    </p>
+                                                </div>
+                                                <div className="at-narrative-box gold">
+                                                    <label>Visión Transformada</label>
+                                                    <p>
+                                                        {formDataCierre.reflexionDespues.length > 5
+                                                            ? `"${formDataCierre.reflexionDespues}"`
+                                                            : "A través de la implementación de protocolos de sostenibilidad, he consolidado una supervisión humana activa, reduciendo la dependencia de la automatización."}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN 3: AUDITORÍA ÉTICA UNESCO */}
+                                        <div className="at-c4-ethic-summary">
+                                            <h5><span className="dot l"></span> Dictamen de Liderazgo Ético UNESCO</h5>
+                                            <div className="at-c4-ethic-bars">
+                                                {[
+                                                    { l: 'Privacidad y Seguridad', v: promptData?.puntaje_privacidad, c: '#06b6d4' },
+                                                    { l: 'Agencia Humana', v: promptData?.puntaje_agencia, c: '#f59e0b' },
+                                                    { l: 'Propósito Pedagógico', v: promptData?.puntaje_etica, c: '#8b5cf6' }
+                                                ].map(d => (
+                                                    <div key={d.l} className="at-c4-bar-row">
+                                                        <div className="at-bar-label"><span>{d.l}</span> <strong>{d.v}/5</strong></div>
+                                                        <div className="at-bar-track">
+                                                            <div className="at-bar-fill" style={{ width: `${(d.v / 5) * 100}%`, backgroundColor: d.c }}></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="at-c4-hallazgo-box">
+                                                <strong>Análisis UNESCO 2026:</strong> {promptData?.puntaje_agencia <= 2
+                                                    ? "Se detectó inicialmente una delegación de juicio docente. El ciclo ATLAS ha fortalecido la autonomía, permitiéndote usar la IA como copiloto sin ceder el control pedagógico."
+                                                    : "Tu evolución demuestra una agencia humana sólida. Mantienes la autoridad en el diseño de experiencias, cumpliendo con los estándares de integridad digital de la UNESCO."}
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN 4: LOGROS Y RIESGOS */}
+                                        <div className="at-c4-double-stats">
+                                            <div className="at-c4-tech-block">
+                                                <h5><span className="dot t"></span> Misiones Superadas</h5>
+                                                <div className="at-c4-tags-container">
+                                                    {retos.filter(r => r.status_reto?.toUpperCase() === 'COMPLETADO').length > 0 ? (
+                                                        retos.filter(r => r.status_reto?.toUpperCase() === 'COMPLETADO').map((r, i) => (
+                                                            <div key={i} className="at-mission-card-mini">
+                                                                <span className="check">✓</span>
+                                                                <div className="info">
+                                                                    <strong>{r.Nombre_Reto}</strong>
+                                                                    <small>{r.Nivel_UNESCO || 'Nivel Avanzado'}</small>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : <p className="at-empty-text">No se registraron misiones externas.</p>}
+                                                </div>
+                                            </div>
+
+                                            <div className="at-c4-alerts-section">
+                                                <h5><span className="dot a"></span> Gestión de Riesgos</h5>
+                                                <div className="at-c4-alerts-grid">
+                                                    {alerts.length > 0 ? alerts.slice(0, 2).map((a, i) => (
+                                                        <div key={i} className="at-alert-item-resolved">
+                                                            <span className="icon">🛡️</span>
+                                                            <p>{a}</p>
+                                                        </div>
+                                                    )) : (
+                                                        <div className="at-alert-item-resolved success">
+                                                            <span className="icon">✅</span>
+                                                            <p>Ciclo finalizado sin brechas de seguridad activas.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* SECCIÓN 5: INDICADORES TÉCNICOS FINALES */}
+                                        <div className="at-c4-quality-checks">
+                                            <div className="at-check-row">
+                                                <span className={`pill ${promptData?.puntaje_privacidad >= 3 ? 'on' : ''}`}>🛡️ Privacidad UNESCO</span>
+                                                <span className={`pill ${promptData?.puntaje_agencia >= 3 ? 'on' : ''}`}>👤 Agencia Humana</span>
+                                                <span className={`pill ${parseFloat(selectedFormReal?.desviacion) < 1.8 ? 'on' : ''}`}>📊 Consistencia ATLAS</span>
+                                                <span className={`pill ${historial.length > 0 ? 'on' : ''}`}>♻️ Sostenibilidad</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ETAPA 5: HOJA DE RUTA (PLAN DE MEJORA) */}
+                            {cierreStep === 5 && (() => {
+                                // Calculamos automáticamente la dimensión con mayor oportunidad (la más baja)
+                                const m = getMetricasAuditoria();
+                                const dimensiones = [
+                                    { nombre: 'Uso Pedagógico', valor: parseFloat(m.uso) },
+                                    { nombre: 'Ética y Privacidad', valor: parseFloat(m.etica) },
+                                    { nombre: 'Impacto en el Aprendizaje', valor: parseFloat(m.impacto) },
+                                    { nombre: 'Desarrollo y Fundamentos', valor: parseFloat(m.desarrollo) }
+                                ];
+                                // Ordenamos de menor a mayor y tomamos la primera
+                                const oportunidad = dimensiones.sort((a, b) => a.valor - b.valor)[0]?.nombre;
+
+                                return (
+                                    <div className="at-c5-roadmap-container animate-slide-up">
+                                        {/* CABECERA ESTRATÉGICA */}
+                                        <div className="at-c5-header">
+                                            <span className="at-c5-badge">Fase 5: Sostener el Cambio</span>
+                                            <h2 className="at-c5-title">Hoja de Ruta de Sostenibilidad</h2>
+                                            <div className="at-c5-insight-box">
+                                                <span className="at-c5-insight-label">Hallazgo del Ciclo:</span>
+                                                <p>Tu dimensión con mayor oportunidad de consolidación es: <strong>{oportunidad}</strong></p>
+                                            </div>
+                                        </div>
+
+                                        <div className="at-c5-roadmap-card">
+                                            <div className="at-c5-instruction-text">
+                                                <p>"Sostener implica mejorar de manera consciente. Define un compromiso realista para los próximos meses."</p>
+                                            </div>
+
+                                            <div className="at-c5-form-grid">
+                                                {/* 1. PRIORIDAD */}
+                                                <div className="at-c5-field full">
+                                                    <label className="at-c5-label">1. Mi prioridad será fortalecer:</label>
+                                                    <select
+                                                        className="at-c5-select"
+                                                        value={formDataCierre.prioridadSostener}
+                                                        onChange={(e) => setFormDataCierre({ ...formDataCierre, prioridadSostener: e.target.value })}
+                                                    >
+                                                        <option value="">Selecciona una dimensión...</option>
+                                                        <option value="Uso Pedagógico">Uso Pedagógico Intencional</option>
+                                                        <option value="Ética">Ética y Privacidad</option>
+                                                        <option value="Impacto">Impacto en el Aprendizaje</option>
+                                                        <option value="Desarrollo">Desarrollo y Fundamentos</option>
+                                                    </select>
+                                                </div>
+
+                                                {/* 2. ACCIÓN CONCRETA */}
+                                                <div className="at-c5-field full">
+                                                    <label className="at-c5-label">
+                                                        2. Acción concreta que implementaré:
+                                                        <span className={formDataCierre.compromisoAccion?.length < 150 ? "at-char-count error" : "at-char-count"}>
+                                                            ({formDataCierre.compromisoAccion?.length || 0}/150 caracteres)
+                                                        </span>
+                                                    </label>
+                                                    <textarea
+                                                        className="at-c5-textarea"
+                                                        placeholder="Describe detalladamente cómo aplicarás esto en tus clases..."
+                                                        value={formDataCierre.compromisoAccion}
+                                                        onChange={(e) => setFormDataCierre({ ...formDataCierre, compromisoAccion: e.target.value })}
+                                                    />
+                                                </div>
+
+                                                {/* 3. EVIDENCIA */}
+                                                <div className="at-c5-field">
+                                                    <label className="at-c5-label">
+                                                        3. Evidencia de mejora:
+                                                        <span className={formDataCierre.evidenciaMejora?.length < 100 ? "at-char-count error" : "at-char-count"}>
+                                                            ({formDataCierre.evidenciaMejora?.length || 0}/100)
+                                                        </span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        className="at-c5-input"
+                                                        placeholder="Ej: Portafolio de evidencias, resultados de examen..."
+                                                        value={formDataCierre.evidenciaMejora}
+                                                        onChange={(e) => setFormDataCierre({ ...formDataCierre, evidenciaMejora: e.target.value })}
+                                                    />
+                                                </div>
+
+                                                {/* 4. FECHA */}
+                                                <div className="at-c5-field">
+                                                    <label className="at-c5-label">4. Fecha de revisión:</label>
+                                                    <input
+                                                        type="date"
+                                                        className="at-c5-input-date"
+                                                        value={formDataCierre.fechaRevision}
+                                                        onChange={(e) => setFormDataCierre({ ...formDataCierre, fechaRevision: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* MENSAJE FINAL INSPIRACIONAL */}
+                                            <div className="at-c5-footer-quote">
+                                                <div className="at-quote-line"></div>
+                                                <p className="at-main-quote">"No necesitas hacer más. Necesitas hacer mejor."</p>
+                                                <p className="at-sub-quote">Este plan será tu guía para el siguiente ciclo ATLAS.</p>
+
+                                                {/* Nueva sección de encuesta */}
+                                                <div className="at-survey-section" style={{ marginTop: '20px' }}>
+                                                    <p className="at-survey-text">
+                                                        ¡Hola! Espero estés muy bien hoy. Por favor, llena esta última encuesta para saber de tu experiencia:
+                                                    </p>
+                                                    <a
+                                                        href="https://tinyurl.com/cierre-piloto"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="at-survey-link"
+                                                        style={{ color: '#007bff', fontWeight: 'bold', textDecoration: 'underline' }}
+                                                    >
+                                                        tinyurl.com/cierre-piloto
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Navegación Inferior */}
+                            <div className="cierre-actions-footer">
+                                {cierreStep > 1 && (
+                                    <button className="btn-sos-secondary" onClick={() => {
+                                        setCierreStep(cierreStep - 1);
+                                        cierreTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }}>Anterior</button>
+                                )}
+                                <button
+                                    className="btn-sos-primary btn-large"
+                                    onClick={() => {
+                                        if (cierreStep === 5) {
+                                            isReadOnly ? setView("menu") : handleFinalSaveCierre();
+                                        } else {
+                                            setCierreStep(cierreStep + 1);
+                                            cierreTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                                    }}
+                                >
+                                    {cierreStep === 5
+                                        ? (isReadOnly ? "Finalizar Consulta" : "Finalizar Ciclo e Integrar")
+                                        : "Siguiente Etapa"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

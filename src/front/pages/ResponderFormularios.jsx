@@ -15,6 +15,7 @@ export const ResponderFormularios = ({
     apiFetch,
     filterPhase,
     onNavigate,
+    modoAuditar2 = false,
 }) => {
     const [availableForms, setAvailableForms] = useState([]);
     const [userAnswers, setUserAnswers] = useState([]);
@@ -23,10 +24,29 @@ export const ResponderFormularios = ({
     const [activeTab, setActiveTab] = useState('pending');
     const [isSyncing, setIsSyncing] = useState(false);
 
+    
+
     useEffect(() => {
         fetchInitialData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterPhase]);
+
+    // MODO AUDITAR2: abrir directo el formulario AUDITAR ya respondido
+    useEffect(() => {
+        if (!modoAuditar2) return;
+        (async () => {
+            try {
+                const { formulario_id } = await apiFetch("/api/sostener/auditar-dos/formulario");
+                if (!formulario_id) return;
+                const form = availableForms.find(f => f.id === formulario_id)
+                    || { id: formulario_id, titulo: "Segundo Diagnóstico AUDITAR", fase_atlas: "AUDITAR", puntos_maximos: 100 };
+                await handleOpenForm(form);
+            } catch (e) {
+                console.error("No se pudo cargar formulario auditar2:", e);
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [modoAuditar2, availableForms]);
 
     const fetchInitialData = async () => {
         setIsSyncing(true);
@@ -163,7 +183,8 @@ export const ResponderFormularios = ({
         });
 
         try {
-            await apiFetch("/api/respuestas", {
+            const endpoint = modoAuditar2 ? "/api/sostener/auditar-dos" : "/api/respuestas";
+            await apiFetch(endpoint, {
                 method: "POST",
                 body: JSON.stringify({
                     formulario_id: formToSave.id,
@@ -173,21 +194,24 @@ export const ResponderFormularios = ({
 
             await fetchInitialData();
 
-await Swal.fire({
-    icon: 'success',
-    title: '¡Enviado!',
-    text: 'Tus respuestas han sido sincronizadas correctamente.',
-    timer: 2000,
-    showConfirmButton: false
-});
+            await Swal.fire({
+                icon: 'success',
+                title: modoAuditar2 ? '¡Segundo diagnóstico enviado!' : '¡Enviado!',
+                text: modoAuditar2
+                    ? 'Volvamos a tu análisis para ver tu progreso.'
+                    : 'Tus respuestas han sido sincronizadas correctamente.',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
-// Redirigir a la fase de origen después de completar
-if (filterPhase === 'AUDITAR') {
-    onNavigate('fase_auditar');
-} else {
-    onNavigate('overview');
-}
-
+            // Navegación de salida
+            if (modoAuditar2) {
+                onNavigate('modulo_sostener');        // ← vuelve a Sostener, NO a Fase Auditar
+            } else if (filterPhase === 'AUDITAR') {
+                onNavigate('fase_auditar');
+            } else {
+                onNavigate('overview');
+            }
 
         } catch (err) {
             console.error("Error:", err);

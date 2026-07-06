@@ -804,3 +804,25 @@ class InventarioIA(db.Model):
             "riesgo_detectado": self.riesgo_detectado,
             "fecha_registro": self.fecha_registro.isoformat() if self.fecha_registro else None,
         }
+
+
+# ─────────────────────────────────────────────
+# 24. AUDITAR DOS (segundo diagnóstico aislado — SOLO Sostener)
+# ─────────────────────────────────────────────
+class AuditarDos(db.Model):
+    __tablename__ = "auditar_dos"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
+    formulario_id: Mapped[int] = mapped_column(ForeignKey("formularios.id"), nullable=False)
+    pregunta_id: Mapped[int] = mapped_column(ForeignKey("preguntas_formulario.id"), nullable=True)
+    valor_respondido: Mapped[str] = mapped_column(Text, nullable=True)
+    puntos_ganados: Mapped[float] = mapped_column(Float, default=0.0)
+    fecha_respuesta: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+    def serialize(self):
+        return {
+            "id": self.id, "usuario_id": self.usuario_id,
+            "formulario_id": self.formulario_id, "pregunta_id": self.pregunta_id,
+            "valor_respondido": self.valor_respondido, "puntos_ganados": self.puntos_ganados,
+            "fecha_respuesta": self.fecha_respuesta.isoformat() if self.fecha_respuesta else None,
+        }

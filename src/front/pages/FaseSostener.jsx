@@ -12,6 +12,8 @@ const FaseSostener = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => 
 
     const isDirectivo = userData.rol === "DIRECTIVO";
 
+    const [faseActivada, setFaseActivada] = useState(null); // null = cargando, true/false = resuelto
+
     useEffect(() => {
         window.scrollTo(0, 0);
         fetchData();
@@ -20,11 +22,12 @@ const FaseSostener = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [dataProgreso, dataStatus] = await Promise.all([
+            const [dataProgreso, dataStatus, dataFases] = await Promise.all([
                 apiFetch("/api/sostener/mi-progreso").catch(() => null),
                 isDirectivo
                     ? apiFetch("/api/sostener/directivo/cierre").catch(() => null)
                     : apiFetch("/api/sostener/mis-evaluaciones").catch(() => []),
+                apiFetch("/api/mi-empresa/fases").catch(() => []),
             ]);
 
             if (dataProgreso) {
@@ -39,8 +42,19 @@ const FaseSostener = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => 
                     setStatusSostener(dataStatus[0]);
                 }
             }
+
+            // ADMIN no tiene empresa: siempre habilitado. Docente/Directivo dependen del toggle.
+            if (userData.rol === "ADMIN") {
+                setFaseActivada(true);
+            } else {
+                const cfg = Array.isArray(dataFases)
+                    ? dataFases.find(f => f.fase === "SOSTENER")
+                    : null;
+                setFaseActivada(cfg?.is_activa === true);
+            }
         } catch (e) {
             console.error("Error cargando Sostener:", e);
+            setFaseActivada(false);
         } finally {
             setLoading(false);
         }
@@ -85,7 +99,43 @@ const FaseSostener = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => 
     return (
         <div className="transformar-master-container">
 
-            {showIntro ? (
+            {/* Fase no activada por la institución */}
+            {faseActivada === false ? (
+                <div className="transformar-intro-container animate-fade-in">
+                    <header className="intro-hero">
+                        <div className="top-nav-intro">
+                            <button className="btn-back-atlas-minimal" onClick={() => onNavigate('overview')}>⬅ Volver al Mapa</button>
+                        </div>
+                        <span className="badge-fase-pill">Fase: Sostener</span>
+                        <h1>Esta fase aún no está disponible</h1>
+                        <p className="hero-subtitle">
+                            Tu institución todavía no ha habilitado la fase <strong>SOSTENER</strong>.
+                            Cuando el administrador la active, podrás acceder al {isDirectivo ? "Cierre Institucional" : "Radar de Desarrollo"} desde aquí.
+                        </p>
+                    </header>
+                    <section className="final-action-section">
+                        <div className="action-button-wrapper">
+                            <div className="liderar-protocols-card-canvas" style={{ textAlign: 'center', padding: '30px' }}>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🔒</div>
+                                <h4>Fase bloqueada temporalmente</h4>
+                                <p className="text-muted-liderar">
+                                    Vuelve más adelante o comunícate con tu coordinador ATLAS para conocer cuándo se abrirá.
+                                </p>
+                                <button className="btn-back-atlas" style={{ marginTop: '16px' }} onClick={() => onNavigate('overview')}>
+                                    Volver al Mapa de Fases
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            ) : faseActivada === null ? (
+                <div className="atlas-sync-float">
+                    <div className="atlas-sync-pill">
+                        <span className="sync-icon">🔄</span>
+                        <span className="sync-text">Verificando disponibilidad...</span>
+                    </div>
+                </div>
+            ) : showIntro ? (
                 <div className="transformar-intro-container animate-fade-in">
                     <header className="intro-hero">
                         <div className="top-nav-intro">

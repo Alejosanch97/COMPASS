@@ -14,7 +14,7 @@ from api.models import (
     RetoPlantilla, AsignacionReto,
     ProgresoFase, RespuestaFormulario, RetoTransformar, PromptLiderar, RetoLiderar, SeguimientoDirectivo,
     AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan, AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan,
-    SostenerDocente, SostenerInstitucional
+    SostenerDocente, SostenerInstitucional, AuditarDos
 )
 import uuid
 
@@ -661,21 +661,6 @@ def actualizar_reto_plantilla_completo(rid):
     db.session.commit()
     return jsonify(r.serialize()), 200
 
-
-# ══════════════════════════════════════════════════════════════════════
-# HUELLA (placeholders mínimos para que el Dashboard no truene)
-# ══════════════════════════════════════════════════════════════════════
-
-@api.route('/huella', methods=['GET'])
-@jwt_required()
-def get_huella():
-    u = get_usuario_actual()
-    return jsonify({
-        "usuario_id": u.id,
-        "nombre": u.nombre_completo,
-        "huella_total": u.huella_compass_total or 0,
-        "ultimo_calculo": None
-    }), 200
 
 
 @api.route('/huella/historial', methods=['GET'])
@@ -1945,26 +1930,6 @@ def sostener_guardar_evaluacion():
     return jsonify(reg.serialize()), 200
 
 
-# ── DOCENTE: evidencia integrada de fases previas (balance antes/ahora) ──
-@api.route('/sostener/mi-balance', methods=['GET'])
-@jwt_required()
-def sostener_mi_balance2():
-    """
-    Reúne evidencia de fases previas para el balance global del docente:
-    retos completados (TRANSFORMAR) y último prompt (LIDERAR).
-    """
-    u = get_usuario_actual()
-    retos_completados = RetoTransformar.query.filter_by(
-        usuario_id=u.id, status_reto="COMPLETADO").count()
-    prompt = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
-        .order_by(PromptLiderar.fecha_registro.desc()).first()
-
-    return jsonify({
-        "retos_completados": retos_completados,
-        "prompt_liderar": prompt.serialize() if prompt else None,
-    }), 200
-
-
 # ── DIRECTIVO: cierre institucional (upsert sobre SostenerInstitucional) ─
 @api.route('/sostener/directivo/cierre', methods=['GET'])
 @jwt_required()
@@ -2081,13 +2046,14 @@ def sostener_datos_grupales():
 def sostener_mi_balance():
     """
     Evidencia integrada para el balance global del docente:
-    - Auditar: promedio de puntos_ganados en formularios de fase AUDITAR (base 5)
+    - Auditar: promedio de puntos_ganados en formularios de fase AUDITAR (base 5),
+      más moda, desviación y puntaje total (para el nivel Compass).
     - Transformar: retos completados
     - Liderar: último prompt
     """
     u = get_usuario_actual()
 
-    # AUDITAR: promedio de puntos de respuestas en formularios AUDITAR
+    # AUDITAR: puntos de respuestas en formularios AUDITAR
     respuestas = db.session.query(RespuestaFormulario).join(
         Formulario, RespuestaFormulario.formulario_id == Formulario.id
     ).filter(
@@ -2097,26 +2063,53 @@ def sostener_mi_balance():
 
     puntajes = [float(r.puntos_ganados or 0) for r in respuestas]
     if puntajes:
-        media_auditar = sum(puntajes) / len(puntajes)
         n = len(puntajes)
+        media_auditar = sum(puntajes) / n
         varianza = sum((p - media_auditar) ** 2 for p in puntajes) / n
         desviacion = varianza ** 0.5
+
+        # Moda: el puntaje que más se repite
+        frec = {}
+        for p in puntajes:
+            frec[p] = frec.get(p, 0) + 1
+        moda = max(frec, key=frec.get)
+
+        # Puntaje total (lo que usa Fase Auditar para calcular el nivel Compass)
+        puntaje_total = sum(puntajes)
     else:
         media_auditar = 0
         desviacion = 0
+        moda = 0
+        puntaje_total = 0
         n = 0
 
     retos_completados = RetoTransformar.query.filter_by(
         usuario_id=u.id, status_reto="COMPLETADO").count()
     prompt = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
         .order_by(PromptLiderar.fecha_registro.desc()).first()
+    
+    filas_dos = AuditarDos.query.filter_by(usuario_id=u.id).all()
+    if filas_dos:
+        p2 = [float(f.puntos_ganados or 0) for f in filas_dos]
+        media_dos = sum(p2) / len(p2)
+        auditar_dos_media5 = round(media_dos, 2)
+        auditar_dos_media100 = round(media_dos * 20, 1)
+    else:
+        auditar_dos_media5 = None
+        auditar_dos_media100 = None
 
     return jsonify({
         "auditar": {
             "media_base5": round(media_auditar, 2),
             "media_base100": round(media_auditar * 20, 1),
             "desviacion": round(desviacion, 2),
+            "moda": round(moda, 2),
+            "puntaje_total": round(puntaje_total, 1),
             "total_items": n,
+        },
+        "auditar_dos": {
+            "media_base5": auditar_dos_media5,
+            "media_base100": auditar_dos_media100,
         },
         "retos_completados": retos_completados,
         "prompt_liderar": prompt.serialize() if prompt else None,
@@ -2215,3 +2208,686 @@ def asegurar_evidencia_auditar():
         "parrafo": parrafo,
         "preguntas": preguntas_out,
     }), 200
+
+@api.route('/mi-empresa/fases-estado', methods=['GET'])
+@jwt_required()
+def mis_fases_estado():
+    """
+    Devuelve las 5 fases en orden fijo, indicando para el docente actual:
+    - activa: si el toggle is_activa está encendido (AUDITAR/TRANSFORMAR se asumen siempre activas)
+    - completada: si el docente ya envió datos de esa fase
+    """
+    u = get_usuario_actual()
+    ORDEN = ["AUDITAR", "TRANSFORMAR", "ASEGURAR", "LIDERAR", "SOSTENER"]
+
+    if not u.empresa_id:
+        return jsonify([{"fase": f, "activa": False, "completada": False} for f in ORDEN]), 200
+
+    # Config de toggles de la empresa
+    configs = {c.fase: c for c in ConfiguracionFaseEmpresa.query.filter_by(empresa_id=u.empresa_id).all()}
+
+    # ── Completitud por fase para ESTE docente ──
+    # AUDITAR: tiene al menos una respuesta de formulario fase AUDITAR
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    auditar_ok = False
+    if forms_auditar_ids:
+        auditar_ok = RespuestaFormulario.query.filter(
+            RespuestaFormulario.usuario_id == u.id,
+            RespuestaFormulario.formulario_id.in_(forms_auditar_ids)
+        ).first() is not None
+
+    # TRANSFORMAR: al menos un reto COMPLETADO
+    transformar_ok = RetoTransformar.query.filter_by(
+        usuario_id=u.id, status_reto="COMPLETADO").first() is not None
+
+    # LIDERAR: prompt COMPLETADO
+    liderar_ok = PromptLiderar.query.filter_by(
+        usuario_id=u.id, status="COMPLETADO").first() is not None
+
+    # ASEGURAR: taller docente COMPLETADO
+    asegurar_ok = AsegurarDocente.query.filter_by(
+        usuario_id=u.id, status="COMPLETADO").first() is not None
+
+    # SOSTENER: evaluación COMPLETADA
+    sostener_ok = SostenerDocente.query.filter_by(
+        usuario_id=u.id, status="COMPLETADO").first() is not None
+
+    completadas = {
+        "AUDITAR": auditar_ok,
+        "TRANSFORMAR": transformar_ok,
+        "ASEGURAR": asegurar_ok,
+        "LIDERAR": liderar_ok,
+        "SOSTENER": sostener_ok,
+    }
+
+    # AUDITAR y TRANSFORMAR se consideran siempre activas; el resto dependen del toggle
+    def esta_activa(fase):
+        if fase in ("AUDITAR", "TRANSFORMAR"):
+            return True
+        cfg = configs.get(fase)
+        return bool(cfg and cfg.is_activa)
+
+    salida = []
+    for fase in ORDEN:
+        salida.append({
+            "fase": fase,
+            "activa": esta_activa(fase),
+            "completada": completadas.get(fase, False),
+        })
+    return jsonify(salida), 200
+
+
+@api.route('/sostener/mis-respuestas-auditar', methods=['GET'])
+@jwt_required()
+def sostener_mis_respuestas_auditar():
+    """
+    Devuelve las respuestas individuales de formularios AUDITAR del docente
+    actual, con el formato que espera ModuloSostener (Panel 2):
+    ID_Pregunta, Puntos_Ganados, Valor_Respondido.
+    """
+    u = get_usuario_actual()
+
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    if not forms_auditar_ids:
+        return jsonify([]), 200
+
+    respuestas = RespuestaFormulario.query.filter(
+        RespuestaFormulario.usuario_id == u.id,
+        RespuestaFormulario.formulario_id.in_(forms_auditar_ids)
+    ).all()
+
+    salida = []
+    for r in respuestas:
+        preg = PreguntaFormulario.query.get(r.pregunta_id) if r.pregunta_id else None
+        salida.append({
+            "ID_Pregunta": str(r.pregunta_id),
+            "Orden_Pregunta": preg.orden_pregunta if preg else None,   # ← NUEVO
+            "Texto_Pregunta": preg.texto_pregunta if preg else "",
+            "Puntos_Ganados": r.puntos_ganados or 0,
+            "Valor_Respondido": r.valor_respondido or "",
+        })
+
+    return jsonify(salida), 200
+
+# ══════════════════════════════════════════════════════════════
+# SEGUNDO DIAGNÓSTICO AUDITAR (tabla aislada AuditarDos)
+# ══════════════════════════════════════════════════════════════
+
+@api.route('/sostener/auditar-dos/estado', methods=['GET'])
+@jwt_required()
+def sostener_auditar_dos_estado():
+    """
+    Dice si el docente YA hizo el segundo diagnóstico y, si existe,
+    devuelve sus estadísticas (mismo formato que mi-balance.auditar)
+    + el detalle por ítem para la pestaña 'Análisis Compass Nuevo'.
+    """
+    u = get_usuario_actual()
+    filas = AuditarDos.query.filter_by(usuario_id=u.id).all()
+
+    if not filas:
+        return jsonify({"existe": False}), 200
+
+    puntajes = [float(f.puntos_ganados or 0) for f in filas]
+    n = len(puntajes)
+    media = sum(puntajes) / n
+    varianza = sum((p - media) ** 2 for p in puntajes) / n
+    desviacion = varianza ** 0.5
+    frec = {}
+    for p in puntajes:
+        frec[p] = frec.get(p, 0) + 1
+    moda = max(frec, key=frec.get)
+    puntaje_total = sum(puntajes)
+
+    detalle = []
+    for f in filas:
+        preg = PreguntaFormulario.query.get(f.pregunta_id) if f.pregunta_id else None
+        detalle.append({
+            "ID_Pregunta": str(f.pregunta_id),
+            "Texto_Pregunta": preg.texto_pregunta if preg else f"Indicador {f.id}",
+            "Puntos_Ganados": f.puntos_ganados or 0,
+            "Valor_Respondido": f.valor_respondido or "",
+        })
+
+    return jsonify({
+        "existe": True,
+        "fecha": filas[0].fecha_respuesta.isoformat() if filas[0].fecha_respuesta else None,
+        "auditar": {
+            "media_base5": round(media, 2),
+            "media_base100": round(media * 20, 1),
+            "desviacion": round(desviacion, 2),
+            "moda": round(moda, 2),
+            "puntaje_total": round(puntaje_total, 1),
+            "total_items": n,
+        },
+        "detalle": detalle,
+    }), 200
+
+
+@api.route('/sostener/auditar-dos', methods=['POST'])
+@jwt_required()
+def sostener_auditar_dos_guardar():
+    """
+    Guarda el SEGUNDO diagnóstico en la tabla aislada AuditarDos.
+    Mismo body que /api/respuestas:
+    { "formulario_id": 3, "respuestas": [ {pregunta_id, valor_respondido, puntos_ganados}, ... ] }
+    Sobrescribe si ya existía (idempotente), sin tocar RespuestaFormulario.
+    """
+    u = get_usuario_actual()
+    data = request.get_json()
+    formulario_id = data.get("formulario_id")
+    respuestas = data.get("respuestas", [])
+
+    if not formulario_id or not respuestas:
+        return jsonify({"error": "formulario_id y respuestas son requeridos"}), 400
+
+    Formulario.query.get_or_404(formulario_id)
+
+    # Limpia intento previo en la tabla aislada (solo AuditarDos)
+    AuditarDos.query.filter_by(usuario_id=u.id).delete()
+
+    for r in respuestas:
+        db.session.add(AuditarDos(
+            usuario_id=u.id,
+            formulario_id=formulario_id,
+            pregunta_id=r.get("pregunta_id"),
+            valor_respondido=r.get("valor_respondido", ""),
+            puntos_ganados=r.get("puntos_ganados", 0),
+        ))
+    db.session.commit()
+
+    total = sum(r.get("puntos_ganados", 0) for r in respuestas)
+    return jsonify({"message": "Segundo diagnóstico guardado", "total_puntos": total}), 201
+
+
+@api.route('/sostener/auditar-dos/formulario', methods=['GET'])
+@jwt_required()
+def sostener_auditar_dos_formulario():
+    """
+    Devuelve el formulario AUDITAR que el docente ya respondió (el mismo que
+    usó en su 1er diagnóstico), para poder recargarlo en modo 'auditar2'.
+    """
+    u = get_usuario_actual()
+
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    if not forms_auditar_ids:
+        return jsonify({"formulario_id": None}), 200
+
+    primera = RespuestaFormulario.query.filter(
+        RespuestaFormulario.usuario_id == u.id,
+        RespuestaFormulario.formulario_id.in_(forms_auditar_ids)
+    ).first()
+
+    fid = primera.formulario_id if primera else forms_auditar_ids[0]
+    return jsonify({"formulario_id": fid}), 200
+
+@api.route('/sostener/mis-retos-transformar', methods=['GET'])
+@jwt_required()
+def sostener_mis_retos_transformar():
+    """
+    Lista los retos de Transformar del docente actual (para el Panel 4).
+    Devuelve todos; el front puede filtrar por status si quiere.
+    """
+    u = get_usuario_actual()
+    retos = RetoTransformar.query.filter_by(usuario_id=u.id)\
+        .order_by(RetoTransformar.numero_reto.asc()).all()
+    return jsonify([r.serialize() for r in retos]), 200
+
+
+@api.route('/sostener/mi-huella-completa', methods=['GET'])
+@jwt_required()
+def sostener_mi_huella_completa():
+    """
+    Huella COMPASS ponderada del docente (0-100), sumando el aporte de cada fase
+    según PESOS_FASE. Cada fase entrega su peso completo si está 'completa', o
+    una fracción proporcional a su desempeño cuando hay una métrica de calidad.
+
+      AUDITAR (20): fracción = media_puntos / 5   (qué tan alto puntuó)
+      TRANSFORMAR (30): fracción = retos_completados / retos_totales_asignados
+      LIDERAR (15): fracción = promedio 4 puntajes del prompt / 5
+      ASEGURAR (20): fracción = puntaje_rector / 6  (o 1.0 si status COMPLETADO)
+      SOSTENER (15): fracción = promedio_global / 5  (del último radar)
+    """
+    u = get_usuario_actual()
+    detalle = {}
+
+    # ---------- AUDITAR (20) ----------
+    r_aud = db.session.query(RespuestaFormulario).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == u.id,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+    if r_aud:
+        media_aud = sum(float(x.puntos_ganados or 0) for x in r_aud) / len(r_aud)
+        frac_aud = min(media_aud / 5.0, 1.0)
+    else:
+        media_aud = 0
+        frac_aud = 0
+    detalle["auditar"] = {
+        "peso": PESOS_FASE["AUDITAR"],
+        "obtenido": round(PESOS_FASE["AUDITAR"] * frac_aud, 1),
+        "completa": bool(r_aud),
+        "media_base5": round(media_aud, 2),
+    }
+
+    # ---------- TRANSFORMAR (30) ----------
+    total_retos = RetoTransformar.query.filter_by(usuario_id=u.id).count()
+    retos_ok = RetoTransformar.query.filter_by(
+        usuario_id=u.id, status_reto="COMPLETADO").count()
+    frac_tr = (retos_ok / total_retos) if total_retos else 0
+    detalle["transformar"] = {
+        "peso": PESOS_FASE["TRANSFORMAR"],
+        "obtenido": round(PESOS_FASE["TRANSFORMAR"] * frac_tr, 1),
+        "completa": retos_ok > 0,
+        "retos_completados": retos_ok,
+        "retos_totales": total_retos,
+    }
+
+    # ---------- LIDERAR (15) ----------
+    p = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+    if p:
+        prom_lid = (float(p.puntaje_etica or 0) + float(p.puntaje_privacidad or 0)
+                    + float(p.puntaje_agencia or 0) + float(p.puntaje_dependencia or 0)) / 4.0
+        frac_lid = min(prom_lid / 5.0, 1.0)
+    else:
+        prom_lid = 0
+        frac_lid = 0
+    detalle["liderar"] = {
+        "peso": PESOS_FASE["LIDERAR"],
+        "obtenido": round(PESOS_FASE["LIDERAR"] * frac_lid, 1),
+        "completa": bool(p),
+        "promedio_etico": round(prom_lid, 2),
+    }
+
+    # ---------- ASEGURAR (20) ----------
+    a = AsegurarDocente.query.filter_by(usuario_id=u.id).first()
+    if a and a.status == "COMPLETADO":
+        # puntaje_rector va 0-6; si no hay, damos el peso completo por finalizar
+        frac_as = (float(a.puntaje_rector) / 6.0) if a.puntaje_rector else 1.0
+        frac_as = min(frac_as, 1.0)
+        completa_as = True
+    else:
+        frac_as = 0
+        completa_as = False
+    detalle["asegurar"] = {
+        "peso": PESOS_FASE["ASEGURAR"],
+        "obtenido": round(PESOS_FASE["ASEGURAR"] * frac_as, 1),
+        "completa": completa_as,
+    }
+
+    # ---------- SOSTENER (15) ----------
+    s = SostenerDocente.query.filter_by(usuario_id=u.id)\
+        .order_by(SostenerDocente.fecha_evaluacion.desc()).first()
+    if s:
+        frac_so = min(float(s.promedio_global or 0) / 5.0, 1.0)
+    else:
+        frac_so = 0
+    detalle["sostener"] = {
+        "peso": PESOS_FASE["SOSTENER"],
+        "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1),
+        "completa": bool(s),
+        "promedio_global": round(float(s.promedio_global), 2) if s else 0,
+    }
+
+    huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    fases_completas = sum(1 for d in detalle.values() if d["completa"])
+
+    return jsonify({
+        "huella_total": huella_total,           # 0-100 ponderado
+        "fases_completas": fases_completas,      # 0-5
+        "detalle": detalle,
+    }), 200
+
+def _calcular_huella_docente(uid):
+    """Devuelve la huella ponderada (0-100) + detalle de UN docente por id.
+    Reutilizable tanto para /mi-huella-completa como para el promedio institucional."""
+    detalle = {}
+
+    # AUDITAR (20)
+    r_aud = db.session.query(RespuestaFormulario).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == uid,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+    if r_aud:
+        media_aud = sum(float(x.puntos_ganados or 0) for x in r_aud) / len(r_aud)
+        frac_aud = min(media_aud / 5.0, 1.0)
+    else:
+        media_aud, frac_aud = 0, 0
+    detalle["auditar"] = {"peso": PESOS_FASE["AUDITAR"],
+        "obtenido": round(PESOS_FASE["AUDITAR"] * frac_aud, 1), "completa": bool(r_aud)}
+
+    # TRANSFORMAR (30)
+    total_retos = RetoTransformar.query.filter_by(usuario_id=uid).count()
+    retos_ok = RetoTransformar.query.filter_by(usuario_id=uid, status_reto="COMPLETADO").count()
+    frac_tr = (retos_ok / total_retos) if total_retos else 0
+    detalle["transformar"] = {"peso": PESOS_FASE["TRANSFORMAR"],
+        "obtenido": round(PESOS_FASE["TRANSFORMAR"] * frac_tr, 1), "completa": retos_ok > 0}
+
+    # LIDERAR (15)
+    p = PromptLiderar.query.filter_by(usuario_id=uid, status="COMPLETADO")\
+        .order_by(PromptLiderar.fecha_registro.desc()).first()
+    if p:
+        prom_lid = (float(p.puntaje_etica or 0) + float(p.puntaje_privacidad or 0)
+                    + float(p.puntaje_agencia or 0) + float(p.puntaje_dependencia or 0)) / 4.0
+        frac_lid = min(prom_lid / 5.0, 1.0)
+    else:
+        frac_lid = 0
+    detalle["liderar"] = {"peso": PESOS_FASE["LIDERAR"],
+        "obtenido": round(PESOS_FASE["LIDERAR"] * frac_lid, 1), "completa": bool(p)}
+
+    # ASEGURAR (20)
+    a = AsegurarDocente.query.filter_by(usuario_id=uid).first()
+    if a and a.status == "COMPLETADO":
+        frac_as = min((float(a.puntaje_rector) / 6.0) if a.puntaje_rector else 1.0, 1.0)
+        completa_as = True
+    else:
+        frac_as, completa_as = 0, False
+    detalle["asegurar"] = {"peso": PESOS_FASE["ASEGURAR"],
+        "obtenido": round(PESOS_FASE["ASEGURAR"] * frac_as, 1), "completa": completa_as}
+
+    # SOSTENER (15)
+    s = SostenerDocente.query.filter_by(usuario_id=uid)\
+        .order_by(SostenerDocente.fecha_evaluacion.desc()).first()
+    frac_so = min(float(s.promedio_global or 0) / 5.0, 1.0) if s else 0
+    detalle["sostener"] = {"peso": PESOS_FASE["SOSTENER"],
+        "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1), "completa": bool(s)}
+
+    huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    fases_completas = sum(1 for d in detalle.values() if d["completa"])
+    return {"huella_total": huella_total, "fases_completas": fases_completas, "detalle": detalle}
+
+def _docentes_de_mi_empresa(u):
+    if not u or u.rol not in ("DIRECTIVO", "ADMIN") or not u.empresa_id:
+        return []
+    return Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+
+@api.route('/sostener/directivo/auditar-institucional', methods=['GET'])
+@jwt_required()
+def sostener_directivo_auditar_institucional():
+    """
+    Promedia las respuestas AUDITAR de TODOS los docentes de la empresa,
+    devolviendo por Orden_Pregunta (para que el front mapee dimensiones igual
+    que en el docente). Cada item = promedio de puntos de esa pregunta en la empresa.
+    """
+    u = get_usuario_actual()
+    docentes = _docentes_de_mi_empresa(u)
+    if not docentes:
+        return jsonify({"respuestas": [], "totalDocentes": 0}), 200
+
+    ids_doc = [d.id for d in docentes]
+    forms_aud = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    if not forms_aud:
+        return jsonify({"respuestas": [], "totalDocentes": len(docentes)}), 200
+
+    filas = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
+        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id.in_(ids_doc),
+        RespuestaFormulario.formulario_id.in_(forms_aud)
+    ).all()
+
+    # Agrupamos por orden_pregunta y promediamos
+    acc = {}
+    for resp, preg in filas:
+        orden = preg.orden_pregunta
+        if orden is None:
+            continue
+        acc.setdefault(orden, []).append(float(resp.puntos_ganados or 0))
+
+    salida = []
+    for orden, vals in sorted(acc.items()):
+        salida.append({
+            "Orden_Pregunta": orden,
+            "Puntos_Ganados": round(sum(vals) / len(vals), 2),  # media empresa
+        })
+
+    # Puntaje total institucional = promedio de la suma total por docente
+    sumas_por_doc = {}
+    for resp, preg in filas:
+        sumas_por_doc.setdefault(resp.usuario_id, 0)
+        sumas_por_doc[resp.usuario_id] += float(resp.puntos_ganados or 0)
+    docentes_con_data = len(sumas_por_doc) or 1
+    puntaje_total_prom = round(sum(sumas_por_doc.values()) / docentes_con_data, 1)
+
+    todos = [v for vals in acc.values() for v in vals]
+    media5 = round(sum(todos) / len(todos), 2) if todos else 0
+
+    return jsonify({
+        "respuestas": salida,
+        "totalDocentes": len(docentes),
+        "docentesConAuditar": docentes_con_data,
+        "media_base5": media5,
+        "media_base100": round(media5 * 20, 1),
+        "puntaje_total": puntaje_total_prom,
+    }), 200
+
+@api.route('/sostener/directivo/balance-institucional', methods=['GET'])
+@jwt_required()
+def sostener_directivo_balance_institucional():
+    """
+    Balance institucional con la MISMA forma que /sostener/mi-balance del docente,
+    pero con datos promediados de toda la empresa.
+    """
+    u = get_usuario_actual()
+    docentes = _docentes_de_mi_empresa(u)
+    if not docentes:
+        return jsonify({
+            "auditar": {"media_base5": 0, "media_base100": 0, "desviacion": 0,
+                        "moda": 0, "puntaje_total": 0, "total_items": 0},
+            "retos_completados": 0, "prompt_liderar": None, "totalDocentes": 0,
+        }), 200
+
+    ids = [d.id for d in docentes]
+
+    # ── AUDITAR institucional: promedio de puntos de todos los docentes ──
+    forms_aud = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    puntajes = []
+    sumas_por_doc = {}
+    if forms_aud:
+        r_aud = RespuestaFormulario.query.filter(
+            RespuestaFormulario.usuario_id.in_(ids),
+            RespuestaFormulario.formulario_id.in_(forms_aud)
+        ).all()
+        for r in r_aud:
+            val = float(r.puntos_ganados or 0)
+            puntajes.append(val)
+            sumas_por_doc.setdefault(r.usuario_id, 0)
+            sumas_por_doc[r.usuario_id] += val
+
+    if puntajes:
+        n_p = len(puntajes)
+        media = sum(puntajes) / n_p
+        varianza = sum((p - media) ** 2 for p in puntajes) / n_p
+        desviacion = varianza ** 0.5
+        frec = {}
+        for p in puntajes:
+            frec[p] = frec.get(p, 0) + 1
+        moda = max(frec, key=frec.get)
+        docs_data = len(sumas_por_doc) or 1
+        puntaje_total = sum(sumas_por_doc.values()) / docs_data
+    else:
+        media = desviacion = moda = puntaje_total = 0
+        n_p = 0
+
+    # ── TRANSFORMAR: retos completados en la empresa ──
+    retos_ok = RetoTransformar.query.filter(
+        RetoTransformar.usuario_id.in_(ids),
+        RetoTransformar.status_reto == "COMPLETADO"
+    ).count()
+
+    # ── LIDERAR: promedio de puntajes éticos (último prompt por docente) ──
+    sums = {"etica": 0, "priv": 0, "agen": 0, "dep": 0, "n": 0}
+    for did in ids:
+        p = PromptLiderar.query.filter_by(usuario_id=did, status="COMPLETADO")\
+            .order_by(PromptLiderar.fecha_registro.desc()).first()
+        if not p:
+            continue
+        sums["etica"] += float(p.puntaje_etica or 0)
+        sums["priv"] += float(p.puntaje_privacidad or 0)
+        sums["agen"] += float(p.puntaje_agencia or 0)
+        sums["dep"] += float(p.puntaje_dependencia or 0)
+        sums["n"] += 1
+    prompt_inst = None
+    if sums["n"] > 0:
+        nn = sums["n"]
+        prompt_inst = {
+            "prompt_original": f"Promedio institucional de {nn} docentes con prompt registrado.",
+            "clasificacion_riesgo": "Promedio Institucional",
+            "categoria_uso": "Institucional",
+            "puntaje_etica": round(sums["etica"] / nn, 2),
+            "puntaje_privacidad": round(sums["priv"] / nn, 2),
+            "puntaje_agencia": round(sums["agen"] / nn, 2),
+            "puntaje_dependencia": round(sums["dep"] / nn, 2),
+        }
+
+    return jsonify({
+        "auditar": {
+            "media_base5": round(media, 2),
+            "media_base100": round(media * 20, 1),
+            "desviacion": round(desviacion, 2),
+            "moda": round(moda, 2),
+            "puntaje_total": round(puntaje_total, 1),
+            "total_items": n_p,
+        },
+        "retos_completados": retos_ok,
+        "prompt_liderar": prompt_inst,
+        "totalDocentes": len(docentes),
+    }), 200
+
+@api.route('/sostener/directivo/huella-institucional', methods=['GET'])
+@jwt_required()
+def sostener_directivo_huella_institucional():
+    """
+    Huella institucional = promedio de la huella ponderada individual de
+    cada docente (misma fórmula), calculada con _calcular_huella_docente.
+    """
+    u = get_usuario_actual()
+    docentes = _docentes_de_mi_empresa(u)
+    if not docentes:
+        return jsonify({"huella_total": 0, "totalDocentes": 0, "fases_completas": 0, "detalle": {}}), 200
+
+    fases = ["auditar", "transformar", "liderar", "asegurar", "sostener"]
+    acum = {f: 0.0 for f in fases}
+    acum_total = 0.0
+    completas_por_fase = {f: 0 for f in fases}
+
+    for d in docentes:
+        h = _calcular_huella_docente(d.id)
+        acum_total += h["huella_total"]
+        for f in fases:
+            acum[f] += h["detalle"][f]["obtenido"]
+            if h["detalle"][f]["completa"]:
+                completas_por_fase[f] += 1
+
+    n = len(docentes)
+    detalle = {}
+    total_completas = 0
+    for f in fases:
+        # Fase "completa" a nivel institucional si más de la mitad de docentes la completó
+        completa_inst = completas_por_fase[f] > (n / 2)
+        if completa_inst:
+            total_completas += 1
+        detalle[f] = {
+            "peso": PESOS_FASE[f.upper()],
+            "obtenido": round(acum[f] / n, 1),           # promedio empresa
+            "docentes_completos": completas_por_fase[f],
+            "completa": completa_inst,
+        }
+
+    return jsonify({
+        "huella_total": round(acum_total / n, 1),
+        "totalDocentes": n,
+        "fases_completas": total_completas,
+        "detalle": detalle,
+    }), 200
+
+@api.route('/sostener/directivo/auditar-dos-inst', methods=['GET'])
+@jwt_required()
+def sostener_directivo_auditar_dos_inst():
+    """
+    Promedio institucional del SEGUNDO diagnóstico AUDITAR (tabla AuditarDos)
+    de todos los docentes de la empresa. Devuelve la misma forma que el
+    auditar-dos individual del docente (existe + auditar{...}), pero agregado.
+    """
+    u = get_usuario_actual()
+    docentes = _docentes_de_mi_empresa(u)
+    if not docentes:
+        return jsonify({"existe": False}), 200
+
+    ids = [d.id for d in docentes]
+    filas = AuditarDos.query.filter(AuditarDos.usuario_id.in_(ids)).all()
+    if not filas:
+        return jsonify({"existe": False}), 200
+
+    # Todos los puntos (para media/moda/desviación institucional)
+    puntajes = [float(f.puntos_ganados or 0) for f in filas]
+    n_p = len(puntajes)
+    media = sum(puntajes) / n_p
+    varianza = sum((p - media) ** 2 for p in puntajes) / n_p
+    desviacion = varianza ** 0.5
+    frec = {}
+    for p in puntajes:
+        frec[p] = frec.get(p, 0) + 1
+    moda = max(frec, key=frec.get)
+
+    # Puntaje total = promedio de la suma por docente que hizo el 2º diagnóstico
+    sumas_por_doc = {}
+    for f in filas:
+        sumas_por_doc.setdefault(f.usuario_id, 0)
+        sumas_por_doc[f.usuario_id] += float(f.puntos_ganados or 0)
+    docs_data = len(sumas_por_doc) or 1
+    puntaje_total = sum(sumas_por_doc.values()) / docs_data
+
+    return jsonify({
+        "existe": True,
+        "docentesConSegundo": docs_data,
+        "totalDocentes": len(docentes),
+        "auditar": {
+            "media_base5": round(media, 2),
+            "media_base100": round(media * 20, 1),
+            "desviacion": round(desviacion, 2),
+            "moda": round(moda, 2),
+            "puntaje_total": round(puntaje_total, 1),
+            "total_items": n_p,
+        },
+    }), 200
+
+
+@api.route('/sostener/directivo/mis-retos-transformar-inst', methods=['GET'])
+@jwt_required()
+def sostener_directivo_retos_inst():
+    """Lista agregada de retos Transformar de todos los docentes de la empresa."""
+    u = get_usuario_actual()
+    docentes = _docentes_de_mi_empresa(u)
+    if not docentes:
+        return jsonify([]), 200
+    ids = [d.id for d in docentes]
+    retos = RetoTransformar.query.filter(
+        RetoTransformar.usuario_id.in_(ids)
+    ).order_by(RetoTransformar.numero_reto.asc()).all()
+    return jsonify([r.serialize() for r in retos]), 200
+
+# ══════════════════════════════════════════════════════════════════════
+# HUELLA (placeholders mínimos para que el Dashboard no truene)
+# ══════════════════════════════════════════════════════════════════════
+
+@api.route('/huella', methods=['GET'])
+@jwt_required()
+def get_huella():
+    u = get_usuario_actual()
+    # Huella calculada EN VIVO con la ponderación real de las 5 fases.
+    # Sube automáticamente cada vez que el docente completa una fase.
+    h = _calcular_huella_docente(u.id)
+    return jsonify({
+        "usuario_id": u.id,
+        "nombre": u.nombre_completo,
+        "huella_total": h["huella_total"],
+        "fases_completas": h["fases_completas"],
+        "detalle": h["detalle"],
+        "ultimo_calculo": None
+    }), 200
+
+
