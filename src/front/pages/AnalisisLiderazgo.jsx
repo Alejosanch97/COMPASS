@@ -177,7 +177,7 @@ const AnalisisLiderazgo = ({ userData, apiFetch, onNavigate }) => {
         });
     };
 
-    const canUnlockAsegurar = stats.cumplimiento.transformar >= 80 && stats.riesgos.altoRiesgoTotal <= 15;
+    const canUnlockAsegurar = stats.cumplimiento.transformar >= 80;
 
     if (loading) return (
         <div className="dash-lider-2026-loader">

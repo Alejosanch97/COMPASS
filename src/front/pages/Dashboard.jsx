@@ -588,24 +588,34 @@ export const Dashboard = ({ onLogout }) => {
                                 <div className="notifications-container">
                                     {notificaciones.length === 0 ? (
                                         <p className="notif-empty">No tienes mensajes pendientes.</p>
-                                    ) : notificaciones.map((n, i) => (
-                                        <div key={i} className="notification-item">
-                                            <div className="notif-icon">🔔</div>
-                                            <div className="notif-content">
-                                                <p className="notif-text">{n.accion_activada || "Notificación institucional"}</p>
-                                                <div className="notif-footer-meta">
-                                                    <span className="notif-tag-dim">{n.dimension_priorizada || "INSTITUCIONAL"}</span>
-                                                    <span className="notif-date">
-                                                        {n.fecha_accion ? new Date(n.fecha_accion).toLocaleDateString() : "—"}
-                                                    </span>
+                                    ) : notificaciones.map((n, i) => {
+                                        const accion = String(n.accion_activada || "").toUpperCase();
+                                        const esRezagado = accion.includes("REZAGADOS");
+                                        const esAyuda = accion.includes("AYUDA") || accion.includes("MENTOR");
+                                        return (
+                                            <div key={i} className={`notification-item ${esRezagado ? 'alert' : esAyuda ? 'help' : ''}`}>
+                                                <div className="notif-icon">{esRezagado ? "⚠️" : esAyuda ? "🤝" : "🔔"}</div>
+                                                <div className="notif-content">
+                                                    <p className="notif-text">
+                                                        {esRezagado
+                                                            ? "Atención: tienes tareas pendientes en tus fases. Es importante retomar el proceso."
+                                                            : esAyuda
+                                                                ? "Tu directivo activó una sesión de mentoría / ayuda presencial para ti."
+                                                                : (n.accion_activada || "Notificación institucional")}
+                                                    </p>
+                                                    <div className="notif-footer-meta">
+                                                        <span className="notif-tag-dim">{n.dimension_priorizada || "INSTITUCIONAL"}</span>
+                                                        <span className="notif-date">
+                                                            {n.fecha_accion ? new Date(n.fecha_accion).toLocaleDateString() : "—"}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
-
                         {/* CARD: FORMULARIOS DISPONIBLES */}
                         {misFormularios.length > 0 && (
                             <div className="info-card wide-card">

@@ -1,0 +1,400 @@
+/* =============================================
+   ESTRUCTURA BASE ATLAS ANÁLISIS (atl-an)
+   ============================================= */
+.atl-an-container {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    padding: 1rem 0;
+}
+
+.atl-an-grid {
+    display: grid;
+    /* Limitamos el tamaño máximo para que no se crezcan de más */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
+    gap: 24px;
+    justify-content: center;
+} 
+
+.atl-an-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.atl-an-card:hover {
+    transform: translateY(-4px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.atl-an-card-info h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.user-key-tag {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* =============================================
+   ESTADÍSTICAS RÁPIDAS (MINI BOXES)
+   ============================================= */
+.atl-an-stats-row {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.atl-an-mini-box {
+    flex: 1;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #f1f5f9;
+}
+
+.atl-an-mini-box.dark { 
+    background: #0f172a; 
+    border-color: #1e293b; 
+}
+
+.atl-an-val { 
+    font-size: 1.4rem; 
+    font-weight: 800; 
+    display: block; 
+}
+
+.atl-an-val.blue { color: #3b82f6; }
+.atl-an-val.green { color: #10b981; }
+.atl-an-val.gold { color: #f59e0b; }
+
+.atl-an-lbl { 
+    font-size: 0.65rem; 
+    color: #94a3b8; 
+    text-transform: uppercase; 
+    font-weight: 700; 
+}
+
+.atl-an-btn-main {
+    width: 100%;
+    padding: 12px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    margin-top: auto;
+}
+
+.atl-an-btn-main:hover { 
+    background: #2563eb; 
+    transform: translateY(-2px);
+}
+
+/* =============================================
+   MODAL PREMIUM Y TABS (CON SCROLL FIX)
+   ============================================= */
+.atl-an-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.atl-an-modal {
+    background: white;
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    max-height: 90vh; 
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    position: relative;
+}
+
+.atl-an-modal.wide {
+    max-width: 850px; 
+}
+
+.atl-an-modal-head {
+    padding: 24px 32px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.atl-an-modal-head h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #0f172a;
+    padding-right: 40px;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 5px;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.modal-tabs button {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #64748b;
+    background: transparent;
+}
+
+.modal-tabs button.active {
+    background: white;
+    color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.atl-an-modal-body {
+    padding: 32px;
+    overflow-y: auto;
+    flex-grow: 1;
+    background: #ffffff;
+}
+
+/* =============================================
+   MÉTRICAS E INTERPRETACIÓN (LÓGICA IMAGEN 2)
+   ============================================= */
+.atl-an-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.atl-an-progress-section {
+    margin-bottom: 30px;
+}
+
+/* GRÁFICAS CORREGIDAS: Estilo Senior */
+.atl-an-bar-container {
+    margin-top: 12px;
+    margin-bottom: 16px;
+}
+
+.atl-an-bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.atl-an-bar-bg {
+    background: #f1f5f9;
+    height: 12px; /* Un poco más gruesa para que se vea mejor */
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0; /* Definición extra */
+}
+
+.atl-an-bar-fill {
+    height: 100%;
+    /* Degradado para que no se vea aburrido */
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
+}
+
+.atl-an-insight-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #3b82f6;
+}
+
+/* =============================================
+   SÍNTESIS NARRATIVA 
+   ============================================= */
+.sintesis-narrativa {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.parrafo-analitico {
+    background: #fdfdfd;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    border-left: 4px solid #3b82f6;
+}
+
+.parrafo-analitico h5 {
+    margin: 0 0 8px 0;
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.parrafo-analitico p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #475569;
+}
+
+/* =============================================
+   DETALLE DE ENCUESTA (PREGUNTAS)
+   ============================================= */
+.pregunta-detalle-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.pregunta-detalle-card h5 {
+    font-size: 1rem;
+    margin: 0 0 15px 0;
+    line-height: 1.4;
+    color: #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.badge-tipo {
+    font-size: 0.65rem;
+    background: #eff6ff;
+    color: #3b82f6;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+/* =============================================
+   FOOTER Y CIERRE (FIJOS)
+   ============================================= */
+.modal-footer {
+    padding: 20px 32px;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+    flex-shrink: 0;
+}
+
+.atl-an-close {
+    background: #f1f5f9;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    color: #64748b;
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.atl-an-close:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* --- LOADER ESTRUCTURADO --- */
+.dash-lider-2026-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh; /* Ajustado para que no ocupe toda la pantalla si está dentro de un contenedor */
+    width: 100%;
+}
+
+.dash-lider-2026-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(197, 160, 89, 0.1); /* Fondo del círculo muy tenue */
+    border-top: 5px solid #c5a059; /* El color dorado de tu marca */
+    border-radius: 50%;
+    animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    margin-bottom: 20px;
+}
+
+.dash-lider-2026-loader p {
+    font-family: 'Montserrat', sans-serif; /* O la que uses en tu app */
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #c5a059;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+/* =============================================
+   ANIMACIONES Y RESPONSIVE
+   ============================================= */
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 768px) {
+    .atl-an-modal {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    .atl-an-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

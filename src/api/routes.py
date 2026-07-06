@@ -202,8 +202,25 @@ def crear_usuario():
     if Usuario.query.filter_by(email=data["email"].lower()).first():
         return jsonify({"error": "Email ya existe"}), 409
 
+    # ── Generar teacher_key: consecutivo + primer nombre, en MAYÚSCULAS ──
+    # Ej: "Luis Alejandro" con 0 usuarios previos → "1LUIS"
+    import unicodedata
+    primer_nombre = data["nombre_completo"].strip().split(" ")[0].lower()
+    primer_nombre = "".join(
+        c for c in unicodedata.normalize("NFD", primer_nombre)
+        if unicodedata.category(c) != "Mn" and c.isalnum()
+    )
+
+    consecutivo = Usuario.query.count() + 1
+    nuevo_teacher_key = f"{consecutivo}{primer_nombre}".upper()
+
+    # Garantiza unicidad: si ese key ya existe, sigue sumando
+    while Usuario.query.filter_by(teacher_key=nuevo_teacher_key).first():
+        consecutivo += 1
+        nuevo_teacher_key = f"{consecutivo}{primer_nombre}".upper()
+
     nuevo = Usuario(
-        teacher_key=f"TK-{gen_id()}",
+        teacher_key=nuevo_teacher_key,
         nombre_completo=data["nombre_completo"],
         email=data["email"].strip().lower(),
         password_hash=generate_password_hash(data["password"]),
@@ -670,7 +687,46 @@ def historial_huella():
 @api.route('/mis-notificaciones', methods=['GET'])
 @jwt_required()
 def mis_notificaciones():
-    return jsonify([]), 200
+    """
+    Devuelve las acciones de gobernanza (SeguimientoDirectivo) dirigidas
+    al docente actual. El directivo guarda los teacher_keys destino en
+    docente_mentor_key como texto ("TK-1, TK-2"), así que buscamos
+    cualquier registro donde aparezca la clave del docente.
+    """
+    u = get_usuario_actual()
+    if not u or not u.teacher_key:
+        return jsonify([]), 200
+
+    # Traemos los seguimientos de directivos de la misma empresa
+    if not u.empresa_id:
+        return jsonify([]), 200
+
+    directivos_ids = [
+        d.id for d in Usuario.query.filter_by(
+            empresa_id=u.empresa_id, rol="DIRECTIVO"
+        ).all()
+    ]
+    # También incluye acciones institucionales de ADMIN si las hubiera
+    admins_ids = [d.id for d in Usuario.query.filter_by(rol="ADMIN").all()]
+    emisores_ids = directivos_ids + admins_ids
+
+    if not emisores_ids:
+        return jsonify([]), 200
+
+    registros = SeguimientoDirectivo.query.filter(
+        SeguimientoDirectivo.usuario_id.in_(emisores_ids)
+    ).order_by(SeguimientoDirectivo.fecha_accion.desc()).all()
+
+    mi_key = (u.teacher_key or "").strip().upper()
+    mis_notifs = []
+    for r in registros:
+        destino = (r.docente_mentor_key or "").upper()
+        # El campo puede traer varias keys separadas por coma
+        # o la palabra "INSTITUCIONAL" (para todos)
+        if mi_key in destino or "INSTITUCIONAL" in destino:
+            mis_notifs.append(r.serialize())
+
+    return jsonify(mis_notifs), 200
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1706,7 +1762,14 @@ def asegurar_guardar_diagnostico():
     for c in campos:
         if c in data:
             setattr(reg, c, data[c])
-    reg.puntaje_total_radar = data.get("puntaje_total_radar", reg.puntaje_total_radar)
+
+    # ── CAMBIO: convertir "4.20" (string decimal) a entero, que es lo que espera la columna ──
+    ptr = data.get("puntaje_total_radar", reg.puntaje_total_radar)
+    try:
+        reg.puntaje_total_radar = int(round(float(ptr))) if ptr is not None else None
+    except (ValueError, TypeError):
+        reg.puntaje_total_radar = None
+
     reg.clasificacion_final = data.get("clasificacion_final", reg.clasificacion_final)
     reg.status = "COMPLETADO"
     db.session.commit()
@@ -2057,4 +2120,98 @@ def sostener_mi_balance():
         },
         "retos_completados": retos_completados,
         "prompt_liderar": prompt.serialize() if prompt else None,
+    }), 200
+
+
+@api.route('/asegurar/directivo/evidencia-auditar', methods=['GET'])
+@jwt_required()
+def asegurar_evidencia_auditar():
+    """
+    Estadísticas de las respuestas de formularios AUDITAR de los docentes
+    de la empresa: promedio, moda y desviación de los puntajes totales por
+    envío, más el desglose por pregunta (para la pestaña 'Respuestas Auditar').
+    Replica procesarDatosHeredados del módulo viejo.
+    """
+    u = get_usuario_actual()
+    if u.rol not in ("DIRECTIVO", "ADMIN"):
+        return jsonify({"error": "No autorizado"}), 403
+    if not u.empresa_id:
+        return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
+
+    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()]
+    if not docentes_ids:
+        return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
+
+    # Formularios AUDITAR de la empresa
+    forms_auditar = Formulario.query.filter_by(fase_atlas="AUDITAR").all()
+    forms_ids = [f.id for f in forms_auditar]
+    if not forms_ids:
+        return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
+
+    respuestas = RespuestaFormulario.query.filter(
+        RespuestaFormulario.usuario_id.in_(docentes_ids),
+        RespuestaFormulario.formulario_id.in_(forms_ids)
+    ).all()
+
+    # Suma de puntos por envío (usuario+formulario)
+    envios = {}
+    conteo_por_pregunta = {}
+    for r in respuestas:
+        clave = f"{r.formulario_id}_{r.usuario_id}"
+        envios[clave] = envios.get(clave, 0) + float(r.puntos_ganados or 0)
+        # desglose por pregunta
+        if r.pregunta_id is not None:
+            pid = r.pregunta_id
+            if pid not in conteo_por_pregunta:
+                conteo_por_pregunta[pid] = {}
+            val = (r.valor_respondido or "").strip()
+            if val:
+                conteo_por_pregunta[pid][val] = conteo_por_pregunta[pid].get(val, 0) + 1
+
+    puntajes = list(envios.values())
+    n = len(puntajes)
+    if n == 0:
+        return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
+
+    promedio = sum(puntajes) / n
+    # moda
+    frec = {}
+    for p in puntajes:
+        frec[p] = frec.get(p, 0) + 1
+    moda = max(frec, key=frec.get)
+    # desviación estándar
+    varianza = sum((p - promedio) ** 2 for p in puntajes) / n
+    desviacion = varianza ** 0.5
+
+    # Análisis inteligente (mismos umbrales del viejo)
+    def analisis_inteligente(p):
+        if p >= 90: return ("Capacidad ATLAS demostrada", "#d69e2e", "La distribución del COMPASS ubica al grupo mayoritariamente en niveles de práctica alineada y consciente. Este resultado evidencia un uso intencional de la inteligencia artificial, acompañado de reflexión pedagógica, criterios éticos claros y comprensión del rol docente.")
+        if p >= 80: return ("Práctica alineada en consolidación", "#3182ce", "Los resultados indican que el grupo ha integrado la inteligencia artificial de manera consistente en planificación, diseño de actividades y retroalimentación. Existe claridad pedagógica, aunque hay oportunidades para fortalecer la sistematicidad institucional.")
+        if p >= 70: return ("Práctica consciente emergente", "#38a169", "El grupo reconoce el potencial de la IA para apoyar el aprendizaje con intención pedagógica. Se evidencian preocupaciones legítimas sobre el esfuerzo cognitivo del estudiante y la automatización excesiva, reflejando una actitud crítica y responsable.")
+        if p >= 40: return ("Uso emergente y exploratorio", "#dd6b20", "La evidencia sugiere un uso inicial o exploratorio de la IA, con aproximaciones puntuales y reflexión en construcción. Fase clave para clarificar criterios pedagógicos y definir principios comunes antes de escalar.")
+        return ("Exploración inicial", "#e53e3e", "Los resultados muestran una presencia limitada de la IA en la práctica docente y una percepción significativa de riesgos. Refuerza la importancia de la fase AUDITAR como punto de partida para construir acompañamiento institucional.")
+
+    nivel, color, parrafo = analisis_inteligente(promedio)
+
+    # Formatear desglose por pregunta
+    preguntas_out = []
+    for pid, conteo in conteo_por_pregunta.items():
+        preg = PreguntaFormulario.query.get(pid)
+        total_resp = sum(conteo.values()) or 1
+        opciones = [{"opcion": k, "count": v, "pct": round((v / total_resp) * 100, 1)} for k, v in conteo.items()]
+        preguntas_out.append({
+            "id": pid,
+            "texto": preg.texto_pregunta if preg else f"Pregunta {pid}",
+            "opciones": opciones,
+        })
+
+    return jsonify({
+        "promedio": round(promedio, 2),
+        "moda": round(moda, 2),
+        "desviacion": round(desviacion, 2),
+        "n": n,
+        "nivel": nivel,
+        "color": color,
+        "parrafo": parrafo,
+        "preguntas": preguntas_out,
     }), 200
