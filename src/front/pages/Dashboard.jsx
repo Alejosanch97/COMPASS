@@ -299,7 +299,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
             case "analisis": return { title: "Análisis Estratégico", subtitle: "Data e Insights" };
             case "retos": return { title: "Mis Retos Estratégicos", subtitle: "L - Liderar: Seguimiento de Objetivos" };
             case "fase_transformar": return { title: "Fase: Transformar", subtitle: "Estrategia Pedagógica UNESCO" };
-            case "ejecutar_reto": return { title: `Mision ${activeRetoId}`, subtitle: "Consignación de Evidencia Pedagógica" };
+            case "ejecutar_reto": return { title: `Mision ${retoEjecutando}`, subtitle: "Consignación de Evidencia Pedagógica" };
             case "fase_auditar": return { title: "Fase: Auditar", subtitle: "Gobernanza y Sentido Crítico de la IA" };
             case "responder_fase": 
             case "fase_liderar": return { title: "Fase: Liderar", subtitle: "Gobernanza y Ética de la IA" };
