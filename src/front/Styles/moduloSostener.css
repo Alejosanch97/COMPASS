@@ -4648,6 +4648,24 @@ button.at-btn-next-fase:hover {
 }
 
 
+/* Fix: texto largo sin espacios desborda la card */
+.at-narrative-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.at-narrative-box {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+.at-narrative-box p {
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 /* =============================
    RESPONSIVE
 ============================= */
