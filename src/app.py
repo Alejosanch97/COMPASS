@@ -12,6 +12,7 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
+from datetime import timedelta
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 static_file_dir = os.path.join(os.path.dirname(
@@ -22,6 +23,7 @@ app.url_map.strict_slashes = False
 
 # ── JWT ───────────────────────────────────────────────────────────────
 app.config["JWT_SECRET_KEY"] = os.getenv("FLASK_APP_KEY", "atlas-secret-2026")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=12)
 JWTManager(app)
 
 # ── CORS (permite el frontend en puerto 3000 hablar con el backend 3001) ──

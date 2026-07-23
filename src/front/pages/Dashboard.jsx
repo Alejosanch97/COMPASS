@@ -166,7 +166,11 @@ export const Dashboard = ({ onLogout }) => {
 
     // ── Toggle menú ───────────────────────────────────────────────────────────
     const toggleMenu = (name) => setOpenMenu(prev => prev === name ? null : name);
-    const switchTab = (tab) => { setActiveTab(tab); setIsMobileMenuOpen(false); };
+    const switchTab = (tab) => {
+        setActiveTab(tab);
+        setIsMobileMenuOpen(false);
+        if (tab === "overview" && userData) loadDashboardData(userData);
+    };
 
     // ── Helpers de UI ─────────────────────────────────────────────────────────
     const getCompassLevel = (pct) => {
@@ -301,7 +305,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
             case "fase_transformar": return { title: "Fase: Transformar", subtitle: "Estrategia Pedagógica UNESCO" };
             case "ejecutar_reto": return { title: `Mision ${retoEjecutando}`, subtitle: "Consignación de Evidencia Pedagógica" };
             case "fase_auditar": return { title: "Fase: Auditar", subtitle: "Gobernanza y Sentido Crítico de la IA" };
-            case "responder_fase": 
+            case "responder_fase":
             case "fase_liderar": return { title: "Fase: Liderar", subtitle: "Gobernanza y Ética de la IA" };
             case "retos_liderar": return { title: `Misión`, subtitle: "Auditoría de Responsabilidad Pedagógica" };
             case "fase_asegurar":
@@ -771,7 +775,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                             </div>
                         )}
 
-                        
+
 
                         {/* CARD: HISTORIAL DE HUELLA */}
                         {historial.length > 0 && (
@@ -949,7 +953,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                 {activeTab !== "overview" && (
                     <>
                         {/* 1. Fases con su propio layout — SIN wrapper grid, ocupan el ancho completo */}
-                        {activeTab === "fase_auditar" && <FaseAuditar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateFase} />}
+                        {activeTab === "fase_auditar" && <FaseAuditar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateFase} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "responder_fase" && (
                             <ResponderFormularios
                                 userData={userData}
@@ -957,19 +961,20 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                                 filterPhase={modoResponder === "auditar2" ? "AUDITAR" : faseRespondiendo}
                                 modoAuditar2={modoResponder === "auditar2"}
                                 onNavigate={modoResponder === "auditar2" ? handleNavigateSostener : handleNavigateFase}
+                                onRefreshProgreso={() => loadDashboardData(userData)}
                             />
                         )}
-                        {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} />}
-                        {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} />}
-                        {activeTab === "fase_liderar" && <FaseLiderar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
-                        {activeTab === "retos_liderar" && <RetosLiderar userData={userData} apiFetch={apiFetch} retoId={retoLiderarId} onNavigate={handleNavigateLiderar} />}
+                        {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "fase_liderar" && <FaseLiderar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "retos_liderar" && <RetosLiderar userData={userData} apiFetch={apiFetch} retoId={retoLiderarId} onNavigate={handleNavigateLiderar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "analisis_liderazgo" && <AnalisisLiderazgo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
-                        {activeTab === "fase_asegurar" && <FaseAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
-                        {activeTab === "taller_asegurar" && <TallerMejoraAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
-                        {activeTab === "diagnostico_directivo" && <ModuloDirectivoEstrategico userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} />}
+                        {activeTab === "fase_asegurar" && <FaseAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "taller_asegurar" && <TallerMejoraAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "diagnostico_directivo" && <ModuloDirectivoEstrategico userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "fase_sostener" && <FaseSostener userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} onRefreshProgreso={() => loadDashboardData(userData)} />}
-                        {activeTab === "modulo_sostener" && <ModuloSostener userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} />}
-                        {activeTab === "modulo_sostener_directivo" && <ModuloSostenerDirectivo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} />}
+                        {activeTab === "modulo_sostener" && <ModuloSostener userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "modulo_sostener_directivo" && <ModuloSostenerDirectivo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateSostener} onRefreshProgreso={() => loadDashboardData(userData)} />}
 
                         {/* 2. Páginas tipo panel/admin que sí usan el grid de cards de 2 columnas */}
                         {["creador_retos", "gestion_empresas", "asignacion_retos"].includes(activeTab) && (
