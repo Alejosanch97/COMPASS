@@ -826,3 +826,34 @@ class AuditarDos(db.Model):
             "valor_respondido": self.valor_respondido, "puntos_ganados": self.puntos_ganados,
             "fecha_respuesta": self.fecha_respuesta.isoformat() if self.fecha_respuesta else None,
         }
+
+
+# ─────────────────────────────────────────────
+# 25. CREDENCIAL / CERTIFICADO VERIFICABLE
+# ─────────────────────────────────────────────
+class Credencial(db.Model):
+    __tablename__ = "credenciales"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    id_credencial: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)  # ej: COMPASS-8F4C99A1
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
+    programa: Mapped[str] = mapped_column(String(300), default="ATLAS Framework 2026 - Adopción Ética de IA")
+    fases_completadas: Mapped[dict] = mapped_column(JSON, nullable=True)   # ["AUDITAR","TRANSFORMAR",...]
+    huella_final: Mapped[float] = mapped_column(Float, default=0.0)
+    fecha_emision: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    status: Mapped[str] = mapped_column(String(20), default="ACTIVA")     # ACTIVA / REVOCADA
+
+    usuario = relationship("Usuario")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "id_credencial": self.id_credencial,
+            "usuario_id": self.usuario_id,
+            "nombre_completo": self.usuario.nombre_completo if self.usuario else None,
+            "empresa_nombre": self.usuario.empresa.nombre if (self.usuario and self.usuario.empresa) else None,
+            "programa": self.programa,
+            "fases_completadas": self.fases_completadas or [],
+            "huella_final": self.huella_final,
+            "status": self.status,
+            "fecha_emision": self.fecha_emision.isoformat() if self.fecha_emision else None,
+        }

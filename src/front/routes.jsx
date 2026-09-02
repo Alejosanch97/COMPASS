@@ -26,6 +26,8 @@ import ModuloDirectivoEstrategico from "./pages/ModuloDirectivoEstrategico";
 import FaseSostener from "./pages/FaseSostener";
 import ModuloSostener from "./pages/ModuloSostener";
 import ModuloSostenerDirectivo from "./pages/ModuloSostenerDirectivo";
+import { MiCertificado } from "./pages/MiCertificado";
+import { VerificarCredencial } from "./pages/VerificarCredencial";
 
 
 
@@ -70,6 +72,8 @@ export const router = createBrowserRouter(
             <Route path="/fase-sostener" element={<FaseSostener />} />
             <Route path="/modulo-sostener" element={<ModuloSostener />} />
             <Route path="/modulo-sostener-directivo" element={<ModuloSostenerDirectivo />} />
+            <Route path="/mi-certificado" element={<MiCertificado />} />
         </Route>
+        <Route path="/verify/:idCred" element={<VerificarCredencial />} />
     )
 );

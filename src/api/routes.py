@@ -4,6 +4,8 @@ Solo: AUTH, EMPRESAS, USUARIOS, RETOS-PLANTILLA, FORMULARIOS
 El resto de fases (Transformar, Liderar, Asegurar, Sostener, etc.)
 se agregan después sin tocar este bloque base.
 """
+from urllib.parse import quote
+import os
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,7 +16,7 @@ from api.models import (
     RetoPlantilla, AsignacionReto,
     ProgresoFase, RespuestaFormulario, RetoTransformar, PromptLiderar, RetoLiderar, SeguimientoDirectivo,
     AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan, AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan,
-    SostenerDocente, SostenerInstitucional, AuditarDos
+    SostenerDocente, SostenerInstitucional, AuditarDos, Credencial
 )
 import uuid
 
@@ -34,8 +36,10 @@ def get_usuario_actual():
         return None
     return db.session.get(Usuario, int(uid))
 
+
 def solo_admin(u):
     return u is not None and u.rol == "ADMIN"
+
 
 def gen_id(prefix=""):
     return f"{prefix}{uuid.uuid4().hex[:8].upper()}"
@@ -139,7 +143,8 @@ def actualizar_empresa(eid):
 
     if "fecha_inicio_atlas" in data:
         try:
-            e.fecha_inicio_atlas = datetime.fromisoformat(data["fecha_inicio_atlas"]) if data["fecha_inicio_atlas"] else None
+            e.fecha_inicio_atlas = datetime.fromisoformat(
+                data["fecha_inicio_atlas"]) if data["fecha_inicio_atlas"] else None
         except (ValueError, TypeError):
             pass
 
@@ -290,15 +295,19 @@ def configurar_fase(eid):
     if fase not in ["AUDITAR", "TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
         return jsonify({"error": "Fase inválida"}), 400
 
-    cfg = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase=fase).first()
+    cfg = ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=eid, fase=fase).first()
     if not cfg:
-        cfg = ConfiguracionFaseEmpresa(empresa_id=eid, fase=fase, creado_por_admin_id=u.id)
+        cfg = ConfiguracionFaseEmpresa(
+            empresa_id=eid, fase=fase, creado_por_admin_id=u.id)
         db.session.add(cfg)
 
     if "fecha_apertura" in data:
-        cfg.fecha_apertura = datetime.fromisoformat(data["fecha_apertura"]) if data["fecha_apertura"] else None
+        cfg.fecha_apertura = datetime.fromisoformat(
+            data["fecha_apertura"]) if data["fecha_apertura"] else None
     if "fecha_cierre" in data:
-        cfg.fecha_cierre = datetime.fromisoformat(data["fecha_cierre"]) if data["fecha_cierre"] else None
+        cfg.fecha_cierre = datetime.fromisoformat(
+            data["fecha_cierre"]) if data["fecha_cierre"] else None
     if "is_activa" in data:
         cfg.is_activa = data["is_activa"]
     if "descripcion_admin" in data:
@@ -314,7 +323,8 @@ def mis_fases():
     u = get_usuario_actual()
     if not u.empresa_id:
         return jsonify([]), 200
-    fases = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=u.empresa_id).all()
+    fases = ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=u.empresa_id).all()
     return jsonify([f.serialize() for f in fases]), 200
 
 
@@ -387,7 +397,8 @@ def crear_formulario_completo():
     db.session.commit()
 
     if data.get("empresa_id"):
-        asignacion = AsignacionFormulario(empresa_id=data["empresa_id"], formulario_id=formulario.id)
+        asignacion = AsignacionFormulario(
+            empresa_id=data["empresa_id"], formulario_id=formulario.id)
         db.session.add(asignacion)
         db.session.commit()
 
@@ -642,7 +653,6 @@ def actualizar_reto_plantilla_completo(rid):
     if not data.get("nombre_reto") or not data.get("fase"):
         return jsonify({"error": "nombre_reto y fase son requeridos"}), 400
 
-    
     r.nombre = data["nombre_reto"]
     r.descripcion = data.get("descripcion")
     r.fase = data["fase"]
@@ -652,15 +662,17 @@ def actualizar_reto_plantilla_completo(rid):
     r.config_json = {"preguntas": data.get("preguntas", [])}
     r.contexto_narrativo = data.get("contexto_narrativo", r.contexto_narrativo)
     r.mision_texto = data.get("mision_texto", r.mision_texto)
-    r.objetivos_aprendizaje = data.get("objetivos_aprendizaje", r.objetivos_aprendizaje)
-    r.preguntas_orientadoras = data.get("preguntas_orientadoras", r.preguntas_orientadoras)
+    r.objetivos_aprendizaje = data.get(
+        "objetivos_aprendizaje", r.objetivos_aprendizaje)
+    r.preguntas_orientadoras = data.get(
+        "preguntas_orientadoras", r.preguntas_orientadoras)
     r.conceptos_clave = data.get("conceptos_clave", r.conceptos_clave)
-    r.autoevaluacion_items = data.get("autoevaluacion_items", r.autoevaluacion_items)
+    r.autoevaluacion_items = data.get(
+        "autoevaluacion_items", r.autoevaluacion_items)
     r.lectura_previa = data.get("lectura_previa", r.lectura_previa)
 
     db.session.commit()
     return jsonify(r.serialize()), 200
-
 
 
 @api.route('/huella/historial', methods=['GET'])
@@ -754,7 +766,8 @@ def asignar_formulario_a_empresa(eid, fid):
     Empresa.query.get_or_404(eid)
     Formulario.query.get_or_404(fid)
 
-    existente = AsignacionFormulario.query.filter_by(empresa_id=eid, formulario_id=fid).first()
+    existente = AsignacionFormulario.query.filter_by(
+        empresa_id=eid, formulario_id=fid).first()
     if existente:
         return jsonify({"message": "Ya estaba asignado", "asignacion": existente.serialize()}), 200
 
@@ -771,7 +784,8 @@ def desasignar_formulario_de_empresa(eid, fid):
     if not solo_admin(u):
         return jsonify({"error": "Solo ADMIN"}), 403
 
-    a = AsignacionFormulario.query.filter_by(empresa_id=eid, formulario_id=fid).first_or_404()
+    a = AsignacionFormulario.query.filter_by(
+        empresa_id=eid, formulario_id=fid).first_or_404()
     db.session.delete(a)
     db.session.commit()
     return jsonify({"message": "Formulario desasignado"}), 200
@@ -787,7 +801,8 @@ def asignar_reto_a_empresa(eid, rid):
     Empresa.query.get_or_404(eid)
     reto = RetoPlantilla.query.get_or_404(rid)
 
-    existente = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first()
+    existente = AsignacionReto.query.filter_by(
+        empresa_id=eid, reto_plantilla_id=rid).first()
     if existente:
         return jsonify({"message": "Ya estaba asignado", "asignacion": existente.serialize()}), 200
 
@@ -798,7 +813,8 @@ def asignar_reto_a_empresa(eid, rid):
             .filter(AsignacionReto.empresa_id == eid, RetoPlantilla.fase == reto.fase).count()
         siguiente_orden = existentes_misma_fase + 1
 
-    a = AsignacionReto(empresa_id=eid, reto_plantilla_id=rid, numero_orden=siguiente_orden)
+    a = AsignacionReto(empresa_id=eid, reto_plantilla_id=rid,
+                       numero_orden=siguiente_orden)
     db.session.add(a)
     db.session.commit()
     return jsonify(a.serialize()), 201
@@ -811,7 +827,8 @@ def desasignar_reto_de_empresa(eid, rid):
     if not solo_admin(u):
         return jsonify({"error": "Solo ADMIN"}), 403
 
-    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+    a = AsignacionReto.query.filter_by(
+        empresa_id=eid, reto_plantilla_id=rid).first_or_404()
     db.session.delete(a)
     db.session.commit()
     return jsonify({"message": "Reto desasignado"}), 200
@@ -859,7 +876,8 @@ def get_asignaciones_empresa(eid):
     asigs_reto = AsignacionReto.query.filter_by(empresa_id=eid)\
         .order_by(AsignacionReto.numero_orden).all()
 
-    retos_por_fase = {"TRANSFORMAR": [], "LIDERAR": [], "ASEGURAR": [], "SOSTENER": []}
+    retos_por_fase = {"TRANSFORMAR": [],
+                      "LIDERAR": [], "ASEGURAR": [], "SOSTENER": []}
     for a in asigs_reto:
         rp = a.reto_plantilla
         if not rp or rp.fase not in retos_por_fase:
@@ -883,18 +901,22 @@ def get_asignaciones_empresa(eid):
         "peso_fase": PESOS_FASE["AUDITAR"],
     }
     # LIDERAR se mide por el switch is_activa (no por retos asignados)
-    cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="LIDERAR").first()
+    cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=eid, fase="LIDERAR").first()
     liderar_activa = cfg_liderar.is_activa if cfg_liderar else False
 
-    cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="ASEGURAR").first()
+    cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=eid, fase="ASEGURAR").first()
     asegurar_activa = cfg_asegurar.is_activa if cfg_asegurar else False
 
-    cfg_sostener = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=eid, fase="SOSTENER").first()
+    cfg_sostener = ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=eid, fase="SOSTENER").first()
     sostener_activa = cfg_sostener.is_activa if cfg_sostener else False
 
     for fase in ["TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]:
         if fase in ("LIDERAR", "ASEGURAR", "SOSTENER"):
-            activa = liderar_activa if fase == "LIDERAR" else (asegurar_activa if fase == "ASEGURAR" else sostener_activa)
+            activa = liderar_activa if fase == "LIDERAR" else (
+                asegurar_activa if fase == "ASEGURAR" else sostener_activa)
             progreso_fases[fase] = {
                 "completo": activa,
                 "porcentaje": 100 if activa else 0,
@@ -943,7 +965,8 @@ def get_resumen_todas_empresas():
     resultado = []
 
     for emp in empresas:
-        asigs_form = AsignacionFormulario.query.filter_by(empresa_id=emp.id).all()
+        asigs_form = AsignacionFormulario.query.filter_by(
+            empresa_id=emp.id).all()
         roles_cubiertos = set()
         for a in asigs_form:
             f = a.formulario
@@ -953,7 +976,8 @@ def get_resumen_todas_empresas():
                 roles_cubiertos.add("DOCENTE")
             if f.rol_destino in ("DIRECTIVO", "TODOS"):
                 roles_cubiertos.add("DIRECTIVO")
-        auditar_pct = 100 if len(roles_cubiertos) == 2 else (50 if len(roles_cubiertos) == 1 else 0)
+        auditar_pct = 100 if len(roles_cubiertos) == 2 else (
+            50 if len(roles_cubiertos) == 1 else 0)
 
         asigs_reto = AsignacionReto.query.filter_by(empresa_id=emp.id).all()
         fases_con_retos = set()
@@ -963,10 +987,12 @@ def get_resumen_todas_empresas():
                 fases_con_retos.add(rp.fase)
 
         # LIDERAR por switch, el resto por retos asignados
-        cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="LIDERAR").first()
+        cfg_liderar = ConfiguracionFaseEmpresa.query.filter_by(
+            empresa_id=emp.id, fase="LIDERAR").first()
         liderar_activa = cfg_liderar.is_activa if cfg_liderar else False
 
-        cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="ASEGURAR").first()
+        cfg_asegurar = ConfiguracionFaseEmpresa.query.filter_by(
+            empresa_id=emp.id, fase="ASEGURAR").first()
         asegurar_activa = cfg_asegurar.is_activa if cfg_asegurar else False
 
         porcentajes_fase = {"AUDITAR": auditar_pct}
@@ -976,8 +1002,10 @@ def get_resumen_todas_empresas():
             elif fase == "ASEGURAR":
                 porcentajes_fase[fase] = 100 if asegurar_activa else 0
             elif fase == "SOSTENER":
-                cfg_sos = ConfiguracionFaseEmpresa.query.filter_by(empresa_id=emp.id, fase="SOSTENER").first()
-                porcentajes_fase[fase] = 100 if (cfg_sos and cfg_sos.is_activa) else 0
+                cfg_sos = ConfiguracionFaseEmpresa.query.filter_by(
+                    empresa_id=emp.id, fase="SOSTENER").first()
+                porcentajes_fase[fase] = 100 if (
+                    cfg_sos and cfg_sos.is_activa) else 0
             else:
                 porcentajes_fase[fase] = 100 if fase in fases_con_retos else 0
 
@@ -1010,7 +1038,8 @@ def actualizar_orden_asignacion_reto(eid, rid):
     if not solo_admin(u):
         return jsonify({"error": "Solo ADMIN"}), 403
 
-    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+    a = AsignacionReto.query.filter_by(
+        empresa_id=eid, reto_plantilla_id=rid).first_or_404()
     data = request.get_json()
     if "numero_orden" in data:
         a.numero_orden = data["numero_orden"]
@@ -1038,10 +1067,12 @@ def reemplazar_reto_asignado(eid, rid):
 
     RetoPlantilla.query.get_or_404(nuevo_id)
 
-    a = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=rid).first_or_404()
+    a = AsignacionReto.query.filter_by(
+        empresa_id=eid, reto_plantilla_id=rid).first_or_404()
 
     # Evita duplicar si el nuevo reto ya estaba asignado a esta empresa
-    ya_existe = AsignacionReto.query.filter_by(empresa_id=eid, reto_plantilla_id=nuevo_id).first()
+    ya_existe = AsignacionReto.query.filter_by(
+        empresa_id=eid, reto_plantilla_id=nuevo_id).first()
     if ya_existe and ya_existe.id != a.id:
         return jsonify({"error": "Ese reto ya está asignado a esta empresa"}), 409
 
@@ -1054,6 +1085,7 @@ def reemplazar_reto_asignado(eid, rid):
 # Agregar esto a routes.py, después de las rutas de /retos-plantilla.
 # Usa los modelos: ProgresoFase, PreguntaFormulario, RespuestaFormulario
 # ══════════════════════════════════════════════════════════════════════
+
 
 @api.route('/progreso-fases', methods=['GET'])
 @jwt_required()
@@ -1141,7 +1173,8 @@ def crear_respuestas_batch():
     Formulario.query.get_or_404(formulario_id)
 
     # Borra respuestas previas de este usuario para este formulario (permite reintentar)
-    RespuestaFormulario.query.filter_by(usuario_id=u.id, formulario_id=formulario_id).delete()
+    RespuestaFormulario.query.filter_by(
+        usuario_id=u.id, formulario_id=formulario_id).delete()
 
     for r in respuestas:
         nueva = RespuestaFormulario(
@@ -1258,11 +1291,13 @@ def get_mi_avance_reto_transformar(reto_plantilla_id):
     if not registros:
         return jsonify(None), 200
 
-    completado = next((r for r in reversed(registros) if r.status_reto == "COMPLETADO"), None)
+    completado = next((r for r in reversed(registros)
+                      if r.status_reto == "COMPLETADO"), None)
     if completado:
         return jsonify(completado.serialize()), 200
 
-    borrador = next((r for r in reversed(registros) if r.status_reto == "BORRADOR"), None)
+    borrador = next((r for r in reversed(registros)
+                    if r.status_reto == "BORRADOR"), None)
     return jsonify(borrador.serialize() if borrador else None), 200
 
 
@@ -1309,6 +1344,7 @@ def guardar_reto_transformar():
     db.session.commit()
     return jsonify(registro.serialize()), 200
 
+
 @api.route('/empresa/retos-transformar', methods=['GET'])
 @jwt_required()
 def get_retos_transformar_empresa():
@@ -1320,9 +1356,11 @@ def get_retos_transformar_empresa():
         return jsonify([]), 200
 
     # Trae todos los usuarios de la empresa y sus retos
-    usuarios_empresa = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    usuarios_empresa = Usuario.query.filter_by(
+        empresa_id=u.empresa_id, rol="DOCENTE").all()
     ids = [usr.id for usr in usuarios_empresa]
-    registros = RetoTransformar.query.filter(RetoTransformar.usuario_id.in_(ids)).all()
+    registros = RetoTransformar.query.filter(
+        RetoTransformar.usuario_id.in_(ids)).all()
     return jsonify([r.serialize() for r in registros]), 200
 
 
@@ -1437,7 +1475,8 @@ def liderar_dashboard_directivo():
             "rankingCritico": []
         }), 200
 
-    docentes = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    docentes = Usuario.query.filter_by(
+        empresa_id=u.empresa_id, rol="DOCENTE").all()
     total = len(docentes)
 
     conteo_auditar = 0
@@ -1453,7 +1492,8 @@ def liderar_dashboard_directivo():
         # AUDITAR: aceptó la capa 1 + respondió al menos un formulario
         c1 = ProgresoFase.query.filter_by(
             usuario_id=d.id, fase="AUDITAR", capa_1_sentido="COMPLETADO").first() is not None
-        c2 = RespuestaFormulario.query.filter_by(usuario_id=d.id).first() is not None
+        c2 = RespuestaFormulario.query.filter_by(
+            usuario_id=d.id).first() is not None
         if c1 and c2:
             conteo_auditar += 1
         else:
@@ -1477,8 +1517,10 @@ def liderar_dashboard_directivo():
             p = float(prompt.puntaje_privacidad or 0)
             a = float(prompt.puntaje_agencia or 0)
             c = float(prompt.puntaje_dependencia or 0)
-            suma["etica"] += e; suma["priv"] += p
-            suma["agen"] += a; suma["cogn"] += c
+            suma["etica"] += e
+            suma["priv"] += p
+            suma["agen"] += a
+            suma["cogn"] += c
             suma["n"] += 1
             if prompt.clasificacion_riesgo and "ALTO" in prompt.clasificacion_riesgo.upper():
                 alto_riesgo += 1
@@ -1570,7 +1612,8 @@ def liderar_galeria():
     if not u.empresa_id:
         return jsonify([]), 200
 
-    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id).all()]
+    docentes_ids = [d.id for d in Usuario.query.filter_by(
+        empresa_id=u.empresa_id).all()]
     regs = PromptLiderar.query.filter(
         PromptLiderar.usuario_id.in_(docentes_ids),
         PromptLiderar.es_publico == True,
@@ -1581,7 +1624,8 @@ def liderar_galeria():
         return (float(r.puntaje_etica or 0) + float(r.puntaje_privacidad or 0)
                 + float(r.puntaje_agencia or 0) + float(r.puntaje_dependencia or 0)) / 4
 
-    salida = [{**r.serialize(), "promedio_calificacion": round(promedio(r), 1)} for r in regs]
+    salida = [{**r.serialize(), "promedio_calificacion": round(promedio(r), 1)}
+              for r in regs]
     salida.sort(key=lambda x: x["promedio_calificacion"], reverse=True)
     return jsonify(salida), 200
 
@@ -1595,7 +1639,8 @@ def liderar_galeria():
 @jwt_required()
 def asegurar_mi_progreso():
     u = get_usuario_actual()
-    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="ASEGURAR").first()
+    reg = ProgresoFase.query.filter_by(
+        usuario_id=u.id, fase="ASEGURAR").first()
     return jsonify(reg.serialize() if reg else None), 200
 
 
@@ -1603,7 +1648,8 @@ def asegurar_mi_progreso():
 @jwt_required()
 def asegurar_aceptar():
     u = get_usuario_actual()
-    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="ASEGURAR").first()
+    reg = ProgresoFase.query.filter_by(
+        usuario_id=u.id, fase="ASEGURAR").first()
     if not reg:
         reg = ProgresoFase(usuario_id=u.id, fase="ASEGURAR")
         db.session.add(reg)
@@ -1659,25 +1705,36 @@ def asegurar_guardar_taller():
         reg = AsegurarDocente(usuario_id=u.id)
         db.session.add(reg)
 
-    reg.prompt_original       = data.get("prompt_original", reg.prompt_original)
-    reg.prompt_mejorado       = data.get("prompt_mejorado", reg.prompt_mejorado)
-    reg.alertas_detectadas    = data.get("alertas_detectadas", reg.alertas_detectadas)
-    reg.bloques_activados     = data.get("bloques_activados", reg.bloques_activados)
-    reg.riesgo_previo         = data.get("riesgo_previo")  # guardamos como string/JSON en el modelo (String)
-    reg.riesgo_final          = data.get("riesgo_final")
-    reg.reflexion_1_cambios   = data.get("reflexion_1_cambios", reg.reflexion_1_cambios)
-    reg.reflexion_2_riesgos   = data.get("reflexion_2_riesgos", reg.reflexion_2_riesgos)
-    reg.reflexion_3_supervision = data.get("reflexion_3_supervision", reg.reflexion_3_supervision)
-    reg.reflexion_4_cognicion = data.get("reflexion_4_cognicion", reg.reflexion_4_cognicion)
-    reg.estandar_seleccionado = data.get("estandar_seleccionado", reg.estandar_seleccionado)
-    reg.status                = data.get("status", "BORRADOR")
-    reg.constructor_prompt      = data.get("constructor_prompt", reg.constructor_prompt)
-    reg.reescrituras_aplicadas  = data.get("reescrituras_aplicadas", reg.reescrituras_aplicadas)
-    reg.lecciones_vistas        = data.get("lecciones_vistas", reg.lecciones_vistas)
-    reg.puntaje_rector          = data.get("puntaje_rector", reg.puntaje_rector)
-    reg.reduccion_riesgo_pct    = data.get("reduccion_riesgo_pct", reg.reduccion_riesgo_pct)
-    reg.compromiso_datos        = data.get("compromiso_datos", reg.compromiso_datos)
-    
+    reg.prompt_original = data.get("prompt_original", reg.prompt_original)
+    reg.prompt_mejorado = data.get("prompt_mejorado", reg.prompt_mejorado)
+    reg.alertas_detectadas = data.get(
+        "alertas_detectadas", reg.alertas_detectadas)
+    reg.bloques_activados = data.get(
+        "bloques_activados", reg.bloques_activados)
+    # guardamos como string/JSON en el modelo (String)
+    reg.riesgo_previo = data.get("riesgo_previo")
+    reg.riesgo_final = data.get("riesgo_final")
+    reg.reflexion_1_cambios = data.get(
+        "reflexion_1_cambios", reg.reflexion_1_cambios)
+    reg.reflexion_2_riesgos = data.get(
+        "reflexion_2_riesgos", reg.reflexion_2_riesgos)
+    reg.reflexion_3_supervision = data.get(
+        "reflexion_3_supervision", reg.reflexion_3_supervision)
+    reg.reflexion_4_cognicion = data.get(
+        "reflexion_4_cognicion", reg.reflexion_4_cognicion)
+    reg.estandar_seleccionado = data.get(
+        "estandar_seleccionado", reg.estandar_seleccionado)
+    reg.status = data.get("status", "BORRADOR")
+    reg.constructor_prompt = data.get(
+        "constructor_prompt", reg.constructor_prompt)
+    reg.reescrituras_aplicadas = data.get(
+        "reescrituras_aplicadas", reg.reescrituras_aplicadas)
+    reg.lecciones_vistas = data.get("lecciones_vistas", reg.lecciones_vistas)
+    reg.puntaje_rector = data.get("puntaje_rector", reg.puntaje_rector)
+    reg.reduccion_riesgo_pct = data.get(
+        "reduccion_riesgo_pct", reg.reduccion_riesgo_pct)
+    reg.compromiso_datos = data.get("compromiso_datos", reg.compromiso_datos)
+
     if reg.status == "COMPLETADO":
         reg.fecha_finalizacion = datetime.now(timezone.utc)
 
@@ -1703,11 +1760,16 @@ def asegurar_guardar_panorama():
     if not reg:
         reg = AsegurarDirectivoPanorama(usuario_id=u.id)
         db.session.add(reg)
-    reg.visto_bloque_1_regulatorio  = data.get("visto_bloque_1_regulatorio", reg.visto_bloque_1_regulatorio)
-    reg.visto_bloque_2_competencias = data.get("visto_bloque_2_competencias", reg.visto_bloque_2_competencias)
-    reg.visto_bloque_3_etica        = data.get("visto_bloque_3_etica", reg.visto_bloque_3_etica)
-    reg.visto_bloque_4_cultura      = data.get("visto_bloque_4_cultura", reg.visto_bloque_4_cultura)
-    reg.feedback_opcional_panorama  = data.get("feedback_opcional_panorama", reg.feedback_opcional_panorama)
+    reg.visto_bloque_1_regulatorio = data.get(
+        "visto_bloque_1_regulatorio", reg.visto_bloque_1_regulatorio)
+    reg.visto_bloque_2_competencias = data.get(
+        "visto_bloque_2_competencias", reg.visto_bloque_2_competencias)
+    reg.visto_bloque_3_etica = data.get(
+        "visto_bloque_3_etica", reg.visto_bloque_3_etica)
+    reg.visto_bloque_4_cultura = data.get(
+        "visto_bloque_4_cultura", reg.visto_bloque_4_cultura)
+    reg.feedback_opcional_panorama = data.get(
+        "feedback_opcional_panorama", reg.feedback_opcional_panorama)
     reg.status = "COMPLETADO"
     db.session.commit()
     return jsonify(reg.serialize()), 200
@@ -1751,11 +1813,13 @@ def asegurar_guardar_diagnostico():
     # ── CAMBIO: convertir "4.20" (string decimal) a entero, que es lo que espera la columna ──
     ptr = data.get("puntaje_total_radar", reg.puntaje_total_radar)
     try:
-        reg.puntaje_total_radar = int(round(float(ptr))) if ptr is not None else None
+        reg.puntaje_total_radar = int(
+            round(float(ptr))) if ptr is not None else None
     except (ValueError, TypeError):
         reg.puntaje_total_radar = None
 
-    reg.clasificacion_final = data.get("clasificacion_final", reg.clasificacion_final)
+    reg.clasificacion_final = data.get(
+        "clasificacion_final", reg.clasificacion_final)
     reg.status = "COMPLETADO"
     db.session.commit()
     return jsonify(reg.serialize()), 200
@@ -1779,13 +1843,20 @@ def asegurar_guardar_plan():
     if not reg:
         reg = AsegurarDirectivoPlan(usuario_id=u.id)
         db.session.add(reg)
-    reg.objetivo_estrategico     = data.get("objetivo_estrategico", reg.objetivo_estrategico)
-    reg.acciones_seleccionadas   = data.get("acciones_seleccionadas", reg.acciones_seleccionadas)
-    reg.responsables_asignados   = data.get("responsables_asignados", reg.responsables_asignados)
-    reg.cronograma_estimado      = data.get("cronograma_estimado", reg.cronograma_estimado)
-    reg.indicadores_exito        = data.get("indicadores_exito", reg.indicadores_exito)
-    reg.dimension_prioridad_1    = data.get("dimension_prioridad_1", reg.dimension_prioridad_1)
-    reg.dimension_prioridad_2    = data.get("dimension_prioridad_2", reg.dimension_prioridad_2)
+    reg.objetivo_estrategico = data.get(
+        "objetivo_estrategico", reg.objetivo_estrategico)
+    reg.acciones_seleccionadas = data.get(
+        "acciones_seleccionadas", reg.acciones_seleccionadas)
+    reg.responsables_asignados = data.get(
+        "responsables_asignados", reg.responsables_asignados)
+    reg.cronograma_estimado = data.get(
+        "cronograma_estimado", reg.cronograma_estimado)
+    reg.indicadores_exito = data.get(
+        "indicadores_exito", reg.indicadores_exito)
+    reg.dimension_prioridad_1 = data.get(
+        "dimension_prioridad_1", reg.dimension_prioridad_1)
+    reg.dimension_prioridad_2 = data.get(
+        "dimension_prioridad_2", reg.dimension_prioridad_2)
     reg.status = "COMPLETADO"
     db.session.commit()
     return jsonify(reg.serialize()), 200
@@ -1810,7 +1881,8 @@ def asegurar_evidencia_institucional():
             "riesgosPromedio": {"etica": 0, "privacidad": 0, "agencia": 0, "cognitiva": 0},
         }), 200
 
-    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()]
+    docentes_ids = [d.id for d in Usuario.query.filter_by(
+        empresa_id=u.empresa_id, rol="DOCENTE").all()]
     suma = {"e": 0.0, "p": 0.0, "a": 0.0, "c": 0.0, "n": 0}
     dist = {"alto": 0, "moderado": 0, "responsable": 0}
 
@@ -1824,10 +1896,17 @@ def asegurar_evidencia_institucional():
         a = float(prompt.puntaje_agencia or 0)
         c = float(prompt.puntaje_dependencia or 0)
         avg = (e + p + a + c) / 4
-        suma["e"] += e; suma["p"] += p; suma["a"] += a; suma["c"] += c; suma["n"] += 1
-        if avg < 2.5: dist["alto"] += 1
-        elif avg < 3.8: dist["moderado"] += 1
-        else: dist["responsable"] += 1
+        suma["e"] += e
+        suma["p"] += p
+        suma["a"] += a
+        suma["c"] += c
+        suma["n"] += 1
+        if avg < 2.5:
+            dist["alto"] += 1
+        elif avg < 3.8:
+            dist["moderado"] += 1
+        else:
+            dist["responsable"] += 1
 
     n = suma["n"] or 1
     return jsonify({
@@ -1856,7 +1935,8 @@ def asegurar_evidencia_institucional():
 @jwt_required()
 def sostener_mi_progreso():
     u = get_usuario_actual()
-    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="SOSTENER").first()
+    reg = ProgresoFase.query.filter_by(
+        usuario_id=u.id, fase="SOSTENER").first()
     return jsonify(reg.serialize() if reg else None), 200
 
 
@@ -1864,7 +1944,8 @@ def sostener_mi_progreso():
 @jwt_required()
 def sostener_aceptar():
     u = get_usuario_actual()
-    reg = ProgresoFase.query.filter_by(usuario_id=u.id, fase="SOSTENER").first()
+    reg = ProgresoFase.query.filter_by(
+        usuario_id=u.id, fase="SOSTENER").first()
     if not reg:
         reg = ProgresoFase(usuario_id=u.id, fase="SOSTENER")
         db.session.add(reg)
@@ -1898,7 +1979,8 @@ def sostener_guardar_evaluacion():
     # Si viene id, es actualización (cierre reflexivo sobre una eval existente)
     reg = None
     if data.get("id"):
-        reg = SostenerDocente.query.filter_by(id=data["id"], usuario_id=u.id).first()
+        reg = SostenerDocente.query.filter_by(
+            id=data["id"], usuario_id=u.id).first()
 
     if not reg:
         reg = SostenerDocente(usuario_id=u.id, empresa_id=u.empresa_id)
@@ -1914,19 +1996,30 @@ def sostener_guardar_evaluacion():
     reg.promedio_d4 = data.get("promedio_d4", reg.promedio_d4 or 0)
     reg.nivel_calculado = data.get("nivel_calculado", reg.nivel_calculado)
     reg.alertas_activas = data.get("alertas_activas", reg.alertas_activas)
-    reg.porcentaje_crecimiento = data.get("porcentaje_crecimiento", reg.porcentaje_crecimiento)
+    reg.porcentaje_crecimiento = data.get(
+        "porcentaje_crecimiento", reg.porcentaje_crecimiento)
 
     # Campos de cierre (opcionales, llegan en la etapa 5)
     reg.reflexion_antes = data.get("reflexion_antes", reg.reflexion_antes)
-    reg.reflexion_despues = data.get("reflexion_despues", reg.reflexion_despues)
-    reg.aprendizaje_clave = data.get("aprendizaje_clave", reg.aprendizaje_clave)
-    reg.prioridad_sostener = data.get("prioridad_sostener", reg.prioridad_sostener)
-    reg.compromiso_accion = data.get("compromiso_accion", reg.compromiso_accion)
+    reg.reflexion_despues = data.get(
+        "reflexion_despues", reg.reflexion_despues)
+    reg.aprendizaje_clave = data.get(
+        "aprendizaje_clave", reg.aprendizaje_clave)
+    reg.prioridad_sostener = data.get(
+        "prioridad_sostener", reg.prioridad_sostener)
+    reg.compromiso_accion = data.get(
+        "compromiso_accion", reg.compromiso_accion)
     reg.evidencia_mejora = data.get("evidencia_mejora", reg.evidencia_mejora)
-    reg.fecha_revision_plan = data.get("fecha_revision_plan", reg.fecha_revision_plan)
+    reg.fecha_revision_plan = data.get(
+        "fecha_revision_plan", reg.fecha_revision_plan)
     reg.status = data.get("status", "COMPLETADO")
 
     db.session.commit()
+
+    # Si con esta evaluación el docente alcanza huella >= 80, emite su credencial
+    if reg.status == "COMPLETADO":
+        emitir_credencial_si_corresponde(u.id)
+
     return jsonify(reg.serialize()), 200
 
 
@@ -1958,18 +2051,30 @@ def sostener_guardar_cierre():
         )
         db.session.add(reg)
 
-    reg.reflexion_punto_partida = data.get("reflexion_punto_partida", reg.reflexion_punto_partida)
-    reg.estado_cumplimiento_asegurar = data.get("estado_cumplimiento_asegurar", reg.estado_cumplimiento_asegurar)
-    reg.analisis_implementacion = data.get("analisis_implementacion", reg.analisis_implementacion)
-    reg.nivel_institucional_actual = data.get("nivel_institucional_actual", reg.nivel_institucional_actual)
+    reg.reflexion_punto_partida = data.get(
+        "reflexion_punto_partida", reg.reflexion_punto_partida)
+    reg.estado_cumplimiento_asegurar = data.get(
+        "estado_cumplimiento_asegurar", reg.estado_cumplimiento_asegurar)
+    reg.analisis_implementacion = data.get(
+        "analisis_implementacion", reg.analisis_implementacion)
+    reg.nivel_institucional_actual = data.get(
+        "nivel_institucional_actual", reg.nivel_institucional_actual)
     reg.docentes_n1 = data.get("docentes_n1", reg.docentes_n1)
-    reg.porcentaje_reduccion_alertas = data.get("porcentaje_reduccion_alertas", reg.porcentaje_reduccion_alertas)
+    reg.porcentaje_reduccion_alertas = data.get(
+        "porcentaje_reduccion_alertas", reg.porcentaje_reduccion_alertas)
     reg.ruta_elegida = data.get("ruta_elegida", reg.ruta_elegida)
-    reg.prioridad_estrategica_anual = data.get("prioridad_estrategica_anual", reg.prioridad_estrategica_anual)
-    reg.accion_gobernanza = data.get("accion_gobernanza", reg.accion_gobernanza)
-    reg.indicador_medible = data.get("indicador_medible", reg.indicador_medible)
-    reg.estrategia_comunicacion = data.get("estrategia_comunicacion", reg.estrategia_comunicacion)
+    reg.prioridad_estrategica_anual = data.get(
+        "prioridad_estrategica_anual", reg.prioridad_estrategica_anual)
+    reg.accion_gobernanza = data.get(
+        "accion_gobernanza", reg.accion_gobernanza)
+    reg.indicador_medible = data.get(
+        "indicador_medible", reg.indicador_medible)
+    reg.estrategia_comunicacion = data.get(
+        "estrategia_comunicacion", reg.estrategia_comunicacion)
     db.session.commit()
+
+    emitir_credencial_si_corresponde(u.id)
+
     return jsonify(_serialize_sostener_inst(reg)), 200
 
 
@@ -2009,7 +2114,8 @@ def sostener_datos_grupales():
             "distribucionNiveles": {"N1": 0, "N2": 0, "N3": 0, "N4": 0},
         }), 200
 
-    docentes = Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+    docentes = Usuario.query.filter_by(
+        empresa_id=u.empresa_id, rol="DOCENTE").all()
     suma = {"g": 0.0, "d1": 0.0, "d2": 0.0, "d3": 0.0, "d4": 0.0, "n": 0}
     dist = {"N1": 0, "N2": 0, "N3": 0, "N4": 0}
 
@@ -2025,10 +2131,14 @@ def sostener_datos_grupales():
         suma["d4"] += float(ev.promedio_d4 or 0)
         suma["n"] += 1
         g = float(ev.promedio_global or 0)
-        if g >= 4.3: dist["N4"] += 1
-        elif g >= 3.5: dist["N3"] += 1
-        elif g >= 2.5: dist["N2"] += 1
-        else: dist["N1"] += 1
+        if g >= 4.3:
+            dist["N4"] += 1
+        elif g >= 3.5:
+            dist["N3"] += 1
+        elif g >= 2.5:
+            dist["N2"] += 1
+        else:
+            dist["N1"] += 1
 
     n = suma["n"] or 1
     return jsonify({
@@ -2040,6 +2150,7 @@ def sostener_datos_grupales():
         "promedioD4": round(suma["d4"] / n, 2),
         "distribucionNiveles": dist,
     }), 200
+
 
 @api.route('/sostener/mi-balance', methods=['GET'])
 @jwt_required()
@@ -2087,7 +2198,7 @@ def sostener_mi_balance():
         usuario_id=u.id, status_reto="COMPLETADO").count()
     prompt = PromptLiderar.query.filter_by(usuario_id=u.id, status="COMPLETADO")\
         .order_by(PromptLiderar.fecha_registro.desc()).first()
-    
+
     filas_dos = AuditarDos.query.filter_by(usuario_id=u.id).all()
     if filas_dos:
         p2 = [float(f.puntos_ganados or 0) for f in filas_dos]
@@ -2131,7 +2242,8 @@ def asegurar_evidencia_auditar():
     if not u.empresa_id:
         return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
 
-    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()]
+    docentes_ids = [d.id for d in Usuario.query.filter_by(
+        empresa_id=u.empresa_id, rol="DOCENTE").all()]
     if not docentes_ids:
         return jsonify({"promedio": 0, "moda": 0, "desviacion": 0, "n": 0, "preguntas": [], "nivel": "", "parrafo": "", "color": "#e53e3e"}), 200
 
@@ -2159,7 +2271,8 @@ def asegurar_evidencia_auditar():
                 conteo_por_pregunta[pid] = {}
             val = (r.valor_respondido or "").strip()
             if val:
-                conteo_por_pregunta[pid][val] = conteo_por_pregunta[pid].get(val, 0) + 1
+                conteo_por_pregunta[pid][val] = conteo_por_pregunta[pid].get(
+                    val, 0) + 1
 
     puntajes = list(envios.values())
     n = len(puntajes)
@@ -2178,10 +2291,14 @@ def asegurar_evidencia_auditar():
 
     # Análisis inteligente (mismos umbrales del viejo)
     def analisis_inteligente(p):
-        if p >= 90: return ("Capacidad ATLAS demostrada", "#d69e2e", "La distribución del COMPASS ubica al grupo mayoritariamente en niveles de práctica alineada y consciente. Este resultado evidencia un uso intencional de la inteligencia artificial, acompañado de reflexión pedagógica, criterios éticos claros y comprensión del rol docente.")
-        if p >= 80: return ("Práctica alineada en consolidación", "#3182ce", "Los resultados indican que el grupo ha integrado la inteligencia artificial de manera consistente en planificación, diseño de actividades y retroalimentación. Existe claridad pedagógica, aunque hay oportunidades para fortalecer la sistematicidad institucional.")
-        if p >= 70: return ("Práctica consciente emergente", "#38a169", "El grupo reconoce el potencial de la IA para apoyar el aprendizaje con intención pedagógica. Se evidencian preocupaciones legítimas sobre el esfuerzo cognitivo del estudiante y la automatización excesiva, reflejando una actitud crítica y responsable.")
-        if p >= 40: return ("Uso emergente y exploratorio", "#dd6b20", "La evidencia sugiere un uso inicial o exploratorio de la IA, con aproximaciones puntuales y reflexión en construcción. Fase clave para clarificar criterios pedagógicos y definir principios comunes antes de escalar.")
+        if p >= 90:
+            return ("Capacidad ATLAS demostrada", "#d69e2e", "La distribución del COMPASS ubica al grupo mayoritariamente en niveles de práctica alineada y consciente. Este resultado evidencia un uso intencional de la inteligencia artificial, acompañado de reflexión pedagógica, criterios éticos claros y comprensión del rol docente.")
+        if p >= 80:
+            return ("Práctica alineada en consolidación", "#3182ce", "Los resultados indican que el grupo ha integrado la inteligencia artificial de manera consistente en planificación, diseño de actividades y retroalimentación. Existe claridad pedagógica, aunque hay oportunidades para fortalecer la sistematicidad institucional.")
+        if p >= 70:
+            return ("Práctica consciente emergente", "#38a169", "El grupo reconoce el potencial de la IA para apoyar el aprendizaje con intención pedagógica. Se evidencian preocupaciones legítimas sobre el esfuerzo cognitivo del estudiante y la automatización excesiva, reflejando una actitud crítica y responsable.")
+        if p >= 40:
+            return ("Uso emergente y exploratorio", "#dd6b20", "La evidencia sugiere un uso inicial o exploratorio de la IA, con aproximaciones puntuales y reflexión en construcción. Fase clave para clarificar criterios pedagógicos y definir principios comunes antes de escalar.")
         return ("Exploración inicial", "#e53e3e", "Los resultados muestran una presencia limitada de la IA en la práctica docente y una percepción significativa de riesgos. Refuerza la importancia de la fase AUDITAR como punto de partida para construir acompañamiento institucional.")
 
     nivel, color, parrafo = analisis_inteligente(promedio)
@@ -2191,7 +2308,8 @@ def asegurar_evidencia_auditar():
     for pid, conteo in conteo_por_pregunta.items():
         preg = PreguntaFormulario.query.get(pid)
         total_resp = sum(conteo.values()) or 1
-        opciones = [{"opcion": k, "count": v, "pct": round((v / total_resp) * 100, 1)} for k, v in conteo.items()]
+        opciones = [{"opcion": k, "count": v, "pct": round(
+            (v / total_resp) * 100, 1)} for k, v in conteo.items()]
         preguntas_out.append({
             "id": pid,
             "texto": preg.texto_pregunta if preg else f"Pregunta {pid}",
@@ -2209,6 +2327,7 @@ def asegurar_evidencia_auditar():
         "preguntas": preguntas_out,
     }), 200
 
+
 @api.route('/mi-empresa/fases-estado', methods=['GET'])
 @jwt_required()
 def mis_fases_estado():
@@ -2224,11 +2343,13 @@ def mis_fases_estado():
         return jsonify([{"fase": f, "activa": False, "completada": False} for f in ORDEN]), 200
 
     # Config de toggles de la empresa
-    configs = {c.fase: c for c in ConfiguracionFaseEmpresa.query.filter_by(empresa_id=u.empresa_id).all()}
+    configs = {c.fase: c for c in ConfiguracionFaseEmpresa.query.filter_by(
+        empresa_id=u.empresa_id).all()}
 
     # ── Completitud por fase para ESTE docente ──
     # AUDITAR: tiene al menos una respuesta de formulario fase AUDITAR
-    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(
+        fase_atlas="AUDITAR").all()]
     auditar_ok = False
     if forms_auditar_ids:
         auditar_ok = RespuestaFormulario.query.filter(
@@ -2287,7 +2408,8 @@ def sostener_mis_respuestas_auditar():
     """
     u = get_usuario_actual()
 
-    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(
+        fase_atlas="AUDITAR").all()]
     if not forms_auditar_ids:
         return jsonify([]), 200
 
@@ -2298,7 +2420,8 @@ def sostener_mis_respuestas_auditar():
 
     salida = []
     for r in respuestas:
-        preg = PreguntaFormulario.query.get(r.pregunta_id) if r.pregunta_id else None
+        preg = PreguntaFormulario.query.get(
+            r.pregunta_id) if r.pregunta_id else None
         salida.append({
             "ID_Pregunta": str(r.pregunta_id),
             "Orden_Pregunta": preg.orden_pregunta if preg else None,   # ← NUEVO
@@ -2312,6 +2435,7 @@ def sostener_mis_respuestas_auditar():
 # ══════════════════════════════════════════════════════════════
 # SEGUNDO DIAGNÓSTICO AUDITAR (tabla aislada AuditarDos)
 # ══════════════════════════════════════════════════════════════
+
 
 @api.route('/sostener/auditar-dos/estado', methods=['GET'])
 @jwt_required()
@@ -2340,7 +2464,8 @@ def sostener_auditar_dos_estado():
 
     detalle = []
     for f in filas:
-        preg = PreguntaFormulario.query.get(f.pregunta_id) if f.pregunta_id else None
+        preg = PreguntaFormulario.query.get(
+            f.pregunta_id) if f.pregunta_id else None
         detalle.append({
             "ID_Pregunta": str(f.pregunta_id),
             "Texto_Pregunta": preg.texto_pregunta if preg else f"Indicador {f.id}",
@@ -2408,7 +2533,8 @@ def sostener_auditar_dos_formulario():
     """
     u = get_usuario_actual()
 
-    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    forms_auditar_ids = [f.id for f in Formulario.query.filter_by(
+        fase_atlas="AUDITAR").all()]
     if not forms_auditar_ids:
         return jsonify({"formulario_id": None}), 200
 
@@ -2419,6 +2545,7 @@ def sostener_auditar_dos_formulario():
 
     fid = primera.formulario_id if primera else forms_auditar_ids[0]
     return jsonify({"formulario_id": fid}), 200
+
 
 @api.route('/sostener/mis-retos-transformar', methods=['GET'])
 @jwt_required()
@@ -2458,7 +2585,8 @@ def sostener_mi_huella_completa():
         Formulario.fase_atlas == "AUDITAR"
     ).all()
     if r_aud:
-        media_aud = sum(float(x.puntos_ganados or 0) for x in r_aud) / len(r_aud)
+        media_aud = sum(float(x.puntos_ganados or 0)
+                        for x in r_aud) / len(r_aud)
         frac_aud = min(media_aud / 5.0, 1.0)
     else:
         media_aud = 0
@@ -2539,6 +2667,7 @@ def sostener_mi_huella_completa():
         "detalle": detalle,
     }), 200
 
+
 def _calcular_huella_docente(uid):
     """Devuelve la huella ponderada (0-100) + detalle de UN docente por id.
     Reutilizable tanto para /mi-huella-completa como para el promedio institucional."""
@@ -2552,19 +2681,21 @@ def _calcular_huella_docente(uid):
         Formulario.fase_atlas == "AUDITAR"
     ).all()
     if r_aud:
-        media_aud = sum(float(x.puntos_ganados or 0) for x in r_aud) / len(r_aud)
+        media_aud = sum(float(x.puntos_ganados or 0)
+                        for x in r_aud) / len(r_aud)
         frac_aud = min(media_aud / 5.0, 1.0)
     else:
         media_aud, frac_aud = 0, 0
     detalle["auditar"] = {"peso": PESOS_FASE["AUDITAR"],
-        "obtenido": round(PESOS_FASE["AUDITAR"] * frac_aud, 1), "completa": bool(r_aud)}
+                          "obtenido": round(PESOS_FASE["AUDITAR"] * frac_aud, 1), "completa": bool(r_aud)}
 
     # TRANSFORMAR (30)
     total_retos = RetoTransformar.query.filter_by(usuario_id=uid).count()
-    retos_ok = RetoTransformar.query.filter_by(usuario_id=uid, status_reto="COMPLETADO").count()
+    retos_ok = RetoTransformar.query.filter_by(
+        usuario_id=uid, status_reto="COMPLETADO").count()
     frac_tr = (retos_ok / total_retos) if total_retos else 0
     detalle["transformar"] = {"peso": PESOS_FASE["TRANSFORMAR"],
-        "obtenido": round(PESOS_FASE["TRANSFORMAR"] * frac_tr, 1), "completa": retos_ok > 0}
+                              "obtenido": round(PESOS_FASE["TRANSFORMAR"] * frac_tr, 1), "completa": retos_ok > 0}
 
     # LIDERAR (15)
     p = PromptLiderar.query.filter_by(usuario_id=uid, status="COMPLETADO")\
@@ -2576,33 +2707,36 @@ def _calcular_huella_docente(uid):
     else:
         frac_lid = 0
     detalle["liderar"] = {"peso": PESOS_FASE["LIDERAR"],
-        "obtenido": round(PESOS_FASE["LIDERAR"] * frac_lid, 1), "completa": bool(p)}
+                          "obtenido": round(PESOS_FASE["LIDERAR"] * frac_lid, 1), "completa": bool(p)}
 
     # ASEGURAR (20)
     a = AsegurarDocente.query.filter_by(usuario_id=uid).first()
     if a and a.status == "COMPLETADO":
-        frac_as = min((float(a.puntaje_rector) / 6.0) if a.puntaje_rector else 1.0, 1.0)
+        frac_as = min((float(a.puntaje_rector) / 6.0)
+                      if a.puntaje_rector else 1.0, 1.0)
         completa_as = True
     else:
         frac_as, completa_as = 0, False
     detalle["asegurar"] = {"peso": PESOS_FASE["ASEGURAR"],
-        "obtenido": round(PESOS_FASE["ASEGURAR"] * frac_as, 1), "completa": completa_as}
+                           "obtenido": round(PESOS_FASE["ASEGURAR"] * frac_as, 1), "completa": completa_as}
 
     # SOSTENER (15)
     s = SostenerDocente.query.filter_by(usuario_id=uid)\
         .order_by(SostenerDocente.fecha_evaluacion.desc()).first()
     frac_so = min(float(s.promedio_global or 0) / 5.0, 1.0) if s else 0
     detalle["sostener"] = {"peso": PESOS_FASE["SOSTENER"],
-        "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1), "completa": bool(s)}
+                           "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1), "completa": bool(s)}
 
     huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
     fases_completas = sum(1 for d in detalle.values() if d["completa"])
     return {"huella_total": huella_total, "fases_completas": fases_completas, "detalle": detalle}
 
+
 def _docentes_de_mi_empresa(u):
     if not u or u.rol not in ("DIRECTIVO", "ADMIN") or not u.empresa_id:
         return []
     return Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
+
 
 @api.route('/sostener/directivo/auditar-institucional', methods=['GET'])
 @jwt_required()
@@ -2618,7 +2752,8 @@ def sostener_directivo_auditar_institucional():
         return jsonify({"respuestas": [], "totalDocentes": 0}), 200
 
     ids_doc = [d.id for d in docentes]
-    forms_aud = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    forms_aud = [f.id for f in Formulario.query.filter_by(
+        fase_atlas="AUDITAR").all()]
     if not forms_aud:
         return jsonify({"respuestas": [], "totalDocentes": len(docentes)}), 200
 
@@ -2650,7 +2785,8 @@ def sostener_directivo_auditar_institucional():
         sumas_por_doc.setdefault(resp.usuario_id, 0)
         sumas_por_doc[resp.usuario_id] += float(resp.puntos_ganados or 0)
     docentes_con_data = len(sumas_por_doc) or 1
-    puntaje_total_prom = round(sum(sumas_por_doc.values()) / docentes_con_data, 1)
+    puntaje_total_prom = round(
+        sum(sumas_por_doc.values()) / docentes_con_data, 1)
 
     todos = [v for vals in acc.values() for v in vals]
     media5 = round(sum(todos) / len(todos), 2) if todos else 0
@@ -2663,6 +2799,7 @@ def sostener_directivo_auditar_institucional():
         "media_base100": round(media5 * 20, 1),
         "puntaje_total": puntaje_total_prom,
     }), 200
+
 
 @api.route('/sostener/directivo/balance-institucional', methods=['GET'])
 @jwt_required()
@@ -2683,7 +2820,8 @@ def sostener_directivo_balance_institucional():
     ids = [d.id for d in docentes]
 
     # ── AUDITAR institucional: promedio de puntos de todos los docentes ──
-    forms_aud = [f.id for f in Formulario.query.filter_by(fase_atlas="AUDITAR").all()]
+    forms_aud = [f.id for f in Formulario.query.filter_by(
+        fase_atlas="AUDITAR").all()]
     puntajes = []
     sumas_por_doc = {}
     if forms_aud:
@@ -2757,6 +2895,7 @@ def sostener_directivo_balance_institucional():
         "totalDocentes": len(docentes),
     }), 200
 
+
 @api.route('/sostener/directivo/huella-institucional', methods=['GET'])
 @jwt_required()
 def sostener_directivo_huella_institucional():
@@ -2803,6 +2942,7 @@ def sostener_directivo_huella_institucional():
         "fases_completas": total_completas,
         "detalle": detalle,
     }), 200
+
 
 @api.route('/sostener/directivo/auditar-dos-inst', methods=['GET'])
 @jwt_required()
@@ -2874,6 +3014,7 @@ def sostener_directivo_retos_inst():
 # HUELLA (placeholders mínimos para que el Dashboard no truene)
 # ══════════════════════════════════════════════════════════════════════
 
+
 @api.route('/huella', methods=['GET'])
 @jwt_required()
 def get_huella():
@@ -2891,3 +3032,179 @@ def get_huella():
     }), 200
 
 
+# ══════════════════════════════════════════════════════════════════════
+# PASO 2 — ENDPOINTS
+# Pega este bloque al FINAL de src/api/routes.py (antes de nada, tras el
+# último endpoint /huella). Añade "Credencial" a tu import de api.models.
+#
+#   from api.models import (..., AuditarDos, Credencial)
+#
+# La lógica de emisión reutiliza tu HuellaCompassHistory y el helper gen_id
+# que YA existen en tu proyecto.
+# ══════════════════════════════════════════════════════════════════════
+
+# Umbral de huella para emitir el certificado (según tu elección: 80)
+HUELLA_MINIMA_CERTIFICADO = 80.0
+FASES_ATLAS = ["AUDITAR", "TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"]
+
+
+def _fases_completadas_de_historial(usuario_id):
+    """Deduce qué fases tienen puntos > 0 en el último snapshot de huella."""
+    ultimo = HuellaCompassHistory.query.filter_by(usuario_id=usuario_id)\
+        .order_by(HuellaCompassHistory.fecha_calculo.desc()).first()
+    if not ultimo:
+        return []
+    mapa = {
+        "AUDITAR": ultimo.pts_auditar,
+        "TRANSFORMAR": ultimo.pts_transformar,
+        "LIDERAR": ultimo.pts_liderar,
+        "ASEGURAR": ultimo.pts_asegurar,
+        "SOSTENER": ultimo.pts_sostener,
+    }
+    return [fase for fase, pts in mapa.items() if pts and pts > 0]
+
+
+def emitir_credencial_si_corresponde(usuario_id):
+    """
+    Emite el certificado solo si la huella ponderada en vivo >= 80 y el
+    usuario aún no tiene una credencial ACTIVA.
+    Usa _calcular_huella_docente (la fuente real de la huella en este proyecto).
+    Devuelve la Credencial (nueva o existente) o None.
+    """
+    usuario = db.session.get(Usuario, usuario_id)
+    if not usuario:
+        return None
+
+    # Huella REAL calculada en vivo (no el campo usuario.huella_compass_total, que queda en 0)
+    h = _calcular_huella_docente(usuario_id)
+    huella = h["huella_total"]
+
+    if huella < HUELLA_MINIMA_CERTIFICADO:
+        return None
+
+    # ¿Ya tiene una credencial activa? No dupliques.
+    existente = Credencial.query.filter_by(
+        usuario_id=usuario_id, status="ACTIVA").first()
+    if existente:
+        return existente
+
+    # Fases completadas según el detalle de la huella en vivo
+    fases_ok = [fase.upper()
+                for fase, d in h["detalle"].items() if d["completa"]]
+
+    # De paso, sincronizamos el campo del usuario para que quede coherente
+    usuario.huella_compass_total = huella
+
+    nueva = Credencial(
+        id_credencial=gen_id("COMPASS-"),
+        usuario_id=usuario_id,
+        huella_final=huella,
+        fases_completadas=fases_ok,
+        status="ACTIVA",
+    )
+    db.session.add(nueva)
+    db.session.commit()
+    return nueva
+
+
+# ──────────────────────────────────────────────────────────────────────
+# A) Consultar / emitir MI credencial (requiere login)
+# ──────────────────────────────────────────────────────────────────────
+@api.route('/mi-credencial', methods=['GET'])
+@jwt_required()
+def mi_credencial():
+    u = get_usuario_actual()
+    if not u:
+        return jsonify({"error": "No autorizado"}), 401
+
+    cred = Credencial.query.filter_by(usuario_id=u.id, status="ACTIVA").first()
+
+    # Si no la tiene pero ya cumple el umbral, la emitimos al vuelo.
+    if not cred:
+        cred = emitir_credencial_si_corresponde(u.id)
+
+    if not cred:
+        h = _calcular_huella_docente(u.id)
+        return jsonify({
+            "tiene_credencial": False,
+            "huella_actual": h["huella_total"],
+            "huella_requerida": HUELLA_MINIMA_CERTIFICADO,
+        }), 200
+
+    # Construimos el enlace de LinkedIn ya listo para usar
+    base = os.getenv("PUBLIC_URL", "https://tusitio.com").rstrip("/")
+    cert_url = f"{base}/verify/{cred.id_credencial}"
+
+    fecha = cred.fecha_emision
+    params = {
+        "startTask": "CERTIFICATION_NAME",
+        "name": cred.programa,
+        "issueYear": str(fecha.year),
+        "issueMonth": str(fecha.month),
+        "certUrl": cert_url,
+        "certId": cred.id_credencial,
+    }
+    # LinkedIn: elige organizationId O organizationName, NUNCA ambos.
+    org_id = os.getenv("LINKEDIN_ORG_ID")
+    if org_id:
+        params["organizationId"] = org_id
+    else:
+        params["organizationName"] = os.getenv("LINKEDIN_ORG_NAME", "COMPASS")
+
+    query = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
+    linkedin_url = f"https://www.linkedin.com/profile/add?{query}"
+
+    data = cred.serialize()
+    data["tiene_credencial"] = True
+    data["cert_url"] = cert_url
+    data["linkedin_url"] = linkedin_url
+    return jsonify(data), 200
+
+
+# ──────────────────────────────────────────────────────────────────────
+# B) VERIFICACIÓN PÚBLICA (SIN login — la usa el reclutador)
+# ──────────────────────────────────────────────────────────────────────
+@api.route('/verify/<string:id_cred>', methods=['GET'])
+def verificar_credencial(id_cred):
+    cred = Credencial.query.filter_by(
+        id_credencial=id_cred.strip().upper()).first()
+    if not cred or cred.status != "ACTIVA":
+        return jsonify({"valido": False}), 404
+
+    return jsonify({
+        "valido": True,
+        "id_credencial": cred.id_credencial,
+        "nombre": cred.usuario.nombre_completo if cred.usuario else "—",
+        "programa": cred.programa,
+        "empresa": cred.usuario.empresa.nombre if (cred.usuario and cred.usuario.empresa) else None,
+        "fases_completadas": cred.fases_completadas or [],
+        "huella_final": cred.huella_final,
+        "fecha_emision": cred.fecha_emision.isoformat() if cred.fecha_emision else None,
+    }), 200
+
+
+# ──────────────────────────────────────────────────────────────────────
+# C) ADMIN: listar y revocar credenciales
+# ──────────────────────────────────────────────────────────────────────
+@api.route('/credenciales', methods=['GET'])
+@jwt_required()
+def listar_credenciales():
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+    creds = Credencial.query.order_by(Credencial.fecha_emision.desc()).all()
+    return jsonify([c.serialize() for c in creds]), 200
+
+
+@api.route('/credenciales/<int:cid>/revocar', methods=['PUT'])
+@jwt_required()
+def revocar_credencial(cid):
+    u = get_usuario_actual()
+    if not solo_admin(u):
+        return jsonify({"error": "Solo ADMIN"}), 403
+    cred = db.session.get(Credencial, cid)
+    if not cred:
+        return jsonify({"error": "No encontrada"}), 404
+    cred.status = "REVOCADA"
+    db.session.commit()
+    return jsonify(cred.serialize()), 200
