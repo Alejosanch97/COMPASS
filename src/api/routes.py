@@ -3404,3 +3404,8 @@ def liderar_dilemas_guardar():
     reg.fecha_registro = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify(reg.serialize()), 200
+
+
+@api.route('/hello', methods=['GET'])
+def hello():
+    return jsonify({"status": "ok", "message": "COMPASS backend despierto 👋"}), 200
