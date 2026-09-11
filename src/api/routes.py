@@ -16,7 +16,7 @@ from api.models import (
     RetoPlantilla, AsignacionReto,
     ProgresoFase, RespuestaFormulario, RetoTransformar, PromptLiderar, RetoLiderar, SeguimientoDirectivo,
     AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan, AsegurarDocente, AsegurarDirectivoPanorama, AsegurarDirectivoDiagnostico, AsegurarDirectivoPlan,
-    SostenerDocente, SostenerInstitucional, AuditarDos, Credencial
+    SostenerDocente, SostenerInstitucional, AuditarDos, Credencial, DilemaLiderar
 )
 import uuid
 
@@ -481,6 +481,7 @@ def crear_reto_plantilla_completo():
         fase=data["fase"],
         nivel_unesco=data.get("nivel_unesco"),
         rol_destino=data.get("rol_destino", "DOCENTE"),
+        numero_reto=data.get("numero_reto", 1),
         peso_huella=data.get("peso_huella", 10.0),
         config_json=config,
         creado_por_admin_id=u.id,
@@ -519,7 +520,7 @@ def actualizar_reto_plantilla(rid):
 
     if "nombre_reto" in data:
         r.nombre = data["nombre_reto"]
-    for c in ["descripcion", "fase", "nivel_unesco", "rol_destino", "peso_huella", "config_json", "is_active", "contexto_narrativo", "mision_texto", "objetivos_aprendizaje", "preguntas_orientadoras", "conceptos_clave", "autoevaluacion_items"]:
+    for c in ["descripcion", "fase", "nivel_unesco", "rol_destino", "numero_reto", "peso_huella", "config_json", "is_active", "contexto_narrativo", "mision_texto", "objetivos_aprendizaje", "preguntas_orientadoras", "conceptos_clave", "autoevaluacion_items"]:
         if c in data:
             setattr(r, c, data[c])
 
@@ -658,6 +659,7 @@ def actualizar_reto_plantilla_completo(rid):
     r.fase = data["fase"]
     r.nivel_unesco = data.get("nivel_unesco")
     r.rol_destino = data.get("rol_destino", "DOCENTE")
+    r.numero_reto = data.get("numero_reto", r.numero_reto)
     r.peso_huella = data.get("peso_huella", r.peso_huella)
     r.config_json = {"preguntas": data.get("preguntas", [])}
     r.contexto_narrativo = data.get("contexto_narrativo", r.contexto_narrativo)
@@ -2331,23 +2333,16 @@ def asegurar_evidencia_auditar():
 @api.route('/mi-empresa/fases-estado', methods=['GET'])
 @jwt_required()
 def mis_fases_estado():
-    """
-    Devuelve las 5 fases en orden fijo, indicando para el docente actual:
-    - activa: si el toggle is_activa está encendido (AUDITAR/TRANSFORMAR se asumen siempre activas)
-    - completada: si el docente ya envió datos de esa fase
-    """
     u = get_usuario_actual()
     ORDEN = ["AUDITAR", "TRANSFORMAR", "ASEGURAR", "LIDERAR", "SOSTENER"]
 
     if not u.empresa_id:
         return jsonify([{"fase": f, "activa": False, "completada": False} for f in ORDEN]), 200
 
-    # Config de toggles de la empresa
     configs = {c.fase: c for c in ConfiguracionFaseEmpresa.query.filter_by(
         empresa_id=u.empresa_id).all()}
 
-    # ── Completitud por fase para ESTE docente ──
-    # AUDITAR: tiene al menos una respuesta de formulario fase AUDITAR
+    # ── AUDITAR y TRANSFORMAR: mismos criterios para cualquier rol ──
     forms_auditar_ids = [f.id for f in Formulario.query.filter_by(
         fase_atlas="AUDITAR").all()]
     auditar_ok = False
@@ -2357,21 +2352,31 @@ def mis_fases_estado():
             RespuestaFormulario.formulario_id.in_(forms_auditar_ids)
         ).first() is not None
 
-    # TRANSFORMAR: al menos un reto COMPLETADO
     transformar_ok = RetoTransformar.query.filter_by(
         usuario_id=u.id, status_reto="COMPLETADO").first() is not None
 
-    # LIDERAR: prompt COMPLETADO
-    liderar_ok = PromptLiderar.query.filter_by(
-        usuario_id=u.id, status="COMPLETADO").first() is not None
+    # ── LIDERAR / ASEGURAR / SOSTENER: criterios distintos según rol ──
+    if u.rol == "DIRECTIVO":
+        liderar_ok = ProgresoFase.query.filter_by(
+            usuario_id=u.id, fase="LIDERAR", capa_1_sentido="COMPLETADO").first() is not None
 
-    # ASEGURAR: taller docente COMPLETADO
-    asegurar_ok = AsegurarDocente.query.filter_by(
-        usuario_id=u.id, status="COMPLETADO").first() is not None
+        diag = AsegurarDirectivoDiagnostico.query.filter_by(
+            usuario_id=u.id, status="COMPLETADO").first()
+        plan = AsegurarDirectivoPlan.query.filter_by(
+            usuario_id=u.id, status="COMPLETADO").first()
+        asegurar_ok = bool(diag or plan)
 
-    # SOSTENER: evaluación COMPLETADA
-    sostener_ok = SostenerDocente.query.filter_by(
-        usuario_id=u.id, status="COMPLETADO").first() is not None
+        sostener_ok = SostenerInstitucional.query.filter_by(
+            usuario_id=u.id).first() is not None
+    else:
+        liderar_ok = PromptLiderar.query.filter_by(
+            usuario_id=u.id, status="COMPLETADO").first() is not None
+
+        asegurar_ok = AsegurarDocente.query.filter_by(
+            usuario_id=u.id, status="COMPLETADO").first() is not None
+
+        sostener_ok = SostenerDocente.query.filter_by(
+            usuario_id=u.id, status="COMPLETADO").first() is not None
 
     completadas = {
         "AUDITAR": auditar_ok,
@@ -2381,7 +2386,6 @@ def mis_fases_estado():
         "SOSTENER": sostener_ok,
     }
 
-    # AUDITAR y TRANSFORMAR se consideran siempre activas; el resto dependen del toggle
     def esta_activa(fase):
         if fase in ("AUDITAR", "TRANSFORMAR"):
             return True
@@ -2738,6 +2742,70 @@ def _docentes_de_mi_empresa(u):
     return Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()
 
 
+def _calcular_huella_directivo(uid):
+    """
+    Huella ponderada (0-100) para un DIRECTIVO. Sus fases se completan
+    con acciones propias del rol directivo, no con las del docente:
+      AUDITAR (20): respondió su formulario AUDITAR
+      TRANSFORMAR (30): completó al menos un reto de Transformar
+      LIDERAR (15): aceptó la fase (ProgresoFase capa_1 COMPLETADO)
+      ASEGURAR (20): completó el módulo directivo (diagnóstico + plan)
+      SOSTENER (15): completó el cierre institucional
+    """
+    detalle = {}
+
+    # AUDITAR (20): tiene respuestas de formularios AUDITAR
+    r_aud = db.session.query(RespuestaFormulario).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == uid,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+    if r_aud:
+        media_aud = sum(float(x.puntos_ganados or 0)
+                        for x in r_aud) / len(r_aud)
+        frac_aud = min(media_aud / 5.0, 1.0)
+    else:
+        frac_aud = 0
+    detalle["auditar"] = {"peso": PESOS_FASE["AUDITAR"],
+                          "obtenido": round(PESOS_FASE["AUDITAR"] * frac_aud, 1), "completa": bool(r_aud)}
+
+    # TRANSFORMAR (30): al menos un reto COMPLETADO
+    total_retos = RetoTransformar.query.filter_by(usuario_id=uid).count()
+    retos_ok = RetoTransformar.query.filter_by(
+        usuario_id=uid, status_reto="COMPLETADO").count()
+    frac_tr = (retos_ok / total_retos) if total_retos else 0
+    detalle["transformar"] = {"peso": PESOS_FASE["TRANSFORMAR"],
+                              "obtenido": round(PESOS_FASE["TRANSFORMAR"] * frac_tr, 1), "completa": retos_ok > 0}
+
+    # LIDERAR (15): aceptó la fase (solo mirar). Peso completo si aceptó.
+    lid = ProgresoFase.query.filter_by(
+        usuario_id=uid, fase="LIDERAR", capa_1_sentido="COMPLETADO").first()
+    frac_lid = 1.0 if lid else 0
+    detalle["liderar"] = {"peso": PESOS_FASE["LIDERAR"],
+                          "obtenido": round(PESOS_FASE["LIDERAR"] * frac_lid, 1), "completa": bool(lid)}
+
+    # ASEGURAR (20): completó el diagnóstico O el plan directivo. Peso completo.
+    diag = AsegurarDirectivoDiagnostico.query.filter_by(
+        usuario_id=uid, status="COMPLETADO").first()
+    plan = AsegurarDirectivoPlan.query.filter_by(
+        usuario_id=uid, status="COMPLETADO").first()
+    completa_as = bool(diag or plan)
+    frac_as = 1.0 if completa_as else 0
+    detalle["asegurar"] = {"peso": PESOS_FASE["ASEGURAR"],
+                           "obtenido": round(PESOS_FASE["ASEGURAR"] * frac_as, 1), "completa": completa_as}
+
+    # SOSTENER (15): completó el cierre institucional. Peso completo.
+    cierre = SostenerInstitucional.query.filter_by(usuario_id=uid).first()
+    frac_so = 1.0 if cierre else 0
+    detalle["sostener"] = {"peso": PESOS_FASE["SOSTENER"],
+                           "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1), "completa": bool(cierre)}
+
+    huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    fases_completas = sum(1 for d in detalle.values() if d["completa"])
+    return {"huella_total": huella_total, "fases_completas": fases_completas, "detalle": detalle}
+
+
 @api.route('/sostener/directivo/auditar-institucional', methods=['GET'])
 @jwt_required()
 def sostener_directivo_auditar_institucional():
@@ -2764,19 +2832,40 @@ def sostener_directivo_auditar_institucional():
         RespuestaFormulario.formulario_id.in_(forms_aud)
     ).all()
 
-    # Agrupamos por orden_pregunta y promediamos
+    # Agrupamos por orden_pregunta: promediamos puntos, guardamos texto Y
+    # ahora también contamos cuántas veces se repitió cada valor_respondido
     acc = {}
+    textos = {}
+    opciones_por_orden = {}
     for resp, preg in filas:
         orden = preg.orden_pregunta
         if orden is None:
             continue
         acc.setdefault(orden, []).append(float(resp.puntos_ganados or 0))
+        if orden not in textos:
+            textos[orden] = preg.texto_pregunta or f"Pregunta {orden}"
+
+        val = (resp.valor_respondido or "").strip()
+        if val:
+            opciones_por_orden.setdefault(orden, {})
+            opciones_por_orden[orden][val] = opciones_por_orden[orden].get(
+                val, 0) + 1
 
     salida = []
     for orden, vals in sorted(acc.items()):
+        conteo = opciones_por_orden.get(orden, {})
+        total_resp = sum(conteo.values()) or 1
+        opciones = [
+            {"opcion": k, "count": v, "pct": round((v / total_resp) * 100, 1)}
+            for k, v in sorted(conteo.items(), key=lambda x: -x[1])
+        ]
         salida.append({
             "Orden_Pregunta": orden,
-            "Puntos_Ganados": round(sum(vals) / len(vals), 2),  # media empresa
+            "Texto_Pregunta": textos.get(orden, f"Pregunta {orden}"),
+            "Puntos_Ganados": round(sum(vals) / len(vals), 2),
+            "Opciones": opciones,
+            "Moda": opciones[0]["opcion"] if opciones else None,
+            "TotalRespuestas": total_resp,
         })
 
     # Puntaje total institucional = promedio de la suma total por docente
@@ -3020,8 +3109,11 @@ def sostener_directivo_retos_inst():
 def get_huella():
     u = get_usuario_actual()
     # Huella calculada EN VIVO con la ponderación real de las 5 fases.
-    # Sube automáticamente cada vez que el docente completa una fase.
-    h = _calcular_huella_docente(u.id)
+    # El directivo tiene su propia fórmula (sus fases se completan distinto).
+    if u.rol == "DIRECTIVO":
+        h = _calcular_huella_directivo(u.id)
+    else:
+        h = _calcular_huella_docente(u.id)
     return jsonify({
         "usuario_id": u.id,
         "nombre": u.nombre_completo,
@@ -3208,3 +3300,107 @@ def revocar_credencial(cid):
     cred.status = "REVOCADA"
     db.session.commit()
     return jsonify(cred.serialize()), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# FASE LIDERAR — MISIÓN 3: DILEMAS ÉTICOS
+# ══════════════════════════════════════════════════════════════════════
+
+# Matriz de principios: por caso y opción, qué SOSTIENE y qué EXPONE.
+# (Fuente: los 5 casos de dilemas éticos)
+DILEMAS_MATRIZ = {
+    "caso01": {
+        "A": {"sostiene": ["No dañar", "Inclusión y acceso"], "expone": ["Transparencia", "Responsabilidad"]},
+        "B": {"sostiene": ["Transparencia", "Agencia humana"], "expone": ["No dañar", "Inclusión y acceso"]},
+        "C": {"sostiene": ["Equidad", "Responsabilidad"], "expone": ["Alfabetización crítica"]},
+        "D": {"sostiene": ["Transparencia", "Equidad"], "expone": ["No dañar"]},
+    },
+    "caso02": {
+        "A": {"sostiene": ["Responsabilidad", "Equidad"], "expone": ["Inclusión y acceso", "No dañar"]},
+        "B": {"sostiene": ["Supervisión humana", "No dañar"], "expone": ["Transparencia"]},
+        "C": {"sostiene": ["Transparencia", "Alfabetización crítica"], "expone": ["Responsabilidad"]},
+        "D": {"sostiene": ["Inclusión y acceso", "Equidad"], "expone": ["Transparencia"]},
+    },
+    "caso03": {
+        "A": {"sostiene": ["Equidad"], "expone": ["Transparencia", "Responsabilidad", "Alfabetización crítica"]},
+        "B": {"sostiene": ["Transparencia", "Responsabilidad"], "expone": []},
+        "C": {"sostiene": ["Supervisión humana"], "expone": ["Equidad", "Transparencia"]},
+        "D": {"sostiene": ["Agencia humana", "Supervisión humana"], "expone": ["No dañar", "Inclusión y acceso"]},
+    },
+    "caso04": {
+        "A": {"sostiene": ["Responsabilidad"], "expone": ["Alfabetización crítica", "No dañar"]},
+        "B": {"sostiene": ["Alfabetización crítica", "Agencia humana"], "expone": ["Responsabilidad"]},
+        "C": {"sostiene": ["Alfabetización crítica"], "expone": ["Equidad", "No dañar"]},
+        "D": {"sostiene": ["Agencia humana", "Alfabetización crítica"], "expone": ["Inclusión y acceso"]},
+    },
+    "caso05": {
+        "A": {"sostiene": ["No dañar", "Supervisión humana"], "expone": ["Responsabilidad"]},
+        "B": {"sostiene": ["No dañar", "Responsabilidad"], "expone": ["Inclusión y acceso"]},
+        "C": {"sostiene": ["Responsabilidad", "Transparencia"], "expone": ["Supervisión humana"]},
+        "D": {"sostiene": ["Supervisión humana", "No dañar"], "expone": ["Privacidad"]},
+    },
+}
+
+PRINCIPIOS_DILEMAS = [
+    "Agencia humana", "Supervisión humana", "Transparencia", "Responsabilidad",
+    "Equidad", "Inclusión y acceso", "Privacidad", "No dañar", "Alfabetización crítica",
+]
+
+
+def _calcular_conteo_dilemas(selecciones):
+    """selecciones = {"caso01":"C", "caso03":"B"} -> conteo por principio."""
+    conteo = {p: {"en_juego": 0, "sostenido": 0, "expuesto": 0}
+              for p in PRINCIPIOS_DILEMAS}
+    for caso, opcion in (selecciones or {}).items():
+        matriz = DILEMAS_MATRIZ.get(caso, {}).get(opcion)
+        if not matriz:
+            continue
+        for p in matriz.get("sostiene", []):
+            if p in conteo:
+                conteo[p]["sostenido"] += 1
+                conteo[p]["en_juego"] += 1
+        for p in matriz.get("expone", []):
+            if p in conteo:
+                conteo[p]["expuesto"] += 1
+                conteo[p]["en_juego"] += 1
+    return conteo
+
+
+@api.route('/liderar/dilemas/mi-registro', methods=['GET'])
+@jwt_required()
+def liderar_dilemas_mi_registro():
+    """Devuelve el registro de dilemas del docente (o null)."""
+    u = get_usuario_actual()
+    reg = DilemaLiderar.query.filter_by(usuario_id=u.id)\
+        .order_by(DilemaLiderar.fecha_registro.desc()).first()
+    return jsonify(reg.serialize() if reg else None), 200
+
+
+@api.route('/liderar/dilemas', methods=['POST'])
+@jwt_required()
+def liderar_dilemas_guardar():
+    """
+    Guarda la selección del docente y calcula el conteo por principio en el server
+    (fuente de verdad para el radar). Upsert por usuario.
+    Body: { "casos_asignados": ["caso01","caso03"], "selecciones": {"caso01":"C","caso03":"B"} }
+    """
+    u = get_usuario_actual()
+    data = request.get_json() or {}
+    selecciones = data.get("selecciones", {})
+    if not selecciones:
+        return jsonify({"error": "selecciones requeridas"}), 400
+
+    conteo = _calcular_conteo_dilemas(selecciones)
+
+    reg = DilemaLiderar.query.filter_by(usuario_id=u.id).first()
+    if not reg:
+        reg = DilemaLiderar(usuario_id=u.id)
+        db.session.add(reg)
+
+    reg.casos_asignados = data.get("casos_asignados", list(selecciones.keys()))
+    reg.selecciones = selecciones
+    reg.conteo_principios = conteo
+    reg.status = "COMPLETADO"
+    reg.fecha_registro = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify(reg.serialize()), 200

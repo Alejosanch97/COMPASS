@@ -77,7 +77,7 @@ export const AsignacionRetos = ({ apiFetch }) => {
             setLiderarActiva(liderar?.is_activa === true);
             const asegurar = Array.isArray(fases) ? fases.find(f => f.fase === "ASEGURAR") : null;
             setAsegurarActiva(asegurar?.is_activa === true);
-             const sostener = Array.isArray(fases) ? fases.find(f => f.fase === "SOSTENER") : null;
+            const sostener = Array.isArray(fases) ? fases.find(f => f.fase === "SOSTENER") : null;
             setSostenerActiva(sostener?.is_activa === true);
         } catch (e) {
             console.error("Error cargando detalle:", e);
@@ -103,23 +103,6 @@ export const AsignacionRetos = ({ apiFetch }) => {
         return detalleAsignacion?.formularios_asignados?.some(f => f.formulario_id === formId);
     };
 
-    const toggleFormulario = async (form) => {
-        if (!empresaSeleccionada) return;
-        setIsSyncing(true);
-        try {
-            if (formularioEstaAsignado(form.id)) {
-                await apiFetch(`/api/empresas/${empresaSeleccionada.id}/formularios/${form.id}/asignar`, { method: "DELETE" });
-            } else {
-                await apiFetch(`/api/empresas/${empresaSeleccionada.id}/formularios/${form.id}/asignar`, { method: "POST" });
-            }
-            await cargarDetalleEmpresa(empresaSeleccionada.id);
-        } catch (e) {
-            console.error("Error al asignar/desasignar formulario:", e);
-            alert("Hubo un error. Revisa la consola.");
-        } finally {
-            setIsSyncing(false);
-        }
-    };
 
     // ── Retos (Transformar, Liderar, Asegurar, Sostener) ────────────────
     const retoEstaAsignado = (retoId) => {
@@ -130,19 +113,77 @@ export const AsignacionRetos = ({ apiFetch }) => {
 
     const toggleReto = async (reto) => {
         if (!empresaSeleccionada) return;
-        setIsSyncing(true);
+        const yaAsignado = retoEstaAsignado(reto.id);
+
+        // 1. Actualiza SOLO este reto en el estado local, sin recargar todo
+        setDetalleAsignacion(prev => {
+            if (!prev) return prev;
+            const listaActual = prev.retos_por_fase[faseActiva] || [];
+            const nuevaLista = yaAsignado
+                ? listaActual.filter(r => r.reto_plantilla_id !== reto.id)
+                : [...listaActual, {
+                    asignacion_id: `tmp-${reto.id}`,
+                    reto_plantilla_id: reto.id,
+                    nombre_reto: reto.nombre_reto,
+                }];
+            return {
+                ...prev,
+                retos_por_fase: { ...prev.retos_por_fase, [faseActiva]: nuevaLista },
+            };
+        });
+
+        // 2. Sincroniza con el backend en segundo plano
         try {
-            if (retoEstaAsignado(reto.id)) {
+            if (yaAsignado) {
                 await apiFetch(`/api/empresas/${empresaSeleccionada.id}/retos/${reto.id}/asignar`, { method: "DELETE" });
             } else {
                 await apiFetch(`/api/empresas/${empresaSeleccionada.id}/retos/${reto.id}/asignar`, { method: "POST", body: JSON.stringify({}) });
             }
-            await cargarDetalleEmpresa(empresaSeleccionada.id);
+            // Refresca en silencio (sin loader) para traer asignacion_id/porcentajes reales
+            await refrescarDetalleSilencioso(empresaSeleccionada.id);
         } catch (e) {
             console.error("Error al asignar/desasignar reto:", e);
             alert("Hubo un error. Revisa la consola.");
-        } finally {
-            setIsSyncing(false);
+            await refrescarDetalleSilencioso(empresaSeleccionada.id); // revierte al estado real
+        }
+    };
+
+    const toggleFormulario = async (form) => {
+        if (!empresaSeleccionada) return;
+        const yaAsignado = formularioEstaAsignado(form.id);
+
+        setDetalleAsignacion(prev => {
+            if (!prev) return prev;
+            const actuales = prev.formularios_asignados || [];
+            const nuevos = yaAsignado
+                ? actuales.filter(f => f.formulario_id !== form.id)
+                : [...actuales, { formulario_id: form.id }];
+            return { ...prev, formularios_asignados: nuevos };
+        });
+
+        try {
+            const metodo = yaAsignado ? "DELETE" : "POST";
+            await apiFetch(`/api/empresas/${empresaSeleccionada.id}/formularios/${form.id}/asignar`, { method: metodo });
+            await refrescarDetalleSilencioso(empresaSeleccionada.id);
+        } catch (e) {
+            console.error("Error al asignar/desasignar formulario:", e);
+            alert("Hubo un error. Revisa la consola.");
+            await refrescarDetalleSilencioso(empresaSeleccionada.id);
+        }
+    };
+
+    const refrescarDetalleSilencioso = async (empresaId) => {
+        try {
+            const [detalle, fases] = await Promise.all([
+                apiFetch(`/api/empresas/${empresaId}/asignaciones`),
+                apiFetch(`/api/empresas/${empresaId}/fases`).catch(() => []),
+            ]);
+            setDetalleAsignacion(detalle);
+            setLiderarActiva(Array.isArray(fases) ? fases.find(f => f.fase === "LIDERAR")?.is_activa === true : false);
+            setAsegurarActiva(Array.isArray(fases) ? fases.find(f => f.fase === "ASEGURAR")?.is_activa === true : false);
+            setSostenerActiva(Array.isArray(fases) ? fases.find(f => f.fase === "SOSTENER")?.is_activa === true : false);
+        } catch (e) {
+            console.error("Error refrescando detalle:", e);
         }
     };
 
@@ -342,7 +383,6 @@ export const AsignacionRetos = ({ apiFetch }) => {
                                             type="checkbox"
                                             checked={formularioEstaAsignado(form.id)}
                                             onChange={() => toggleFormulario(form)}
-                                            disabled={isSyncing}
                                         />
                                         <span>{form.titulo}</span>
                                     </label>
@@ -358,7 +398,6 @@ export const AsignacionRetos = ({ apiFetch }) => {
                                             type="checkbox"
                                             checked={formularioEstaAsignado(form.id)}
                                             onChange={() => toggleFormulario(form)}
-                                            disabled={isSyncing}
                                         />
                                         <span>{form.titulo}</span>
                                     </label>
@@ -456,7 +495,6 @@ export const AsignacionRetos = ({ apiFetch }) => {
                                                     type="checkbox"
                                                     checked={asignado}
                                                     onChange={() => toggleReto(reto)}
-                                                    disabled={isSyncing}
                                                 />
                                                 <div className="as-reto-info">
                                                     <span className="as-reto-nombre">{reto.nombre_reto}</span>

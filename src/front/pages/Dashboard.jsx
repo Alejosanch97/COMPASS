@@ -10,6 +10,7 @@ import { FaseTransformar } from "./FaseTransformar"; // <-- Nueva página para r
 
 import FaseLiderar from "./FaseLiderar";
 import RetosLiderar from "./RetosLiderar";
+import RetosDilemas from "./RetosDilemas";
 import AnalisisLiderazgo from "./AnalisisLiderazgo";
 
 import FaseAsegurar from "./FaseAsegurar";
@@ -67,6 +68,7 @@ export const Dashboard = ({ onLogout }) => {
     const [faseRespondiendo, setFaseRespondiendo] = useState("AUDITAR");
     const [retoEjecutando, setRetoEjecutando] = useState(null);
     const [retoLiderarId, setRetoLiderarId] = useState(null);
+    const [retoCompletadoId, setRetoCompletadoId] = useState(null);
 
     const [fasesEstado, setFasesEstado] = useState([]);
 
@@ -77,8 +79,14 @@ export const Dashboard = ({ onLogout }) => {
         switchTab(tab);
     };
 
-    const handleNavigateTransformar = (tab, retoId) => {
-        if (retoId) setRetoEjecutando(retoId);
+    const handleNavigateTransformar = (tab, dato) => {
+        // Desde el roadmap llega un id numérico (para ejecutar el reto).
+        // Al volver de EjecutarReto llega un objeto { retoCompletadoId }.
+        if (typeof dato === 'object' && dato !== null && dato.retoCompletadoId) {
+            setRetoCompletadoId(dato.retoCompletadoId);
+        } else if (dato) {
+            setRetoEjecutando(dato);
+        }
         switchTab(tab);
     };
 
@@ -523,6 +531,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                             {activeTab === "responder_fase" && "Responder Instrumento"}
                             {activeTab === "ejecutar_reto" && "Ejecutando Misión"}
                             {activeTab === "retos_liderar" && "Laboratorio de Prompt Ético"}
+                            {activeTab === "retos_dilemas" && "Dilemas Éticos"}
                             {activeTab === "analisis_liderazgo" && "Panel de Gobernanza"}
                             {activeTab === "fase_asegurar" && ""}
                             {activeTab === "taller_asegurar" && "Taller de Mejora ASEGURAR"}
@@ -535,7 +544,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
 
                 </header>
 
-                                {/* ── OVERVIEW ─────────────────────────────────────────────── */}
+                {/* ── OVERVIEW ─────────────────────────────────────────────── */}
                 {activeTab === "overview" && (
                     <section className="dashboard-grid">
 
@@ -991,10 +1000,11 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                                 onRefreshProgreso={() => loadDashboardData(userData)}
                             />
                         )}
-                        {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "fase_transformar" && <FaseTransformar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateTransformar} onRefreshProgreso={() => loadDashboardData(userData)} retoCompletadoId={retoCompletadoId} />}
                         {activeTab === "ejecutar_reto" && <EjecutarReto userData={userData} apiFetch={apiFetch} retoId={retoEjecutando} onNavigate={handleNavigateTransformar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "fase_liderar" && <FaseLiderar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "retos_liderar" && <RetosLiderar userData={userData} apiFetch={apiFetch} retoId={retoLiderarId} onNavigate={handleNavigateLiderar} onRefreshProgreso={() => loadDashboardData(userData)} />}
+                        {activeTab === "retos_dilemas" && <RetosDilemas userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "analisis_liderazgo" && <AnalisisLiderazgo userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateLiderar} />}
                         {activeTab === "fase_asegurar" && <FaseAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} onRefreshProgreso={() => loadDashboardData(userData)} />}
                         {activeTab === "taller_asegurar" && <TallerMejoraAsegurar userData={userData} apiFetch={apiFetch} onNavigate={handleNavigateAsegurar} onRefreshProgreso={() => loadDashboardData(userData)} />}
@@ -1013,7 +1023,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                         )}
 
                         {/* 3. Bloque genérico (placeholders restantes: talentos, formularios, analisis, etc.) */}
-                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto", "fase_liderar", "retos_liderar", "analisis_liderazgo", "fase_asegurar", "taller_asegurar", "diagnostico_directivo", "fase_sostener", "modulo_sostener", "modulo_sostener_directivo"].includes(activeTab) && (
+                        {!["creador_retos", "gestion_empresas", "asignacion_retos", "talentos", "formularios", "analisis", "fase_auditar", "responder_fase", "fase_transformar", "ejecutar_reto", "fase_liderar", "retos_liderar", "retos_dilemas", "analisis_liderazgo", "fase_asegurar", "taller_asegurar", "diagnostico_directivo", "fase_sostener", "modulo_sostener", "modulo_sostener_directivo"].includes(activeTab) && (
                             <section className="dashboard-grid">
                                 <div className="info-card wide-card" style={{ textAlign: "center", padding: "60px 20px" }}>
                                     <div style={{ fontSize: "3rem", marginBottom: "16px" }}>

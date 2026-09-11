@@ -132,6 +132,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [retoId]);
 
+
     const fetchRetoData = async () => {
         setLoading(true);
         try {
@@ -272,19 +273,29 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
         setIsSaving(true);
         try {
             const puntajeTotal = calcularPuntajeTotal();
+
+            // Mapa de respuestas indexado por clave_analisis (para el dashboard directivo,
+            // robusto ante reordenamientos de preguntas)
+            const respuestasPorClave = {};
+            preguntasArray.forEach((p, idx) => {
+                if (p.clave_analisis) {
+                    respuestasPorClave[p.clave_analisis] = respuestas[idx];
+                }
+            });
+
             const payload = {
                 reto_plantilla_id: reto.id,
-                numero_reto: reto.numero_orden || 1,
+                numero_reto: reto.numero_reto ?? reto.numero_orden ?? 1,
                 nombre_reto: reto.nombre_reto || reto.nombre,
                 nivel_unesco: reto.nivel_unesco,
-                datos_json: { respuestas, puntaje_total: puntajeTotal, cumplimiento, puntosMatriz, secuenciaDeepen },
+                datos_json: { respuestas, respuestas_por_clave: respuestasPorClave, puntaje_total: puntajeTotal, cumplimiento, puntosMatriz, secuenciaDeepen },
                 status_reto: statusFinal,
             };
 
             // Navegar inmediatamente si el estado es COMPLETADO sin bloquear el hilo principal
             if (statusFinal === 'COMPLETADO') {
                 setStatusActual(statusFinal);
-                onNavigate('fase_transformar');
+                onNavigate('fase_transformar', { retoCompletadoId: reto.id });
 
                 // Guardar silenciosamente en background
                 apiFetch("/api/retos-transformar", {
@@ -362,7 +373,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                     <header className="reto-header-inline">
                         <div className="header-left">
                             <button className="btn-back-minimal" onClick={() => onNavigate('fase_transformar')}>⬅ Volver</button>
-                            <div className="badge-reto-id">Misión {reto.numero_orden || ""}</div>
+                            <div className="badge-reto-id">Misión {reto.numero_reto ?? reto.numero_orden ?? ""}</div>
                         </div>
                         <div className="atlas-unique-title-box">
                             <h2>{reto.nombre_reto || reto.nombre}</h2>
@@ -748,11 +759,15 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                 })()}
 
                                 {p.tipo_respuesta === "ANALISIS_INCLUSIVO_CREATE" && (() => {
-                                    // Lee las respuestas de las preguntas relevantes por su índice en el JSON
-                                    const bloom = respuestas[1] || "";                          // pregunta índice 1
-                                    const garantias = respuestas[8] || [];                      // pregunta índice 8
-                                    const validacion = respuestas[12] || [];                    // pregunta índice 12
-                                    const riesgos = respuestas[7] || [];                        // pregunta índice 7
+                                    // Lee las respuestas por clave_analisis (robusto ante reordenamientos)
+                                    const buscarPorClave = (clave) => {
+                                        const i = preguntas.findIndex(pr => pr.clave_analisis === clave);
+                                        return i !== -1 ? respuestas[i] : undefined;
+                                    };
+                                    const bloom = buscarPorClave("bloom") ?? respuestas[1] ?? "";
+                                    const garantias = buscarPorClave("garantias_equidad") ?? respuestas[8] ?? [];
+                                    const validacion = buscarPorClave("validacion_impacto") ?? respuestas[12] ?? [];
+                                    const riesgos = buscarPorClave("riesgos_sistemicos") ?? respuestas[7] ?? [];
 
                                     const nivelAlto = ['Analizar', 'Evaluar', 'Crear'];
                                     const nivelMedio = ['Aplicar'];
@@ -885,21 +900,23 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                         try {
                                             const datos = reg.datos_json || {};
                                             const resp = datos.respuestas || {};
+                                            const claves = datos.respuestas_por_clave || {};
                                             docentesUnicos.add(reg.usuario_id);
 
-                                            const f1 = datos.fortalecerMision1 || (Array.isArray(resp[IDX.r1]) ? resp[IDX.r1] : null);
-                                            const f2 = datos.fortalecerMision2 || (Array.isArray(resp[IDX.r2]) ? resp[IDX.r2] : null);
-                                            const f3 = datos.fortalecerMision3 || (Array.isArray(resp[IDX.r3]) ? resp[IDX.r3] : null);
+                                            const fortalecer = Array.isArray(claves.fortalecer_mision) ? claves.fortalecer_mision : null;
+                                            const f1 = (reg.numero_reto === 1 ? fortalecer : null) || datos.fortalecerMision1 || (Array.isArray(resp[IDX.r1]) ? resp[IDX.r1] : null);
+                                            const f2 = (reg.numero_reto === 2 ? fortalecer : null) || datos.fortalecerMision2 || (Array.isArray(resp[IDX.r2]) ? resp[IDX.r2] : null);
+                                            const f3 = (reg.numero_reto === 3 ? fortalecer : null) || datos.fortalecerMision3 || (Array.isArray(resp[IDX.r3]) ? resp[IDX.r3] : null);
                                             if (f1) f1.forEach(t => conteoMisiones.r1[t] = (conteoMisiones.r1[t] || 0) + 1);
                                             if (f2) f2.forEach(t => conteoMisiones.r2[t] = (conteoMisiones.r2[t] || 0) + 1);
                                             if (f3) f3.forEach(t => conteoMisiones.r3[t] = (conteoMisiones.r3[t] || 0) + 1);
 
                                             if (reg.nivel_unesco === 'CREATE' || reg.numero_reto === 3) {
                                                 conteoReto3++;
-                                                const bloom = resp[1];
-                                                const garantias = Array.isArray(resp[8]) ? resp[8] : [];
-                                                const validacion = Array.isArray(resp[12]) ? resp[12] : [];
-                                                const riesgos = Array.isArray(resp[7]) ? resp[7] : [];
+                                                const bloom = claves.bloom ?? resp[1];
+                                                const garantias = Array.isArray(claves.garantias_equidad) ? claves.garantias_equidad : (Array.isArray(resp[8]) ? resp[8] : []);
+                                                const validacion = Array.isArray(claves.validacion_impacto) ? claves.validacion_impacto : (Array.isArray(resp[12]) ? resp[12] : []);
+                                                const riesgos = Array.isArray(claves.riesgos_sistemicos) ? claves.riesgos_sistemicos : (Array.isArray(resp[7]) ? resp[7] : []);
                                                 if (bloom && sumaBloom.hasOwnProperty(bloom)) sumaBloom[bloom]++;
                                                 sumaGarantias += garantias.length;
                                                 if (validacion.length > 0) conComprobacion++;
@@ -1155,188 +1172,6 @@ En este nivel, la IA se integra como parte de una arquitectura pedagógica consc
                         ))
                     )}
                 </div>
-
-                {/* DASHBOARD DIRECTIVO — idéntico al original, adaptado a Flask */}
-                {userData.rol === "DIRECTIVO" && registrosTransformar.length > 0 && (
-                    <div style={{
-                        marginTop: '3rem', padding: '25px',
-                        background: '#f8fafc', borderRadius: '20px', border: '2px solid #e2e8f0'
-                    }}>
-                        <h2 style={{ margin: '0 0 20px 0', fontSize: '1.4rem', color: '#1e293b' }}>
-                            Análisis de Capacidad Institucional (Consolidado)
-                        </h2>
-
-                        {(() => {
-                            const docentesUnicos = new Set();
-                            const conteoMisiones = { r1: {}, r2: {}, r3: {} };
-
-                            // ── Índices de preguntas "Proyección" en cada reto (nuevo sistema dinámico)
-                            // Reto 1: índice 8  | Reto 2: índice 20  | Reto 3: índice 14
-                            const IDX = { r1: 8, r2: 20, r3: 14 };
-
-                            // ── Para el análisis de inclusión — solo registros del Reto 3 (CREATE)
-                            let sumaBloom = { Recordar: 0, Aplicar: 0, Comprender: 0, Analizar: 0, Evaluar: 0, Crear: 0 };
-                            let sumaGarantias = 0;
-                            let conteoReto3 = 0;
-                            let conComprobacion = 0;
-                            let conRiesgoSistemico = 0;
-                            const riesgosSistemicosLista = [
-                                'Sesgo algorítmico', 'Perfilamiento',
-                                'Dependencia diferencial', 'Invisibilización de fortalezas'
-                            ];
-
-                            registrosTransformar.forEach(reg => {
-                                try {
-                                    const datos = reg.datos_json || {};
-                                    const resp = datos.respuestas || {};
-                                    docentesUnicos.add(reg.usuario_id);
-
-                                    // Barras de fortalecimiento — compatible con ambos sistemas
-                                    const f1 = datos.fortalecerMision1 || (Array.isArray(resp[IDX.r1]) ? resp[IDX.r1] : null);
-                                    const f2 = datos.fortalecerMision2 || (Array.isArray(resp[IDX.r2]) ? resp[IDX.r2] : null);
-                                    const f3 = datos.fortalecerMision3 || (Array.isArray(resp[IDX.r3]) ? resp[IDX.r3] : null);
-                                    if (f1) f1.forEach(t => conteoMisiones.r1[t] = (conteoMisiones.r1[t] || 0) + 1);
-                                    if (f2) f2.forEach(t => conteoMisiones.r2[t] = (conteoMisiones.r2[t] || 0) + 1);
-                                    if (f3) f3.forEach(t => conteoMisiones.r3[t] = (conteoMisiones.r3[t] || 0) + 1);
-
-                                    // Análisis inclusivo — solo Reto 3 (nivel CREATE o numero_reto 3)
-                                    if (reg.nivel_unesco === 'CREATE' || reg.numero_reto === 3) {
-                                        conteoReto3++;
-                                        const bloom = resp[1];
-                                        const garantias = Array.isArray(resp[8]) ? resp[8] : [];
-                                        const validacion = Array.isArray(resp[12]) ? resp[12] : [];
-                                        const riesgos = Array.isArray(resp[7]) ? resp[7] : [];
-
-                                        if (bloom && sumaBloom.hasOwnProperty(bloom)) sumaBloom[bloom]++;
-                                        sumaGarantias += garantias.length;
-                                        if (validacion.length > 0) conComprobacion++;
-                                        if (riesgos.some(r => riesgosSistemicosLista.includes(r))) conRiesgoSistemico++;
-                                    }
-                                } catch (e) { console.error(e); }
-                            });
-
-                            const totalDocentes = docentesUnicos.size || 1;
-                            const base = conteoReto3 || 1;
-                            const promedioGarantias = (sumaGarantias / base).toFixed(1);
-                            const pctComprobacion = Math.round((conComprobacion / base) * 100);
-                            const pctRiesgo = Math.round((conRiesgoSistemico / base) * 100);
-                            const nivelMasFrecuente = Object.entries(sumaBloom)
-                                .filter(([, v]) => v > 0)
-                                .sort(([, a], [, b]) => b - a)[0]?.[0] || "No definido";
-
-                            // Índice de inclusión 0-100
-                            const nivelAltoBloom = ['Analizar', 'Evaluar', 'Crear'];
-                            const pctNivelAlto = Math.round(
-                                (nivelAltoBloom.reduce((acc, n) => acc + (sumaBloom[n] || 0), 0) / base) * 100
-                            );
-                            const indiceInclusion = Math.round(
-                                pctNivelAlto * 0.3 +
-                                (Math.min(parseFloat(promedioGarantias) / 5, 1) * 100) * 0.3 +
-                                pctComprobacion * 0.2 +
-                                pctRiesgo * 0.2
-                            );
-                            const colorIndice = indiceInclusion >= 70 ? '#16a34a' : indiceInclusion >= 50 ? '#eab308' : '#dc2626';
-
-                            const renderBarras = (metricas, titulo, color = '#C5A059') => {
-                                const items = Object.entries(metricas)
-                                    .map(([tema, cantidad]) => ({
-                                        tema, cantidad,
-                                        porcentaje: Math.round((cantidad / totalDocentes) * 100)
-                                    }))
-                                    .sort((a, b) => b.porcentaje - a.porcentaje);
-
-                                return (
-                                    <div style={{ background: '#fff', padding: '20px', borderRadius: '15px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                                        <h4 style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '15px', borderLeft: `4px solid ${color}`, paddingLeft: '10px' }}>
-                                            {titulo}
-                                        </h4>
-                                        {items.length === 0 ? (
-                                            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Sin solicitudes aún.</p>
-                                        ) : items.map(item => (
-                                            <div key={item.tema} style={{ marginBottom: '12px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
-                                                    <span style={{ color: '#475569', fontWeight: '500' }}>{item.tema}</span>
-                                                    <span style={{ color: '#1e293b', fontWeight: 'bold' }}>{item.porcentaje}%</span>
-                                                </div>
-                                                <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
-                                                    <div style={{ width: `${item.porcentaje}%`, height: '100%', background: item.porcentaje >= 50 ? '#b45309' : color, transition: 'width 0.5s ease' }} />
-                                                </div>
-                                                {item.porcentaje >= 50 && (
-                                                    <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#92400e', background: '#fef3c7', padding: '3px 8px', borderRadius: '6px', display: 'inline-block', fontWeight: '600' }}>
-                                                        🆘 PRIORIDAD ALTA: Organizar taller técnico
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            };
-
-                            return (
-                                <>
-                                    {/* CARD OSCURA — Madurez UNESCO + Índice de Inclusión */}
-                                    <div style={{ background: '#1e293b', padding: '30px', borderRadius: '15px', color: '#fff', marginBottom: '25px' }}>
-                                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                            <span style={{ color: '#C5A059', fontWeight: 'bold', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                                Madurez UNESCO: Capacidad Grupal (Reto 3)
-                                            </span>
-                                        </div>
-
-                                        {/* 4 indicadores */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                            {[
-                                                { label: "Nivel Cognitivo", valor: nivelMasFrecuente },
-                                                { label: "Garantías Equidad", valor: `${promedioGarantias} / 5` },
-                                                { label: "Comp. de Impacto", valor: `${pctComprobacion}% Profes` },
-                                                { label: "Riesgos Sistémicos", valor: `${pctRiesgo}% Ident.` },
-                                            ].map(item => (
-                                                <div key={item.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px' }}>
-                                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                                                        {item.label}
-                                                    </div>
-                                                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#C5A059' }}>
-                                                        {item.valor}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Índice de inclusión */}
-                                        <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: '3rem', fontWeight: '900', color: colorIndice }}>{indiceInclusion}%</div>
-                                            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>ÍNDICE DE INCLUSIÓN ESTRUCTURAL</div>
-                                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '12px' }}>
-                                                Promedio institucional basado en el Marco UNESCO CREATE
-                                            </div>
-                                            <div style={{ width: '100%', height: '8px', background: '#334155', borderRadius: '10px', overflow: 'hidden' }}>
-                                                <div style={{ width: `${indiceInclusion}%`, height: '100%', background: colorIndice, transition: 'width 1s ease', borderRadius: '10px' }} />
-                                            </div>
-                                        </div>
-
-                                        <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '16px', textAlign: 'center' }}>
-                                            {totalDocentes} docente(s) registrado(s) · {conteoReto3} registro(s) del Reto 3
-                                        </p>
-                                    </div>
-
-                                    {/* GRILLA DE MISIONES */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                                        {renderBarras(conteoMisiones.r1, "Misión 1: Ética y Privacidad")}
-                                        {renderBarras(conteoMisiones.r2, "Misión 2: Diseño Human-Centred")}
-                                        {renderBarras(conteoMisiones.r3, "Misión 3: Inclusión y Equidad")}
-                                    </div>
-
-                                    {/* NOTA */}
-                                    <div style={{ padding: '15px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fef08a', fontSize: '0.9rem', color: '#854d0e', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '1.2rem' }}>📊</span>
-                                        <span>
-                                            <strong>Estado de la muestra:</strong> Se han procesado respuestas de <strong>{totalDocentes} docentes únicos</strong>.
-                                        </span>
-                                    </div>
-                                </>
-                            );
-                        })()}
-                    </div>
-                )}
 
                 {/* ACCIÓN FINAL — mismo estilo de botón que el original (btn-finalizar-mision) */}
                 {/* AUTOEVALUACIÓN DE LOGRO — mismo layout que el original */}

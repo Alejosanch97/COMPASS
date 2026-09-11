@@ -1,11 +1,11 @@
 /* --- ModuloDirectivo.css --- */
 :root {
-    --primary-atlas: #1a237e; /* Azul profundo institucional */
-    --gold-atlas: #d69e2e;    /* Dorado de ATLAS */
+    --primary-atlas: #1e293b; /* Slate oscuro (coincide con dashboard) */
+    --gold-atlas: #c5a059;    /* Dorado ATLAS oficial */
     --success: #38a169;
     --bg-light: #f8fafc;
-    --text-main: #2d3748;
-    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --text-main: #1e293b;
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
 }
 
 .directivo-wrapper {
@@ -22,11 +22,12 @@
     justify-content: space-between;
     align-items: center;
     background: white;
-    padding: 20px 40px;
-    border-radius: 16px;
+    padding: 25px 40px;
+    border-radius: 20px;
     box-shadow: var(--card-shadow);
     margin-bottom: 30px;
-    border-left: 6px solid var(--primary-atlas);
+    border-bottom: 4px solid var(--gold-atlas);
+    border-left: none;
 }
 
 .directivo-header-main h2 {
@@ -53,7 +54,7 @@
 }
 
 .progress-bar-dir .step.active {
-    background: var(--primary-atlas);
+    background: var(--gold-atlas);
     color: white;
 }
 
@@ -226,6 +227,27 @@
     padding: 25px;
     background: white;
     border-bottom: 1px solid #f1f5f9;
+}
+
+.atl-an-modal-head h3 {
+    color: #1e293b !important;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0 0 5px 0;
+}
+
+/* Título único de Evidencia — forzamos color para que no herede blanco */
+.titulo-evidencia-real {
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important; /* mata el relleno blanco de Safari/Chrome */
+    text-shadow: none !important;                /* mata cualquier sombra blanca */
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 5px 0 !important;
+    opacity: 1 !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;  /* por si algún estilo usa gradiente en texto */
+    background-clip: initial !important;
 }
 
 /* Botones de Pestañas */

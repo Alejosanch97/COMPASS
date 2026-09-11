@@ -35,10 +35,20 @@ const MODOS = [
 ];
 
 
+const CLAVES_ANALISIS = [
+    { value: "", label: "— ninguna —" },
+    { value: "bloom", label: "Nivel cognitivo (Bloom)" },
+    { value: "garantias_equidad", label: "Garantías de equidad" },
+    { value: "validacion_impacto", label: "Validación de impacto" },
+    { value: "riesgos_sistemicos", label: "Riesgos sistémicos" },
+    { value: "fortalecer_mision", label: "Proyección / Fortalecer misión" },
+];
+
 const nuevaPregunta = () => ({
     _localId: Date.now() + Math.random(),
     texto_pregunta: "",
     descripcion_pregunta: "",
+    clave_analisis: "",
     tipo_respuesta: "ESCALA",
     opciones_seleccion: [],
     slider_min: 1,
@@ -177,10 +187,11 @@ export const CreadorRetos = ({ apiFetch }) => {
         return listaPreguntasAPI.map(p => {
             const esSlider = p.tipo_respuesta === "SLIDER";
             const opcionesEsArray = Array.isArray(p.opciones_seleccion);
-            return {
+                        return {
                 _localId: Date.now() + Math.random(),
                 texto_pregunta: p.texto_pregunta || "",
                 descripcion_pregunta: p.descripcion_pregunta || "",
+                clave_analisis: p.clave_analisis || "",
                 tipo_respuesta: p.tipo_respuesta || "ESCALA",
                 opciones_seleccion: opcionesEsArray ? p.opciones_seleccion : [],
                 slider_min: esSlider ? (p.opciones_seleccion?.min ?? 1) : 1,
@@ -312,9 +323,10 @@ export const CreadorRetos = ({ apiFetch }) => {
                 opciones = null;  // toda la lógica vive en EjecutarReto
             }
 
-            return {
+                        return {
                 texto_pregunta: p.texto_pregunta,
                 descripcion_pregunta: p.descripcion_pregunta || "",
+                clave_analisis: p.clave_analisis || "",
                 tipo_respuesta: p.tipo_respuesta,
                 opciones_seleccion: opciones,
                 puntaje_asociado: parseFloat(p.puntaje_asociado) || 0,
@@ -1035,11 +1047,12 @@ export const CreadorRetos = ({ apiFetch }) => {
                             <div className="cr-table-wrap">
                                 <table className="cr-table">
                                     <thead>
-                                        <tr>
+                                                                                <tr>
                                             <th>#</th>
                                             <th>Texto pregunta</th>
                                             <th>Descripción / Instrucción</th>
                                             <th>Tipo</th>
+                                            <th>Clave análisis</th>
                                             <th>Opciones / Rango</th>
                                             <th>Puntaje</th>
                                             <th></th>
@@ -1067,7 +1080,7 @@ export const CreadorRetos = ({ apiFetch }) => {
                                                         placeholder="Instrucción opcional..."
                                                     />
                                                 </td>
-                                                <td className="cr-table-cell">
+                                                                                                <td className="cr-table-cell">
                                                     <select
                                                         className="cr-table-input"
                                                         value={p.tipo_respuesta}
@@ -1075,6 +1088,17 @@ export const CreadorRetos = ({ apiFetch }) => {
                                                     >
                                                         {TIPOS_PREGUNTA.map(t => (
                                                             <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td className="cr-table-cell">
+                                                    <select
+                                                        className="cr-table-input"
+                                                        value={p.clave_analisis || ""}
+                                                        onChange={(e) => actualizarPregunta(p._localId, "clave_analisis", e.target.value)}
+                                                    >
+                                                        {CLAVES_ANALISIS.map(c => (
+                                                            <option key={c.value} value={c.value}>{c.label}</option>
                                                         ))}
                                                     </select>
                                                 </td>

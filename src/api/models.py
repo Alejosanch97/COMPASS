@@ -262,6 +262,7 @@ class RetoPlantilla(db.Model):
     fase: Mapped[str] = mapped_column(String(20), nullable=False)
     nivel_unesco: Mapped[str] = mapped_column(String(20), nullable=True)
     rol_destino: Mapped[str] = mapped_column(String(20), default="TODOS")
+    numero_reto: Mapped[int] = mapped_column(Integer, default=1)
     peso_huella: Mapped[float] = mapped_column(Float, default=10.0)
     config_json: Mapped[dict] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -283,7 +284,7 @@ class RetoPlantilla(db.Model):
         return {
             "id": self.id, "nombre": self.nombre, "nombre_reto": self.nombre, "descripcion": self.descripcion,
             "fase": self.fase, "nivel_unesco": self.nivel_unesco,
-            "rol_destino": self.rol_destino, "peso_huella": self.peso_huella,
+            "rol_destino": self.rol_destino, "numero_reto": self.numero_reto, "peso_huella": self.peso_huella,
             "config_json": self.config_json, "is_active": self.is_active,
             "contexto_narrativo": self.contexto_narrativo,
             "mision_texto": self.mision_texto,
@@ -696,7 +697,7 @@ class SostenerInstitucional(db.Model):
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
     fecha_cierre: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     reflexion_punto_partida: Mapped[str] = mapped_column(Text, nullable=True)
-    estado_cumplimiento_asegurar: Mapped[str] = mapped_column(String(50), nullable=True)
+    estado_cumplimiento_asegurar: Mapped[str] = mapped_column(Text, nullable=True)
     analisis_implementacion: Mapped[str] = mapped_column(Text, nullable=True)
     nivel_institucional_actual: Mapped[str] = mapped_column(String(50), nullable=True)
     docentes_n1: Mapped[int] = mapped_column(Integer, nullable=True)
@@ -856,4 +857,30 @@ class Credencial(db.Model):
             "huella_final": self.huella_final,
             "status": self.status,
             "fecha_emision": self.fecha_emision.isoformat() if self.fecha_emision else None,
+        }
+
+
+# ─────────────────────────────────────────────
+# 13-B. DILEMA LIDERAR (Misión 3: Dilemas Éticos)
+# ─────────────────────────────────────────────
+class DilemaLiderar(db.Model):
+    __tablename__ = "dilemas_liderar"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
+    casos_asignados: Mapped[dict] = mapped_column(JSON, nullable=True)   # ["caso01","caso03"]
+    selecciones: Mapped[dict] = mapped_column(JSON, nullable=True)       # {"caso01":"C","caso03":"B"}
+    conteo_principios: Mapped[dict] = mapped_column(JSON, nullable=True) # {principio:{en_juego,sostenido,expuesto}}
+    status: Mapped[str] = mapped_column(String(20), default="COMPLETADO")
+    fecha_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+    usuario = relationship("Usuario")
+
+    def serialize(self):
+        return {
+            "id": self.id, "usuario_id": self.usuario_id,
+            "casos_asignados": self.casos_asignados or [],
+            "selecciones": self.selecciones or {},
+            "conteo_principios": self.conteo_principios or {},
+            "status": self.status,
+            "fecha_registro": self.fecha_registro.isoformat() if self.fecha_registro else None,
         }

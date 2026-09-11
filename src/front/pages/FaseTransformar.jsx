@@ -11,36 +11,50 @@ import "../Styles/faseTransformar.css";
  * Si la empresa no tiene retos asignados en esta fase, se muestra un
  * aviso en vez del roadmap de misiones.
  */
-export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
+export const FaseTransformar = ({ userData, apiFetch, onNavigate, retoCompletadoId }) => {
     const [progreso, setProgreso] = useState(null);
     const [loading, setLoading] = useState(true);
     const [retosAsignados, setRetosAsignados] = useState([]);
     const [retosCompletados, setRetosCompletados] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [showIntro, setShowIntro] = useState(true);
+    const [showIntro, setShowIntro] = useState(false);
 
     const isDirectivo = userData.rol === "DIRECTIVO";
 
+        // Carga UNA sola vez al montar el componente.
     useEffect(() => {
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Si vuelves de EjecutarReto con un reto recién completado, solo lo
+    // marcamos en el estado — sin recargar todo el backend otra vez.
     useEffect(() => {
-        if (!loading && progreso?.capa_1_sentido === 'COMPLETADO') {
-            setShowIntro(false);
+        if (retoCompletadoId) {
+            setRetosCompletados(prev =>
+                prev.includes(retoCompletadoId) ? prev : [...prev, retoCompletadoId]
+            );
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [retoCompletadoId]);
+
+    useEffect(() => {
+        if (loading) return;
+        // Ya cargó: decidimos una sola vez. Si la fase está aceptada → directo a retos.
+        setShowIntro(progreso?.capa_1_sentido !== 'COMPLETADO');
     }, [loading, progreso]);
 
     const fetchData = async () => {
         setLoading(true);
+        const t0 = performance.now();
         try {
             const [progresoData, retosData, misAvancesData] = await Promise.all([
                 apiFetch("/api/progreso-fases").catch(() => []),
                 apiFetch("/api/mi-empresa/retos?fase=TRANSFORMAR").catch(() => []),
                 apiFetch("/api/mis-retos-transformar").catch(() => []),
             ]);
+            console.log(`⏱️ Retos Transformar cargaron en ${Math.round(performance.now() - t0)} ms`);
 
             const registro = Array.isArray(progresoData)
                 ? progresoData.find(item => item.fase === "TRANSFORMAR")
@@ -102,12 +116,11 @@ export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
     };
 
     const sinRetosAsignados = retosAsignados.length === 0;
-    const renderIntro = showIntro;
 
     return (
         <div className="transformar-master-container">
 
-            {renderIntro ? (
+            {showIntro ? (
                 // --- VISTA 1: BIENVENIDA Y CONTEXTO EXTENDIDO ---
                 <div className="transformar-intro-container animate-fade-in">
                     <header className="intro-hero">
@@ -276,10 +289,7 @@ export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
                                 onClick={handleAceptarFase}
                                 disabled={isSaving || loading}
                             >
-                                {isSaving ? "Registrando..." : (
-                                    loading ? "Sincronizando estado..." :
-                                        (progreso?.capa_1_sentido === 'COMPLETADO' ? "Ver Misiones" : "Aceptar Marco y Comenzar Retos")
-                                )}
+                                {isSaving ? "Registrando..." : (progreso?.capa_1_sentido === 'COMPLETADO' ? "Ver Misiones" : "Aceptar Marco y Comenzar Retos")}
                             </button>
 
                             {progreso?.capa_1_sentido !== 'COMPLETADO' && !loading && (
@@ -287,6 +297,14 @@ export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
                             )}
                         </div>
                     </section>
+                </div>
+            ) : loading ? (
+                // --- CARGANDO: solo el pill flotante, sin dashboard vacío ---
+                <div className="atlas-sync-float">
+                    <div className="atlas-sync-pill">
+                        <span className="sync-icon">🔄</span>
+                        <span className="sync-text">Cargando tus misiones...</span>
+                    </div>
                 </div>
             ) : (
                 // --- VISTA 2: DASHBOARD DE RETOS ---
@@ -307,8 +325,8 @@ export const FaseTransformar = ({ userData, apiFetch, onNavigate }) => {
                                 {retosCompletados.length === retosAsignados.length && retosAsignados.length > 0
                                     ? " Experto"
                                     : retosCompletados.length === 2 ? (isDirectivo ? " Estratega" : " Deepen")
-                                    : retosCompletados.length === 1 ? (isDirectivo ? " Gestor" : " Adquirir")
-                                    : "🌱 Iniciando"}
+                                        : retosCompletados.length === 1 ? (isDirectivo ? " Gestor" : " Adquirir")
+                                            : "🌱 Iniciando"}
                             </div>
                         )}
                     </div>

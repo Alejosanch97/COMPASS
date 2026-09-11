@@ -500,17 +500,12 @@ const RetosLiderar = ({ userData, apiFetch, retoId, onNavigate, datosIniciales }
             <main className="latlab-vertical-container">
                 <section className="latlab-card">
                     <div className="latlab-card-title-row">
-                        {/* Agrupamos el Badge y el Título para la columna izquierda */}
                         <div className="latlab-title-group">
                             <span className="latlab-step-badge">PASO 1</span>
-                            <h3 className="latlab-main-title">
-                                Laboratorio:
-                            </h3>
+                            <h3 className="latlab-main-title">Pega tu prompt</h3>
                         </div>
-
-                        {/* Texto descriptivo de la columna derecha */}
                         <p className="latlab-description">
-                            Escribe un prompt en español que sueles utilizar con IA generativa (idealmente, copia uno real de tus interacciones previas). Esto nos permitirá identificar riesgos, sesgos o usos inadecuados, y transformarlo en una instrucción responsable que mantenga tu rol como docente, promueva el aprendizaje auténtico y asegure principios de evaluación justa, transparencia y supervisión humana.
+                            Copia una instrucción real que uses con IA generativa. Al escribirla, el sistema la analizará en tiempo real para detectar riesgos de privacidad, sesgo, delegación excesiva de decisiones y dependencia cognitiva. No hay respuestas correctas: el objetivo es ver tu punto de partida.
                         </p>
                     </div>
 
@@ -524,8 +519,13 @@ const RetosLiderar = ({ userData, apiFetch, retoId, onNavigate, datosIniciales }
 
                 <section className="latlab-card">
                     <div className="latlab-card-title-row">
-                        <span className="latlab-step-badge">Paso 2</span>
-                        <h3>Rúbrica de Autoevaluación</h3>
+                        <div className="latlab-title-group">
+                            <span className="latlab-step-badge">Paso 2</span>
+                            <h3 className="latlab-main-title">Rúbrica de Autoevaluación</h3>
+                        </div>
+                        <p className="latlab-description">
+                            Ahora tú calificas tu propio prompt. Mueve cada barra del 1 al 5 según qué tan responsable crees que es tu instrucción en cada dimensión: ética, privacidad, agencia docente y dependencia del estudiante. El texto bajo cada barra te explica qué significa cada nivel.
+                        </p>
                     </div>
                     <div className="latlab-rubric-stack">
                         {Object.entries(indicadoresRubrica).map(([key, info]) => (
@@ -554,8 +554,13 @@ const RetosLiderar = ({ userData, apiFetch, retoId, onNavigate, datosIniciales }
 
                 <section className="latlab-card">
                     <div className="latlab-card-title-row">
-                        <span className="latlab-step-badge">Paso 3</span>
-                        <h3>Simulador de Riesgo Operativo</h3>
+                        <div className="latlab-title-group">
+                            <span className="latlab-step-badge">Paso 3</span>
+                            <h3 className="latlab-main-title">Simulador de Riesgo Operativo</h3>
+                        </div>
+                        <p className="latlab-description">
+                            Responde estas cinco preguntas sobre cómo usarías el prompt en la práctica. Según tus respuestas, el sistema calcula un semáforo de riesgo: cuanto más delegues la decisión, uses datos personales u ocultes el uso de IA, más alto será el riesgo. Elige una opción por pregunta.
+                        </p>
                     </div>
                     <div className="latlab-sim-vertical-stack">
                         {[
@@ -586,8 +591,13 @@ const RetosLiderar = ({ userData, apiFetch, retoId, onNavigate, datosIniciales }
 
                 <section className="latlab-card">
                     <div className="latlab-card-title-row">
-                        <span className="latlab-step-badge">Paso 4</span>
-                        <h3>Contra-Auditoría Heurística</h3>
+                        <div className="latlab-title-group">
+                            <span className="latlab-step-badge">Paso 4</span>
+                            <h3 className="latlab-main-title">Contra-Auditoría Heurística</h3>
+                        </div>
+                        <p className="latlab-description">
+                            Esta es la lectura automática de tu prompt, independiente de tu autoevaluación. El sistema rastrea palabras y frases de riesgo en cuatro ejes y le da a cada uno una nota de 1 a 5 (1 = crítico, 5 = seguro). Compárala con tu rúbrica del Paso 2: si no coinciden, ahí hay algo que revisar.
+                        </p>
                     </div>
                     {formData.analisisAuto ? (
                         <div className="latlab-audit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
@@ -608,8 +618,13 @@ const RetosLiderar = ({ userData, apiFetch, retoId, onNavigate, datosIniciales }
 
                 <section className="latlab-card" style={{ border: '2px solid #c5a059' }}>
                     <div className="latlab-card-title-row">
-                        <span className="latlab-step-badge">Paso 5</span>
-                        <h3>Privacidad de la Misión</h3>
+                        <div className="latlab-title-group">
+                            <span className="latlab-step-badge">Paso 5</span>
+                            <h3 className="latlab-main-title">Privacidad de la Misión</h3>
+                        </div>
+                        <p className="latlab-description">
+                            Último paso. Decide si tu prompt queda privado o si lo compartes en la Galería de Inspiración para que otros docentes aprendan de él. Cuando estés listo, finaliza la misión para guardar tu análisis.
+                        </p>
                     </div>
                     <div style={{ textAlign: 'center', padding: '10px' }}>
                         <p>¿Deseas compartir este prompt en la Galería de Inspiración ATLAS?</p>

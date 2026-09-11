@@ -128,11 +128,19 @@
 
 .latlab-card-title-row {
     display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 25px;
     border-bottom: 2px solid #f1f5f9;
-    padding-bottom: 15px;
+    padding-bottom: 18px;
+}
+
+/* Fila superior: badge + título juntos en horizontal */
+.latlab-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .latlab-step-badge {
@@ -310,22 +318,23 @@
     margin: 0;
 }
 
-/* Título principal (Columna Izquierda) */
+/* Título principal */
 .latlab-main-title {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #1e293b; /* Gris oscuro/Azulado corporativo */
+    color: #1e293b;
     line-height: 1.3;
     margin: 0;
 }
 
-/* Párrafo descriptivo (Columna Derecha) */
+/* Párrafo descriptivo — ahora debajo del título, con aire */
 .latlab-description {
     font-size: 0.95rem;
-    font-weight: 600; /* Un grosor semi-bold similar al de tu imagen */
-    color: #0f172a; /* Color de texto oscuro y nítido */
-    line-height: 1.45;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.6;
     margin: 0;
+    max-width: 760px;
 }
 
 /* --- RESPONSIVE --- */
@@ -424,9 +433,7 @@
         gap: 15px;
     }
 
-    .latlab-card-title-row {
-        flex-direction: column;
-        align-items: flex-start;
+        .latlab-card-title-row {
         gap: 10px;
     }
 }

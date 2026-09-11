@@ -256,10 +256,11 @@ const ModuloDirectivoEstrategico = ({ userData, apiFetch, onNavigate }) => {
             {isSaving && (
                 <div style={{
                     position: 'fixed', top: '20px', right: '20px',
-                    background: '#1a237e', color: 'white', padding: '10px 20px',
-                    borderRadius: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                    background: '#1e293b', color: '#c5a059', padding: '12px 24px',
+                    borderRadius: '50px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(197, 160, 89, 0.3)',
                     zIndex: 9999, display: 'flex', alignItems: 'center', gap: '10px',
-                    fontSize: '0.8rem', animation: 'slideIn 0.3s ease-out'
+                    fontSize: '0.85rem', fontWeight: 500, animation: 'slideIn 0.3s ease-out'
                 }}>
                     <div className="spinner-mini"></div>
                     <span>Sincronizando con ATLAS...</span>
@@ -334,7 +335,7 @@ const ModuloDirectivoEstrategico = ({ userData, apiFetch, onNavigate }) => {
                             {/* IZQUIERDA: EVIDENCIAS */}
                             <div className="panel-realidad-docente">
                                 <div className="atl-an-modal-head">
-                                    <h3>Evidencia Institucional Real</h3>
+                                    <h3 className="titulo-evidencia-real">Evidencia Institucional Real</h3>
                                     <div className="modal-tabs">
                                         <button className={viewModeReal === 'stats' ? 'active' : ''} onClick={() => setViewModeReal('stats')}>📊 Adopción</button>
                                         <button className={viewModeReal === 'survey' ? 'active' : ''} onClick={() => setViewModeReal('survey')}>📝 Riesgos Prompts</button>

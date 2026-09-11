@@ -2025,11 +2025,11 @@
 
 /* CUERPO DEL MODAL */
 .audit-modal-body {
-    padding: 40px;
-    max-height: 60vh;
+    padding: 30px 40px;
+    max-height: 55vh;
     overflow-y: auto;
     background: var(--atlas-white);
-    color: var(--atlas-text) !important; /* Tu color de texto oficial */
+    color: var(--atlas-text) !important;
 }
 
 /* VISTA ESTADÍSTICAS */
@@ -2146,15 +2146,15 @@
 .audit-survey-scroll {
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    padding-right: 10px; /* Espacio para el scroll */
+    gap: 12px;
+    padding-right: 10px;
 }
 
 .audit-item-row {
     background: #ffffff;
     border: 1px solid #f1f5f9;
-    padding: 20px;
-    border-radius: 16px;
+    padding: 14px 18px;
+    border-radius: 12px;
     transition: all 0.3s ease;
 }
 

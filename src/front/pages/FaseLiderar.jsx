@@ -9,9 +9,11 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [showIntro, setShowIntro] = useState(true);
     const [isNavigating, setIsNavigating] = useState(false);
+    const [navegandoId, setNavegandoId] = useState(null);
 
     const [verReporte, setVerReporte] = useState(false);
     const [datosPrompt, setDatosPrompt] = useState(null);
+    const [dilemasCompletado, setDilemasCompletado] = useState(false);
 
     const isDirectivo = userData.rol === "DIRECTIVO";
 
@@ -25,10 +27,11 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
 
     const fetchData = async () => {
         try {
-            const [dataProgreso, dataPrompt, dataFases] = await Promise.all([
+            const [dataProgreso, dataPrompt, dataFases, dataDilemas] = await Promise.all([
                 apiFetch("/api/liderar/mi-progreso").catch(() => null),
                 apiFetch("/api/liderar/mi-prompt").catch(() => null),
                 apiFetch("/api/mi-empresa/fases").catch(() => []),
+                apiFetch("/api/liderar/dilemas/mi-registro").catch(() => null),
             ]);
 
             if (dataProgreso) setProgreso(dataProgreso);
@@ -36,6 +39,10 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
             if (dataPrompt && dataPrompt.status === "COMPLETADO") {
                 setRetosCompletados([1, 2]);
                 setDatosPrompt(dataPrompt);
+            }
+
+            if (dataDilemas && dataDilemas.status === "COMPLETADO") {
+                setDilemasCompletado(true);
             }
 
             // ── NUEVO: decidir si la fase está activada ──
@@ -137,11 +144,13 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
 
     const handleNavegacionSegura = (destino, id) => {
         setIsNavigating(true);
+        setNavegandoId(id);
         const verificarCarga = setInterval(() => {
             if (!loading) {
                 clearInterval(verificarCarga);
                 setTimeout(() => {
                     setIsNavigating(false);
+                    setNavegandoId(null);
                     onNavigate(destino, id);
                     window.scrollTo(0, 0);
                 }, 500);
@@ -421,7 +430,7 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
                                                 opacity: (loading || isNavigating) ? 0.8 : 1
                                             }}
                                         >
-                                            {(loading || isNavigating) ? (
+                                            {(isNavigating && navegandoId === 1) ? (
                                                 <>
                                                     <span className="spinner-mini" style={{ animation: 'spin 1s linear infinite' }}></span>
                                                     <span>Cargando datos...</span>
@@ -448,6 +457,35 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
                                             </button>
                                         )}
                                         {retosCompletados.includes(2) && <div className="badge-done">Completado</div>}
+                                    </div>
+
+                                    <div className={`reto-card-premium ${dilemasCompletado ? 'completed' : 'active'}`}>
+                                        <div className="reto-icon-box">⚖️</div>
+                                        <span className="reto-label">Misión 3</span>
+                                        <h3>Dilemas Éticos</h3>
+                                        <button
+                                            onClick={() => handleNavegacionSegura('retos_dilemas', 3)}
+                                            className="btn-launch-mission"
+                                            disabled={loading || isNavigating}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                cursor: (loading || isNavigating) ? 'wait' : 'pointer',
+                                                opacity: (loading || isNavigating) ? 0.8 : 1
+                                            }}
+                                        >
+                                            {(isNavigating && navegandoId === 3) ? (
+                                                <>
+                                                    <span className="spinner-mini" style={{ animation: 'spin 1s linear infinite' }}></span>
+                                                    <span>Cargando datos...</span>
+                                                </>
+                                            ) : (
+                                                dilemasCompletado ? "Ver Análisis" : "Resolver Dilemas"
+                                            )}
+                                        </button>
+                                        {dilemasCompletado && <div className="badge-done">Completado</div>}
                                     </div>
                                 </>
                             )}
