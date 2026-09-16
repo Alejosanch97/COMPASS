@@ -69,6 +69,19 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
 
     const puntajeFinal = React.useMemo(() => obtenerPuntajeDirecto(), [respuestasUsuario, formulariosFase]);
 
+    // ── NIVEL GLOBAL a partir del PROMEDIO de las dimensiones ──
+    const nivelGlobalPromedio = React.useMemo(() => {
+        if (!perfilDimensiones || !perfilDimensiones.dimensiones?.length) return null;
+        const dims = perfilDimensiones.dimensiones;
+        const promedio = dims.reduce((acc, d) => acc + (d.porcentaje || 0), 0) / dims.length;
+        let nivel, color;
+        if (promedio >= 80) { nivel = "Avanzado"; color = "#38a169"; }
+        else if (promedio >= 55) { nivel = "Intermedio"; color = "#3182ce"; }
+        else if (promedio >= 30) { nivel = "Básico"; color = "#dd6b20"; }
+        else { nivel = "Inicial"; color = "#e53e3e"; }
+        return { nivel, color, promedio: Math.round(promedio) };
+    }, [perfilDimensiones]);
+
     // ── INTERPRETACIONES COMPASS — DOCENTE (texto original sin modificar) ──
     const getCompassData = (score) => {
         if (score >= 90) return {
@@ -446,12 +459,11 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             <div className="result-title-group">
                                 <h3 className="result-subtitle">Resultado COMPASS – Tu nivel de uso responsable de IA:</h3>
                                 <h2 className="result-level-name">{compass.nivel}</h2>
-                                <span className="result-range-tag">Rango ATLAS: {compass.rango}</span>
                             </div>
                             <div className="result-score-card">
                                 <div className="score-label" style={{ marginBottom: '4px' }}>NIVEL GLOBAL</div>
-                                <div className="score-number" style={{ fontSize: '1.3rem', lineHeight: 1.2 }}>
-                                    {compass.nivel}
+                                <div className="score-number" style={{ fontSize: '1.4rem', lineHeight: 1.2 }}>
+                                    {nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}
                                 </div>
                             </div>
                         </header>
