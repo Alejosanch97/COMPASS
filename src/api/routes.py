@@ -755,6 +755,77 @@ PESOS_FASE = {
     "SOSTENER": 15,
 }
 
+# ══════════════════════════════════════════════════════════════
+# COMPASS CUALITATIVO — Perfil por dimensiones (madurez, no puntaje)
+# ══════════════════════════════════════════════════════════════
+
+# Mapa por ORDEN de pregunta (sobrevive a recreación de preguntas).
+# Máximos calculados con los puntajes reales del formulario (suman 100).
+DIMENSIONES_AUDITAR = {
+    "Integración pedagógica":      {"ordenes": [4, 5, 6, 7],            "max": 12},
+    "Pensamiento crítico":         {"ordenes": [8, 9, 10, 11, 26, 28], "max": 27},
+    "Gestión de riesgos y datos":  {"ordenes": [12, 13, 14, 15, 27],   "max": 24},
+    "Gobernanza institucional":    {"ordenes": [16, 17, 18, 19, 29],   "max": 24},
+    "Visión y madurez":            {"ordenes": [20, 21, 22, 23],        "max": 13},
+}
+
+
+def _nivel_por_porcentaje(pct):
+    """Traduce un % de logro (0-100) a un nivel cualitativo de madurez."""
+    if pct >= 80:
+        return "Avanzado"
+    if pct >= 55:
+        return "Intermedio"
+    if pct >= 30:
+        return "Básico"
+    return "Inicial"
+
+
+def calcular_perfil_dimensiones(usuario_id):
+    """
+    Agrupa las respuestas AUDITAR del docente por dimensión (usando
+    orden_pregunta), calcula el % de logro y el nivel cualitativo.
+    Devuelve dimensiones + fortalezas (Avanzado) + oportunidades (Básico/Inicial).
+    """
+    filas = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
+        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
+    ).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == usuario_id,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+
+    # Suma puntos por orden de pregunta
+    puntos_por_orden = {}
+    for resp, preg in filas:
+        if preg.orden_pregunta is None:
+            continue
+        puntos_por_orden[preg.orden_pregunta] = \
+            puntos_por_orden.get(preg.orden_pregunta, 0) + float(resp.puntos_ganados or 0)
+
+    dimensiones = []
+    for nombre, cfg in DIMENSIONES_AUDITAR.items():
+        obtenido = sum(puntos_por_orden.get(o, 0) for o in cfg["ordenes"])
+        maximo = cfg["max"]
+        pct = round((obtenido / maximo) * 100, 1) if maximo else 0
+        dimensiones.append({
+            "dimension": nombre,
+            "obtenido": round(obtenido, 1),
+            "maximo": maximo,
+            "porcentaje": pct,
+            "nivel": _nivel_por_porcentaje(pct),
+        })
+
+    fortalezas = [d["dimension"] for d in dimensiones if d["nivel"] == "Avanzado"]
+    oportunidades = [d["dimension"] for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
+
+    return {
+        "dimensiones": dimensiones,
+        "fortalezas": fortalezas,
+        "oportunidades": oportunidades,
+    }
+
 
 # ── ASIGNAR / DESASIGNAR formularios y retos existentes ─────────────────
 
@@ -1197,6 +1268,13 @@ def crear_respuestas_batch():
         "total_puntos": total_puntos
     }), 201
 
+
+@api.route('/auditar/mi-perfil-dimensiones', methods=['GET'])
+@jwt_required()
+def auditar_mi_perfil_dimensiones():
+    """Perfil cualitativo por dimensiones del docente actual (radar COMPASS)."""
+    u = get_usuario_actual()
+    return jsonify(calcular_perfil_dimensiones(u.id)), 200
 
 @api.route('/mi-empresa/formularios', methods=['GET'])
 @jwt_required()

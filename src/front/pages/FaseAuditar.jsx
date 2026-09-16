@@ -24,6 +24,7 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
     const [respuestasUsuario, setRespuestasUsuario] = useState([]);
 
     const [modalRespuestas, setModalRespuestas] = useState(null);
+    const [perfilDimensiones, setPerfilDimensiones] = useState(null);
 
     useEffect(() => {
         fetchInitialData();
@@ -32,11 +33,13 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
     const fetchInitialData = async () => {
         if (!progreso) setLoading(true);
         try {
-            const [progresoData, formsData, respuestasData] = await Promise.all([
+            const [progresoData, formsData, respuestasData, perfilData] = await Promise.all([
                 apiFetch("/api/progreso-fases").catch(() => []),
                 apiFetch("/api/mi-empresa/formularios?fase=AUDITAR").catch(() => []),
                 apiFetch("/api/mis-respuestas").catch(() => []),
+                apiFetch("/api/auditar/mi-perfil-dimensiones").catch(() => null),
             ]);
+            setPerfilDimensiones(perfilData);
 
             const registroFase = Array.isArray(progresoData)
                 ? progresoData.find(item => item.fase === "AUDITAR")
@@ -374,7 +377,10 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                     <div className="layer-badge">A1</div>
                     <div className="layer-content">
                         <h3>Capa 1: El Sentido (Gobernanza)</h3>
-                        <p className="intro-p">ATLAS no es una capacitación técnica sobre herramientas de IA. Es un proceso de <strong>Auditoría Pedagógica y Gobernanza Institucional</strong>. Declarar este compromiso significa asumir la responsabilidad de integrar la inteligencia artificial con criterio ético, intención pedagógica y evidencia documentada. Este es el punto de partida para una implementación consciente, regulada y estratégica en tu práctica educativa.</p>
+                        <p className="intro-p">
+                            <strong>COMPASS</strong> no es una capacitación sobre herramientas de inteligencia artificial. Es un proceso de <strong>reflexión institucional, diagnóstico pedagógico y gobernanza responsable</strong> que orienta el uso de la IA en la educación.<br /><br />
+                            Declarar este compromiso significa utilizar la inteligencia artificial con <strong>propósito pedagógico, criterio ético y evidencia documentada</strong>. Este es el punto de partida para una implementación consciente, responsable y alineada con los principios de la institución.
+                        </p>
                         <button onClick={handleAceptarMarco} disabled={progreso?.capa_1_sentido === 'COMPLETADO' || isSaving} className={`btn-formal-action ${progreso?.capa_1_sentido === 'COMPLETADO' ? 'btn-done' : ''}`}>
                             {isSaving ? "Guardando..." : progreso?.capa_1_sentido === 'COMPLETADO' ? "✓ Compromiso Declarado" : "Declaro Compromiso ATLAS"}
                         </button>
@@ -443,8 +449,10 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                 <span className="result-range-tag">Rango ATLAS: {compass.rango}</span>
                             </div>
                             <div className="result-score-card">
-                                <div className="score-number">{puntajeFinal}</div>
-                                <div className="score-label">PUNTOS TOTALES</div>
+                                <div className="score-label" style={{ marginBottom: '4px' }}>NIVEL GLOBAL</div>
+                                <div className="score-number" style={{ fontSize: '1.3rem', lineHeight: 1.2 }}>
+                                    {compass.nivel}
+                                </div>
                             </div>
                         </header>
 
@@ -458,6 +466,48 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                     <strong>Nota:</strong> Este diagnóstico no mide cuánto usas IA. Mide cómo la integras, supervisas y articulas con principios pedagógicos y éticos bajo estándares internacionales (UNESCO, OCDE).
                                 </aside>
                             </article>
+
+                            {perfilDimensiones && userData.rol !== "DIRECTIVO" && (
+                                <article className="interpretation-column" style={{ gridColumn: '1 / -1' }}>
+                                    <h4 className="detail-title">Radar COMPASS — Perfil por dimensiones</h4>
+                                    <div style={{ display: 'grid', gap: '8px', marginBottom: '20px' }}>
+                                        {perfilDimensiones.dimensiones.map(d => {
+                                            const color = d.nivel === 'Avanzado' ? '#38a169'
+                                                : d.nivel === 'Intermedio' ? '#3182ce'
+                                                    : d.nivel === 'Básico' ? '#dd6b20' : '#e53e3e';
+                                            return (
+                                                <div key={d.dimension} style={{
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    padding: '10px 14px', background: '#f8fafc', borderRadius: '10px',
+                                                    borderLeft: `4px solid ${color}`
+                                                }}>
+                                                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{d.dimension}</span>
+                                                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color }}>{d.nivel}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div>
+                                            <h4 className="detail-title" style={{ fontSize: '0.9rem' }}>Tus fortalezas</h4>
+                                            {perfilDimensiones.fortalezas.length > 0 ? (
+                                                perfilDimensiones.fortalezas.map(f => (
+                                                    <p key={f} style={{ margin: '4px 0', color: '#38a169' }}>✅ {f}</p>
+                                                ))
+                                            ) : <p style={{ color: '#94a3b8' }}>Sigue trabajando para consolidar fortalezas.</p>}
+                                        </div>
+                                        <div>
+                                            <h4 className="detail-title" style={{ fontSize: '0.9rem' }}>Oportunidades de crecimiento</h4>
+                                            {perfilDimensiones.oportunidades.length > 0 ? (
+                                                perfilDimensiones.oportunidades.map(o => (
+                                                    <p key={o} style={{ margin: '4px 0', color: '#dd6b20' }}>⚠ {o}</p>
+                                                ))
+                                            ) : <p style={{ color: '#94a3b8' }}>¡Sin dimensiones críticas!</p>}
+                                        </div>
+                                    </div>
+                                </article>
+                            )}
 
                             <article className="next-steps-column">
                                 <h4 className="next-steps-title">¿Qué sigue ahora?</h4>

@@ -288,9 +288,9 @@ export const ResponderFormularios = ({
                             <h3>{form.titulo}</h3>
                             <p>{form.descripcion}</p>
                             <div className="card-footer">
-                                <span className="pts-tag">{form.puntos_maximos} Pts Máx</span>
+                                <span className="pts-tag">⏱ 10-15 Min</span>
                                 {activeTab === 'pending' ? (
-                                    <button className="btn-respond" onClick={() => handleOpenForm(form)}>Responder Ahora ✍️</button>
+                                    <button className="btn-respond" onClick={() => handleOpenForm(form)}>Iniciar Diagnóstico ✍️</button>
                                 ) : (
                                     <span className="status-done-pill">✅ Completado</span>
                                 )}
