@@ -1257,6 +1257,57 @@
 .atlas-loader { height: 100vh; display: flex; justify-content: center; align-items: center; background: var(--atlas-blue-dark); color: var(--atlas-gold); font-size: 1.5rem; font-weight: 800; }
 
 /* =========================================
+   SKELETON DE CARGA (Fases ATLAS)
+   ========================================= */
+@keyframes atlasPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+.fase-skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.fase-skeleton-card {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    animation: atlasPulse 1.2s ease-in-out infinite;
+}
+
+.fase-skeleton-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e2e8f0;
+}
+
+.fase-skeleton-line {
+    width: 60%;
+    height: 10px;
+    border-radius: 6px;
+    background: #e2e8f0;
+}
+
+.fase-skeleton-pill {
+    width: 40%;
+    height: 16px;
+    border-radius: 20px;
+    background: #e2e8f0;
+}
+
+/* =========================================
    SINCRONIZACIÓN Y ACCIONES
    ========================================= */
 .sync-notification {

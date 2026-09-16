@@ -768,7 +768,15 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                             <div className="info-card wide-card">
                                 <h3>Estado de Fases ATLAS</h3>
                                 {isLoading ? (
-                                    <div style={{ textAlign: "center", padding: "20px" }}><div className="atlas-loader" /></div>
+                                    <div className="fase-skeleton-grid">
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <div key={i} className="fase-skeleton-card">
+                                                <div className="fase-skeleton-circle" />
+                                                <div className="fase-skeleton-line" />
+                                                <div className="fase-skeleton-pill" />
+                                            </div>
+                                        ))}
+                                    </div>
                                 ) : fases.length === 0 ? (
                                     <p style={{ color: "#94a3b8", textAlign: "center", padding: "20px" }}>
                                         No hay fases configuradas aún. El administrador debe activarlas.
