@@ -471,7 +471,17 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
 
             await new Promise(r => setTimeout(r, 80));
 
-            // 3. Capturamos el clon aislado
+            // 3. Medimos dónde termina cada bloque (para no cortarlos)
+            const clonRect = clon.getBoundingClientRect();
+            const bloques = clon.querySelectorAll(".cmp-header, section, .cmp-brand-footer");
+            const cortesPx = [];
+            bloques.forEach(b => {
+                const r = b.getBoundingClientRect();
+                cortesPx.push(r.bottom - clonRect.top); // fin de cada bloque, en px del clon
+            });
+            const totalPx = clon.scrollHeight;
+
+            // 4. Capturamos el clon aislado
             const dataUrl = await toPng(clon, {
                 pixelRatio: 2,
                 backgroundColor: "#ffffff",
@@ -479,25 +489,53 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 cacheBust: true,
             });
 
-            // 4. Armamos el PDF
+            const img = new Image();
+            img.src = dataUrl;
+            await new Promise(res => { img.onload = res; });
+
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF("p", "mm", "a4");
             const pw = pdf.internal.pageSize.getWidth();
             const ph = pdf.internal.pageSize.getHeight();
 
-            const img = new Image();
-            img.src = dataUrl;
-            await new Promise(res => { img.onload = res; });
-            const imgH = (img.height * pw) / img.width;
+            // px del render -> mm del PDF
+            const pxToMm = pw / img.width;               // ancho imagen -> ancho página
+            const escala = img.width / clon.offsetWidth; // ratio pixelRatio real
+            const phPx = ph / pxToMm / escala;           // alto de una página A4, en px del clon
+            const cortesClon = cortesPx.map(c => c);     // ya están en px del clon
 
-            let heightLeft = imgH, position = 0;
-            pdf.addImage(dataUrl, "PNG", 0, position, pw, imgH);
-            heightLeft -= ph;
-            while (heightLeft > 0) {
-                position -= ph;
-                pdf.addPage();
-                pdf.addImage(dataUrl, "PNG", 0, position, pw, imgH);
-                heightLeft -= ph;
+            // Calcula los cortes de página: avanza por A4 pero retrocede al fin
+            // del último bloque que cabe entero.
+            const paginas = [];
+            let inicio = 0;
+            while (inicio < totalPx - 1) {
+                let limite = inicio + phPx;
+                if (limite >= totalPx) { limite = totalPx; }
+                else {
+                    // busca el último bloque que termina dentro de [inicio, limite]
+                    const candidatos = cortesClon.filter(c => c > inicio + 40 && c <= limite);
+                    if (candidatos.length) limite = Math.max(...candidatos);
+                }
+                paginas.push([inicio, limite]);
+                inicio = limite;
+            }
+
+            // Dibuja cada segmento en su propia página (recortando el canvas fuente)
+            const canvasFuente = document.createElement("canvas");
+            const ctx = canvasFuente.getContext("2d");
+            for (let i = 0; i < paginas.length; i++) {
+                const [ini, fin] = paginas[i];
+                const hPx = (fin - ini) * escala;
+                canvasFuente.width = img.width;
+                canvasFuente.height = hPx;
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, canvasFuente.width, canvasFuente.height);
+                ctx.drawImage(img, 0, ini * escala, img.width, hPx, 0, 0, img.width, hPx);
+
+                const segUrl = canvasFuente.toDataURL("image/png");
+                const segMmH = (hPx * pw) / img.width;
+                if (i > 0) pdf.addPage();
+                pdf.addImage(segUrl, "PNG", 0, 0, pw, segMmH);
             }
 
             const nombre = (userData.nombre_completo || "diagnostico").replace(/\s+/g, "_");
