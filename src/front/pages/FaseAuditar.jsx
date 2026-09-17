@@ -777,7 +777,6 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                 <div className="cmp-nivel-global" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                     <IconChart /> Nivel global: <strong>{nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}</strong>
                                 </div>
-                                <span className="cmp-rango">Rango ATLAS: {compass.rango}</span>
                             </div>
 
                             <div className="cmp-hero-right">
