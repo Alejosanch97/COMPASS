@@ -508,7 +508,16 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 nodoTexto.replaceWith(cont);
             });
 
-            // (b) Marcar las unidades que NUNCA deben partirse entre páginas.
+            // (b) El radar es un <svg>: html2canvas NO puede renderizarlo como raíz.
+            //     Lo envolvemos en un <div> y marcamos el div.
+            clon.querySelectorAll(".radar-compass-svg").forEach(svg => {
+                const caja = document.createElement("div");
+                caja.className = "pdf-block pdf-radar-wrap";
+                svg.parentNode.insertBefore(caja, svg);
+                caja.appendChild(svg);
+            });
+
+            // (c) Marcar las unidades que NUNCA deben partirse entre páginas.
             clon.querySelectorAll([
                 ".cmp-header",
                 ".cmp-hero-left",
@@ -516,12 +525,11 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 ".cmp-block-title",
                 ".cmp-interpret-text",
                 ".cmp-disclaimer",
-                ".radar-compass-svg",
                 ".cmp-dim-row",
                 ".cmp-hallazgo-card",
                 ".cmp-standard-card",
                 ".cmp-next-step p",
-                ".cmp-footer",
+                ".cmp-footer-text",
                 ".cmp-brand-footer",
             ].join(", ")).forEach(el => el.classList.add("pdf-block"));
 
@@ -555,13 +563,19 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             let paginaVacia = true;
 
             for (const bloque of bloques) {
-                const canvas = await window.html2canvas(bloque, {
-                    scale: 2,
-                    backgroundColor: "#ffffff",
-                    useCORS: true,
-                    logging: false,
-                });
-                if (!canvas.width || !canvas.height) continue;
+                let canvas;
+                try {
+                    canvas = await window.html2canvas(bloque, {
+                        scale: 2,
+                        backgroundColor: "#ffffff",
+                        useCORS: true,
+                        logging: false,
+                    });
+                } catch (errBloque) {
+                    console.warn("Bloque omitido en PDF:", bloque.className, errBloque);
+                    continue;
+                }
+                if (!canvas || !canvas.width || !canvas.height) continue;
 
                 const escala = usableW / canvas.width;
                 const alturaPt = canvas.height * escala;
@@ -598,8 +612,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             pdf.save(`COMPASS_${nombre}.pdf`);
             Swal.close();
         } catch (e) {
-            console.error(e);
-            Swal.fire("Error", "No se pudo generar el PDF. Intenta de nuevo.", "error");
+            console.error("FALLO PDF:", e);
+            Swal.fire("Error", `No se pudo generar el PDF: ${e?.message || e}`, "error");
         } finally {
             if (sandbox) document.body.removeChild(sandbox);
         }

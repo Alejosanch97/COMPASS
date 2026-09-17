@@ -1228,11 +1228,17 @@
 }
 
 /* 2. Radar con tamaño fijo (si no, colapsa y sale en blanco) */
+.compass-infografia.pdf-mode .pdf-radar-wrap {
+    width: 100% !important;
+    text-align: center !important;
+    background: #ffffff !important;
+    padding: 6px 0 !important;
+}
 .compass-infografia.pdf-mode .radar-compass-svg {
     width: 470px !important;
     height: 355px !important;
     max-width: none !important;
-    margin: 10px auto !important;
+    display: inline-block !important;
 }
 
 /* 3. Una sola columna: bloques más bajos = cortes más limpios */
