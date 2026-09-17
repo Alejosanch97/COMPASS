@@ -455,7 +455,35 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 scale: 2,
                 backgroundColor: "#ffffff",
                 useCORS: true,
+                logging: false,
+                windowWidth: nodo.scrollWidth,
                 ignoreElements: (el) => el.classList && el.classList.contains("cmp-no-print"),
+                onclone: (doc) => {
+                    // Fuerza colores planos en la copia que se rasteriza,
+                    // porque html2canvas no interpreta oklch/color-mix/var().
+                    const root = doc.querySelector(".compass-infografia");
+                    if (!root) return;
+                    root.style.background = "#ffffff";
+                    root.style.boxShadow = "none";
+
+                    const todos = root.querySelectorAll("*");
+                    todos.forEach((el) => {
+                        const cs = window.getComputedStyle(el);
+                        // Normaliza texto a un color legible si viene translúcido/raro
+                        const col = cs.color;
+                        if (col && col.includes("oklch")) el.style.color = "#1e293b";
+                        // Fuerza opacidad completa
+                        if (cs.opacity && parseFloat(cs.opacity) < 1) el.style.opacity = "1";
+                        // Filtros grayscale (por la clase .locked u otras)
+                        if (cs.filter && cs.filter !== "none") el.style.filter = "none";
+                    });
+
+                    // Asegura contraste mínimo en textos clave
+                    doc.querySelectorAll(".cmp-interpret-text, .cmp-dim-name, .cmp-hero-eyebrow, .cmp-footer-text p, .cmp-standard-info span")
+                        .forEach(el => { if (!el.style.color) el.style.color = "#334155"; });
+                    doc.querySelectorAll(".cmp-hero-nivel, .cmp-block-title, .cmp-brand-title, .cmp-ident-nombre, .cmp-hallazgo-card h5")
+                        .forEach(el => { el.style.color = "#0f172a"; });
+                },
             });
 
             const imgData = canvas.toDataURL("image/png");
