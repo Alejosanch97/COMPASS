@@ -3,6 +3,73 @@ import React, { useState, useEffect } from "react";
 import "../Styles/faseAuditar.css";
 import Swal from "sweetalert2";
 
+
+
+
+// ── Color de nivel para el radar COMPASS ──
+const nivelColorCompass = (nivel) =>
+    nivel === "Avanzado" ? "#38a169" :
+        nivel === "Intermedio" ? "#3182ce" :
+            nivel === "Básico" ? "#dd6b20" : "#e53e3e";
+
+// ── Radar / gráfico de araña reutilizable (sin librerías) ──
+const RadarCompass = ({ dimensiones = [] }) => {
+    const size = 440, box = 400;
+    const cx = size / 2, cy = box / 2 + 5, maxR = 118;
+    const n = dimensiones.length;
+    if (!n) return null;
+
+    const ang = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+    const pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+
+    const dataPts = dimensiones.map((d, i) =>
+        pt(i, maxR * (Math.max(0, Math.min(100, d.porcentaje || 0)) / 100)));
+    const dataStr = dataPts.map(p => p.join(",")).join(" ");
+
+    return (
+        <svg viewBox={`0 0 ${size} ${box}`} className="radar-compass-svg">
+            {[0.25, 0.5, 0.75, 1].map((f, idx) => (
+                <polygon key={idx}
+                    points={dimensiones.map((_, i) => pt(i, maxR * f).join(",")).join(" ")}
+                    fill="none" stroke="#e2e8f0" strokeWidth="1" />
+            ))}
+            {dimensiones.map((_, i) => {
+                const [x, y] = pt(i, maxR);
+                return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e2e8f0" strokeWidth="1" />;
+            })}
+            <polygon points={dataStr} fill="rgba(197,160,89,0.28)" stroke="#c5a059" strokeWidth="2.5" />
+            {dataPts.map((p, i) => (
+                <circle key={i} cx={p[0]} cy={p[1]} r="4.5" fill="#c5a059" stroke="#fff" strokeWidth="1.5" />
+            ))}
+            {dimensiones.map((d, i) => {
+                const [lx, ly] = pt(i, maxR + 22);
+                const a = ang(i);
+                const anchor = Math.abs(Math.cos(a)) < 0.3 ? "middle" : (Math.cos(a) > 0 ? "start" : "end");
+                const palabras = d.dimension.split(" ");
+                let l1 = d.dimension, l2 = "";
+                if (palabras.length > 2) {
+                    const mid = Math.ceil(palabras.length / 2);
+                    l1 = palabras.slice(0, mid).join(" ");
+                    l2 = palabras.slice(mid).join(" ");
+                }
+                return (
+                    <g key={i}>
+                        <text x={lx} y={ly - (l2 ? 6 : 0)} textAnchor={anchor}
+                            fontSize="11" fontWeight="700" fill="#1e293b">
+                            {l1}
+                            {l2 && <tspan x={lx} dy="13">{l2}</tspan>}
+                        </text>
+                        <text x={lx} y={ly + (l2 ? 21 : 15)} textAnchor={anchor}
+                            fontSize="9.5" fontWeight="800" fill={nivelColorCompass(d.nivel)}>
+                            {d.nivel}
+                        </text>
+                    </g>
+                );
+            })}
+        </svg>
+    );
+};
+
 /**
  * FaseAuditar
  * Mantiene el mismo diseño, textos e interpretaciones COMPASS del código
@@ -25,6 +92,8 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
 
     const [modalRespuestas, setModalRespuestas] = useState(null);
     const [perfilDimensiones, setPerfilDimensiones] = useState(null);
+
+    const infografiaRef = React.useRef(null);
 
     useEffect(() => {
         fetchInitialData();
@@ -358,6 +427,63 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         }
     };
 
+    // ── Carga un script externo solo una vez ──
+    const cargarScript = (src) => new Promise((resolve, reject) => {
+        if ([...document.scripts].some(s => s.src === src)) return resolve();
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("No se pudo cargar " + src));
+        document.body.appendChild(s);
+    });
+
+    // ── Descarga la infografía como PDF ──
+    const descargarPDF = async () => {
+        const nodo = infografiaRef.current;
+        if (!nodo) return;
+        Swal.fire({
+            title: "Generando PDF...",
+            html: "Esto toma unos segundos.",
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+        });
+        try {
+            await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+            await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+
+            const canvas = await window.html2canvas(nodo, {
+                scale: 2,
+                backgroundColor: "#ffffff",
+                useCORS: true,
+                ignoreElements: (el) => el.classList && el.classList.contains("cmp-no-print"),
+            });
+
+            const imgData = canvas.toDataURL("image/png");
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF("p", "mm", "a4");
+            const pw = pdf.internal.pageSize.getWidth();
+            const ph = pdf.internal.pageSize.getHeight();
+            const imgH = (canvas.height * pw) / canvas.width;
+
+            let heightLeft = imgH, position = 0;
+            pdf.addImage(imgData, "PNG", 0, position, pw, imgH);
+            heightLeft -= ph;
+            while (heightLeft > 0) {
+                position -= ph;
+                pdf.addPage();
+                pdf.addImage(imgData, "PNG", 0, position, pw, imgH);
+                heightLeft -= ph;
+            }
+
+            const nombre = (userData.nombre_completo || "diagnostico").replace(/\s+/g, "_");
+            pdf.save(`COMPASS_${nombre}.pdf`);
+            Swal.close();
+        } catch (e) {
+            console.error(e);
+            Swal.fire("Error", "No se pudo generar el PDF. Verifica tu conexión a internet.", "error");
+        }
+    };
+
     return (
         <div className="auditar-container animate-fade-in">
             <div className="nav-back-container" style={{ marginBottom: '20px' }}>
@@ -449,92 +575,193 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 </div>
             </div>
 
-            {/* --- CAPA 3: RESULTADOS COMPASS --- */}
-            {isProcessComplete && (
-                <div className="layer-card-result-full animate-slide-up">
-                    <div className="layer-badge-gold">A3</div>
+            {/* --- CAPA 3: INFOGRAFÍA DE RESULTADOS COMPASS --- */}
+            {isProcessComplete && (() => {
+                const fechaHoy = new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
+                const esDirectivo = userData.rol === "DIRECTIVO";
+                const CAMINO = ["Exploración", "Integración", "Consolidación", "Liderazgo", "Transformación"];
+                const etapaActual = puntajeFinal >= 90 ? 4 : puntajeFinal >= 75 ? 3 : puntajeFinal >= 60 ? 2 : puntajeFinal >= 40 ? 1 : 0;
 
-                    <div className="result-main-content">
-                        <header className="result-header">
-                            <div className="result-title-group">
-                                <h3 className="result-subtitle">Resultado COMPASS – Tu nivel de uso responsable de IA:</h3>
-                                <h2 className="result-level-name">{compass.nivel}</h2>
-                            </div>
-                            <div className="result-score-card">
-                                <div className="score-label" style={{ marginBottom: '4px' }}>NIVEL GLOBAL</div>
-                                <div className="score-number" style={{ fontSize: '1.4rem', lineHeight: 1.2 }}>
-                                    {nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}
+                const nivelEstandar = (offset = 0) => {
+                    const e = Math.max(0, etapaActual - offset);
+                    return e >= 3 ? { t: "Consolidado", c: "#38a169" }
+                        : e >= 2 ? { t: "En desarrollo", c: "#3182ce" }
+                            : e >= 1 ? { t: "En progreso", c: "#dd6b20" }
+                                : { t: "Inicial", c: "#e53e3e" };
+                };
+
+                const RIESGO_POR_DIM = {
+                    "Integración pedagógica": "Uso de IA desconectado de objetivos curriculares.",
+                    "Pensamiento crítico": "Escasa evaluación crítica de las respuestas de IA.",
+                    "Gestión de riesgos y datos": "Manejo de datos sin criterios de privacidad claros.",
+                    "Gobernanza institucional": "Falta de lineamientos institucionales claros.",
+                    "Visión y madurez": "Adopción de IA sin una visión estratégica.",
+                };
+                const riesgos = (perfilDimensiones?.oportunidades || [])
+                    .map(o => RIESGO_POR_DIM[o]).filter(Boolean);
+
+                return (
+                    <div className="compass-infografia" ref={infografiaRef}>
+
+                        {/* HEADER */}
+                        <header className="cmp-header">
+                            <div className="cmp-header-brand">
+                                <div className="cmp-logo">◭</div>
+                                <div>
+                                    <h1 className="cmp-brand-title">COMPASS</h1>
+                                    <p className="cmp-brand-sub">Gobernanza y Sentido Crítico de la IA</p>
                                 </div>
+                            </div>
+                            <div className="cmp-header-ident">
+                                <span className="cmp-ident-tag">DIAGNÓSTICO {esDirectivo ? "DIRECTIVO" : "DOCENTE"}</span>
+                                <p className="cmp-ident-nombre">{userData.nombre_completo || "—"}</p>
+                                <p className="cmp-ident-meta">
+                                    {esDirectivo ? "Directivo" : "Docente"}
+                                    {userData.empresa_nombre ? ` · ${userData.empresa_nombre}` : ""}
+                                </p>
+                                <p className="cmp-ident-fecha">{fechaHoy}</p>
                             </div>
                         </header>
 
-                        <div className="result-details-grid">
-                            <article className="interpretation-column">
-                                <h4 className="detail-title">Interpretación de Resultados</h4>
-                                <p className="description-text" style={{ whiteSpace: 'pre-line' }}>
-                                    {compass.desc}
-                                </p>
-                                <aside className="disclaimer-note">
-                                    <strong>Nota:</strong> Este diagnóstico no mide cuánto usas IA. Mide cómo la integras, supervisas y articulas con principios pedagógicos y éticos bajo estándares internacionales (UNESCO, OCDE).
-                                </aside>
-                            </article>
+                        {/* HERO: nivel + camino */}
+                        <section className="cmp-hero">
+                            <div className="cmp-hero-left">
+                                <p className="cmp-hero-eyebrow">Tu nivel de uso responsable de IA</p>
+                                <h2 className="cmp-hero-nivel">{compass.nivel}</h2>
+                                <div className="cmp-nivel-global">
+                                    📊 Nivel global: <strong>{nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}</strong>
+                                </div>
+                                <span className="cmp-rango">Rango ATLAS: {compass.rango}</span>
+                            </div>
 
-                            {perfilDimensiones && userData.rol !== "DIRECTIVO" && (
-                                <article className="interpretation-column" style={{ gridColumn: '1 / -1' }}>
-                                    <h4 className="detail-title">Radar COMPASS — Perfil por dimensiones</h4>
-                                    <div style={{ display: 'grid', gap: '8px', marginBottom: '20px' }}>
-                                        {perfilDimensiones.dimensiones.map(d => {
-                                            const color = d.nivel === 'Avanzado' ? '#38a169'
-                                                : d.nivel === 'Intermedio' ? '#3182ce'
-                                                    : d.nivel === 'Básico' ? '#dd6b20' : '#e53e3e';
-                                            return (
-                                                <div key={d.dimension} style={{
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                    padding: '10px 14px', background: '#f8fafc', borderRadius: '10px',
-                                                    borderLeft: `4px solid ${color}`
-                                                }}>
-                                                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{d.dimension}</span>
-                                                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color }}>{d.nivel}</span>
-                                                </div>
-                                            );
-                                        })}
+                            <div className="cmp-hero-right">
+                                <h3 className="cmp-camino-title">Un camino de crecimiento profesional y colectivo</h3>
+                                <div className="cmp-camino">
+                                    {CAMINO.map((_, idx) => {
+                                        const i = CAMINO.length - 1 - idx; // de arriba (más alto) a abajo
+                                        const nombre = CAMINO[i];
+                                        const activo = i === etapaActual;
+                                        const alcanzado = i <= etapaActual;
+                                        return (
+                                            <div key={nombre} className={`cmp-camino-step${activo ? " activo" : ""}${alcanzado ? " alcanzado" : ""}`}>
+                                                <span className="cmp-camino-dot" />
+                                                <span className="cmp-camino-label">{nombre}</span>
+                                                {activo && <span className="cmp-camino-you">Tú estás aquí</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <p className="cmp-camino-foot">Misma educación. Nuevas posibilidades.</p>
+                            </div>
+                        </section>
+
+                        {/* INTERPRETACIÓN */}
+                        <section className="cmp-interpret">
+                            <h4 className="cmp-block-title">Interpretación de resultados</h4>
+                            <p className="cmp-interpret-text">{compass.desc}</p>
+                            <div className="cmp-disclaimer">
+                                <strong>Nota:</strong> Este diagnóstico no mide cuánto usas IA. Mide cómo la integras, supervisas y articulas con principios pedagógicos y éticos bajo estándares internacionales (UNESCO, OCDE).
+                            </div>
+                        </section>
+
+                        {/* RADAR + HALLAZGOS (docente con perfil) */}
+                        {perfilDimensiones && !esDirectivo && (
+                            <section className="cmp-analysis">
+                                <div className="cmp-radar-box">
+                                    <h4 className="cmp-block-title">Radar COMPASS — Perfil por dimensiones</h4>
+                                    <RadarCompass dimensiones={perfilDimensiones.dimensiones} />
+                                    <div className="cmp-dim-list">
+                                        {perfilDimensiones.dimensiones.map(d => (
+                                            <div key={d.dimension} className="cmp-dim-row"
+                                                style={{ borderLeftColor: nivelColorCompass(d.nivel) }}>
+                                                <span className="cmp-dim-name">{d.dimension}</span>
+                                                <span className="cmp-dim-nivel" style={{ color: nivelColorCompass(d.nivel) }}>
+                                                    {d.nivel} · {d.porcentaje}%
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="cmp-hallazgos">
+                                    <h4 className="cmp-block-title">Tus principales hallazgos</h4>
+
+                                    <div className="cmp-hallazgo-card fortalezas">
+                                        <span className="cmp-hallazgo-icon">⭐</span>
+                                        <div>
+                                            <h5>Fortalezas</h5>
+                                            {perfilDimensiones.fortalezas.length > 0
+                                                ? perfilDimensiones.fortalezas.map(f => <p key={f}>✅ {f}</p>)
+                                                : <p className="cmp-muted">Sigue trabajando para consolidar fortalezas.</p>}
+                                        </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div className="cmp-hallazgo-card oportunidades">
+                                        <span className="cmp-hallazgo-icon">📈</span>
                                         <div>
-                                            <h4 className="detail-title" style={{ fontSize: '0.9rem' }}>Tus fortalezas</h4>
-                                            {perfilDimensiones.fortalezas.length > 0 ? (
-                                                perfilDimensiones.fortalezas.map(f => (
-                                                    <p key={f} style={{ margin: '4px 0', color: '#38a169' }}>✅ {f}</p>
-                                                ))
-                                            ) : <p style={{ color: '#94a3b8' }}>Sigue trabajando para consolidar fortalezas.</p>}
-                                        </div>
-                                        <div>
-                                            <h4 className="detail-title" style={{ fontSize: '0.9rem' }}>Oportunidades de crecimiento</h4>
-                                            {perfilDimensiones.oportunidades.length > 0 ? (
-                                                perfilDimensiones.oportunidades.map(o => (
-                                                    <p key={o} style={{ margin: '4px 0', color: '#dd6b20' }}>⚠ {o}</p>
-                                                ))
-                                            ) : <p style={{ color: '#94a3b8' }}>¡Sin dimensiones críticas!</p>}
+                                            <h5>Oportunidades de crecimiento</h5>
+                                            {perfilDimensiones.oportunidades.length > 0
+                                                ? perfilDimensiones.oportunidades.map(o => <p key={o}>• {o}</p>)
+                                                : <p className="cmp-muted">¡Sin dimensiones críticas!</p>}
                                         </div>
                                     </div>
-                                </article>
-                            )}
 
-                            <article className="next-steps-column">
-                                <h4 className="next-steps-title">¿Qué sigue ahora?</h4>
-                                <p className="next-steps-text">
-                                    Has finalizado con éxito la fase de <strong>Auditoría</strong>. Tu fotografía actual nos permite trazar una ruta personalizada para la fase de <strong>Transformación</strong>.
+                                    <div className="cmp-hallazgo-card riesgos">
+                                        <span className="cmp-hallazgo-icon">⚠️</span>
+                                        <div>
+                                            <h5>Riesgos a tener en cuenta</h5>
+                                            {riesgos.length > 0
+                                                ? riesgos.map(r => <p key={r}>• {r}</p>)
+                                                : <p className="cmp-muted">Sin riesgos críticos detectados. Mantén la supervisión humana.</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* ESTÁNDARES */}
+                        <section className="cmp-standards">
+                            <h4 className="cmp-block-title">Alineación con estándares internacionales</h4>
+                            <div className="cmp-standards-grid">
+                                {[
+                                    { n: "UNESCO", d: "Recomendación sobre la Ética de la IA", e: nivelEstandar(0) },
+                                    { n: "OCDE", d: "Principios de IA en educación", e: nivelEstandar(0) },
+                                    { n: "AI Act (UE)", d: "Marco regulatorio de IA", e: nivelEstandar(1) },
+                                ].map(s => (
+                                    <div key={s.n} className="cmp-standard-card">
+                                        <div className="cmp-standard-info">
+                                            <strong>{s.n}</strong>
+                                            <span>{s.d}</span>
+                                        </div>
+                                        <span className="cmp-standard-estado" style={{ background: `${s.e.c}18`, color: s.e.c }}>
+                                            {s.e.t}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* FOOTER */}
+                        <section className="cmp-footer">
+                            <div className="cmp-footer-text">
+                                <h4 className="cmp-block-title">¿Qué sigue ahora?</h4>
+                                <p>
+                                    Has finalizado con éxito la fase de <strong>Auditoría</strong>. Tu fotografía
+                                    actual nos permite trazar una ruta personalizada para la fase de <strong>Transformación</strong>.
                                 </p>
-                                <button className="btn-finish-fase" onClick={() => onNavigate('overview')}>
-                                    Finalizar Fase
-                                </button>
-                                <footer className="ready-footer">¿Estás preparad@?</footer>
-                            </article>
-                        </div>
+                            </div>
+                            <div className="cmp-footer-actions cmp-no-print">
+                                <button className="cmp-btn-pdf" onClick={descargarPDF}>⬇ Descargar PDF</button>
+                                <button className="cmp-btn-finish" onClick={() => onNavigate('overview')}>Finalizar Fase →</button>
+                            </div>
+                        </section>
+
+                        <footer className="cmp-brand-footer">
+                            ◭ COMPASS · Educación hoy. Posibilidades mañana.
+                        </footer>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {modalRespuestas && (
                 <div

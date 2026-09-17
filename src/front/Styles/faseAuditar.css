@@ -724,6 +724,172 @@
     }
 }
 
+
+/* =========================================
+   INFOGRAFÍA COMPASS (Capa 3 rediseñada)
+   ========================================= */
+.compass-infografia {
+    max-width: 1100px;
+    margin: 40px auto 0;
+    background: #fff;
+    border-radius: 28px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    animation: slideUp 0.7s ease-out;
+    color: #1e293b;
+}
+
+/* HEADER */
+.cmp-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    padding: 26px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.cmp-header-brand { display: flex; align-items: center; gap: 14px; }
+.cmp-logo { font-size: 2rem; color: #c5a059; }
+.cmp-brand-title { margin: 0; font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; }
+.cmp-brand-sub { margin: 2px 0 0; font-size: 0.75rem; color: #cbd5e1; }
+.cmp-header-ident { text-align: right; }
+.cmp-ident-tag {
+    display: inline-block; background: rgba(197, 160, 89, 0.2); color: #f0d9a8;
+    padding: 4px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+    letter-spacing: 1px; margin-bottom: 8px;
+}
+.cmp-ident-nombre { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.cmp-ident-meta { margin: 2px 0 0; font-size: 0.85rem; color: #cbd5e1; }
+.cmp-ident-fecha { margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8; }
+
+/* HERO */
+.cmp-hero {
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;
+    padding: 40px; align-items: center;
+}
+.cmp-hero-eyebrow { margin: 0 0 6px; font-size: 0.9rem; color: #64748b; font-weight: 600; }
+.cmp-hero-nivel { margin: 0 0 18px; font-size: 3.2rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.cmp-nivel-global {
+    display: inline-block; background: #c5a059; color: #0f172a;
+    padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 1rem; margin-bottom: 14px;
+}
+.cmp-rango {
+    display: block; background: #fdf8ee; color: #a17d33; width: fit-content;
+    padding: 6px 16px; border-radius: 50px; font-weight: 800; font-size: 0.85rem;
+    border: 1px solid rgba(197, 160, 89, 0.25);
+}
+
+/* CAMINO */
+.cmp-hero-right {
+    background: linear-gradient(160deg, #1e293b, #334155);
+    border-radius: 22px; padding: 28px 30px; color: #fff;
+}
+.cmp-camino-title { margin: 0 0 20px; font-size: 1.05rem; font-weight: 800; }
+.cmp-camino { display: flex; flex-direction: column; gap: 4px; position: relative; }
+.cmp-camino-step { display: flex; align-items: center; gap: 12px; padding: 8px 0; position: relative; opacity: 0.45; }
+.cmp-camino-step::before {
+    content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.15);
+}
+.cmp-camino-step:first-child::before { top: 50%; }
+.cmp-camino-step:last-child::before { bottom: 50%; }
+.cmp-camino-step.alcanzado { opacity: 1; }
+.cmp-camino-dot {
+    width: 14px; height: 14px; border-radius: 50%; background: #64748b;
+    border: 3px solid #1e293b; z-index: 1; flex-shrink: 0;
+}
+.cmp-camino-step.alcanzado .cmp-camino-dot { background: #cbd5e1; }
+.cmp-camino-step.activo .cmp-camino-dot {
+    background: #c5a059; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.35);
+    width: 16px; height: 16px;
+}
+.cmp-camino-label { font-weight: 700; font-size: 0.95rem; }
+.cmp-camino-step.activo .cmp-camino-label { color: #f0d9a8; font-weight: 900; }
+.cmp-camino-you {
+    margin-left: auto; background: #c5a059; color: #0f172a;
+    padding: 3px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 800;
+}
+.cmp-camino-foot { margin: 18px 0 0; text-align: right; font-size: 0.8rem; color: #94a3b8; font-style: italic; }
+
+/* BLOQUES */
+.cmp-block-title { font-size: 1.15rem; color: #0f172a; font-weight: 800; margin: 0 0 18px; }
+.cmp-interpret { padding: 10px 40px 30px; }
+.cmp-interpret-text { font-size: 1.02rem; line-height: 1.8; color: #334155; white-space: pre-line; margin: 0 0 22px; }
+.cmp-disclaimer {
+    background: #f8fafc; border-left: 4px solid #c5a059; border-radius: 14px;
+    padding: 18px 22px; font-size: 0.9rem; color: #64748b; line-height: 1.6;
+}
+
+/* ANÁLISIS: radar + hallazgos */
+.cmp-analysis {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 34px;
+    padding: 20px 40px 30px; align-items: start;
+}
+.cmp-radar-box { text-align: center; }
+.radar-compass-svg { width: 100%; max-width: 420px; height: auto; margin: 0 auto; display: block; }
+.cmp-dim-list { display: grid; gap: 8px; margin-top: 20px; text-align: left; }
+.cmp-dim-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #e2e8f0;
+}
+.cmp-dim-name { font-weight: 600; color: #1e293b; font-size: 0.9rem; }
+.cmp-dim-nivel { font-weight: 800; font-size: 0.82rem; }
+
+.cmp-hallazgos { display: flex; flex-direction: column; gap: 16px; }
+.cmp-hallazgo-card {
+    display: flex; gap: 14px; padding: 20px; border-radius: 18px; background: #f8fafc; border: 1px solid #eef2f6;
+}
+.cmp-hallazgo-card.fortalezas { background: #f0fdf4; border-color: #bbf7d0; }
+.cmp-hallazgo-card.oportunidades { background: #fefce8; border-color: #fde68a; }
+.cmp-hallazgo-card.riesgos { background: #fef2f2; border-color: #fecaca; }
+.cmp-hallazgo-icon { font-size: 1.4rem; line-height: 1; }
+.cmp-hallazgo-card h5 { margin: 0 0 8px; font-size: 1rem; color: #0f172a; font-weight: 800; }
+.cmp-hallazgo-card p { margin: 4px 0; font-size: 0.9rem; color: #334155; line-height: 1.5; }
+.cmp-muted { color: #94a3b8 !important; }
+
+/* ESTÁNDARES */
+.cmp-standards { padding: 20px 40px 30px; }
+.cmp-standards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.cmp-standard-card {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    background: #f8fafc; border: 1px solid #eef2f6; border-radius: 16px; padding: 18px 20px;
+}
+.cmp-standard-info { display: flex; flex-direction: column; }
+.cmp-standard-info strong { font-size: 0.95rem; color: #0f172a; }
+.cmp-standard-info span { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
+.cmp-standard-estado { padding: 6px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+
+/* FOOTER */
+.cmp-footer {
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+    padding: 30px 40px; background: #fdfbf7; border-top: 1px solid #f9f1e3; flex-wrap: wrap;
+}
+.cmp-footer-text { flex: 1 1 340px; }
+.cmp-footer-text p { margin: 0; font-size: 0.95rem; color: #7a6336; line-height: 1.7; }
+.cmp-footer-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.cmp-btn-pdf, .cmp-btn-finish {
+    padding: 15px 26px; border: none; border-radius: 14px; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.25s;
+}
+.cmp-btn-pdf { background: #c5a059; color: #0f172a; }
+.cmp-btn-pdf:hover { background: #b08d4a; transform: translateY(-2px); }
+.cmp-btn-finish { background: #0f172a; color: #fff; }
+.cmp-btn-finish:hover { background: #1e293b; transform: translateY(-2px); }
+.cmp-brand-footer {
+    text-align: center; padding: 16px; font-size: 0.8rem; color: #94a3b8;
+    border-top: 1px solid #f1f5f9; font-weight: 600;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .cmp-hero, .cmp-analysis { grid-template-columns: 1fr; }
+    .cmp-standards-grid { grid-template-columns: 1fr; }
+    .cmp-hero-nivel { font-size: 2.4rem; }
+    .cmp-header, .cmp-hero, .cmp-interpret, .cmp-analysis, .cmp-standards, .cmp-footer { padding-left: 22px; padding-right: 22px; }
+    .cmp-header-ident { text-align: left; }
+}
+
 /* =======================================================
    SISTEMA DE RESPONSIVIDAD INTEGRAL - FASE AUDITAR
    ======================================================= */
