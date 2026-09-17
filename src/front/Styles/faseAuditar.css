@@ -1161,3 +1161,13 @@
 @media (max-width: 900px) {
     .cmp-next-step { padding-left: 22px; padding-right: 22px; }
 }
+
+
+/* Evita cortes internos feos al exportar PDF */
+.compass-infografia.exporting .cmp-disclaimer,
+.compass-infografia.exporting .cmp-hallazgo-card,
+.compass-infografia.exporting .cmp-standard-card,
+.compass-infografia.exporting .cmp-next-step-highlight {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}

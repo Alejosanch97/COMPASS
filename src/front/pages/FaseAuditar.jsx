@@ -471,14 +471,28 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
 
             await new Promise(r => setTimeout(r, 80));
 
-            // 3. Medimos dónde termina cada bloque (para no cortarlos)
+            // 3. Medimos puntos de corte "seguros": fin de cada bloque Y también
+            //    los espacios entre tarjetas/párrafos internos (para bloques altos).
             const clonRect = clon.getBoundingClientRect();
-            const bloques = clon.querySelectorAll(".cmp-header, section, .cmp-brand-footer");
-            const cortesPx = [];
-            bloques.forEach(b => {
-                const r = b.getBoundingClientRect();
-                cortesPx.push(r.bottom - clonRect.top); // fin de cada bloque, en px del clon
+            const cortesSet = new Set();
+
+            // Fin de cada sección principal
+            clon.querySelectorAll(".cmp-header, section, .cmp-brand-footer").forEach(b => {
+                cortesSet.add(Math.round(b.getBoundingClientRect().bottom - clonRect.top));
             });
+
+            // Fin de elementos internos que se pueden partir sin romper diseño:
+            // párrafos de interpretación, tarjetas de hallazgos, filas de dimensión,
+            // tarjetas de estándares y párrafos del próximo paso.
+            clon.querySelectorAll(
+                ".cmp-interpret p, .cmp-interpret .cmp-disclaimer, " +
+                ".cmp-hallazgo-card, .cmp-dim-row, .cmp-standard-card, " +
+                ".cmp-next-step p, .radar-compass-svg"
+            ).forEach(el => {
+                cortesSet.add(Math.round(el.getBoundingClientRect().bottom - clonRect.top));
+            });
+
+            const cortesPx = [...cortesSet].sort((a, b) => a - b);
             const totalPx = clon.scrollHeight;
 
             // 4. Capturamos el clon aislado
@@ -512,9 +526,13 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 let limite = inicio + phPx;
                 if (limite >= totalPx) { limite = totalPx; }
                 else {
-                    // busca el último bloque que termina dentro de [inicio, limite]
-                    const candidatos = cortesClon.filter(c => c > inicio + 40 && c <= limite);
-                    if (candidatos.length) limite = Math.max(...candidatos);
+                    // busca el último punto de corte seguro dentro de [inicio, limite]
+                    const candidatos = cortesClon.filter(c => c > inicio + 60 && c <= limite);
+                    if (candidatos.length) {
+                        limite = Math.max(...candidatos);
+                    }
+                    // si no hubo ninguno (bloque enorme), se corta en el límite A4
+                    // para no dejar página en blanco.
                 }
                 paginas.push([inicio, limite]);
                 inicio = limite;
