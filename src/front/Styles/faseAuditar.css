@@ -881,6 +881,13 @@
     border-top: 1px solid #f1f5f9; font-weight: 600;
 }
 
+.layer-microtext {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #64748b;
+    margin: -6px 0 20px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
     .cmp-hero, .cmp-analysis { grid-template-columns: 1fr; }

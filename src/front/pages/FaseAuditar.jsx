@@ -515,9 +515,9 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 <div className={`layer-card main-entry ${progreso?.capa_1_sentido === 'COMPLETADO' ? 'completed' : 'pending'}`}>
                     <div className="layer-badge">A1</div>
                     <div className="layer-content">
-                        <h3>Capa 1: El Sentido (Gobernanza)</h3>
+                        <h3>Capa 1: Compromiso institucional</h3>
                         <p className="intro-p">
-                            <strong>COMPASS</strong> no es una capacitación sobre herramientas de inteligencia artificial. Es un proceso de <strong>reflexión institucional, diagnóstico pedagógico y gobernanza responsable</strong> que orienta el uso de la IA en la educación.<br /><br />
+                            <strong>COMPASS</strong> no es una capacitación sobre herramientas de inteligencia artificial. Es un proceso de <strong>reflexión institucional, diagnóstico estratégico, gestión de riesgos y gobernanza responsable</strong> que orienta la integración de la IA en la educación.<br /><br />
                             Declarar este compromiso significa utilizar la inteligencia artificial con <strong>propósito pedagógico, criterio ético y evidencia documentada</strong>. Este es el punto de partida para una implementación consciente, responsable y alineada con los principios de la institución.
                         </p>
                         <button onClick={handleAceptarMarco} disabled={progreso?.capa_1_sentido === 'COMPLETADO' || isSaving} className={`btn-formal-action ${progreso?.capa_1_sentido === 'COMPLETADO' ? 'btn-done' : ''}`}>
@@ -529,7 +529,10 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 <div className={`layer-card side-entry ${progreso?.capa_1_sentido !== 'COMPLETADO' ? 'locked' : ''}`}>
                     <div className="layer-badge">A2</div>
                     <div className="layer-content">
-                        <h3>Capa 2: El Diagnóstico (Data-Driven)</h3>
+                        <h3>Capa 2: Diagnóstico institucional basado en evidencia</h3>
+                        <p className="layer-microtext">
+                            Evalúa la capacidad de tu institución para liderar, gestionar riesgos y establecer lineamientos para el uso responsable de la inteligencia artificial.
+                        </p>
 
                         {sinFormulariosAsignados ? (
                             <div className="status-indicator-box">
