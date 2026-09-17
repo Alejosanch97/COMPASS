@@ -1096,46 +1096,82 @@
 }
 
 
-/* ── Modo exportación PDF: fuerza colores planos (evita PDF en blanco) ── */
-.compass-infografia.exporting,
-.compass-infografia.exporting * {
+
+/* ═══════════════════════════════════════════
+   MODO PDF — layout y colores para exportación
+   ═══════════════════════════════════════════ */
+.compass-infografia.pdf-mode {
+    width: 794px !important;
+    max-width: 794px !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
     color: #1e293b !important;
+    animation: none !important;
+}
+.compass-infografia.pdf-mode * {
     opacity: 1 !important;
     filter: none !important;
-    -webkit-text-fill-color: currentColor !important;
     text-shadow: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    box-shadow: none !important;
 }
-.compass-infografia.exporting { background: #ffffff !important; }
 
-.compass-infografia.exporting .cmp-header { background: #0f172a !important; }
-.compass-infografia.exporting .cmp-header * { color: #ffffff !important; }
-.compass-infografia.exporting .cmp-ident-tag { color: #f0d9a8 !important; }
+/* No partir estas tarjetas entre páginas */
+.compass-infografia.pdf-mode .cmp-header,
+.compass-infografia.pdf-mode .cmp-hero,
+.compass-infografia.pdf-mode .cmp-hero-right,
+.compass-infografia.pdf-mode .cmp-disclaimer,
+.compass-infografia.pdf-mode .cmp-radar-box,
+.compass-infografia.pdf-mode .cmp-hallazgo-card,
+.compass-infografia.pdf-mode .cmp-dim-row,
+.compass-infografia.pdf-mode .cmp-standard-card,
+.compass-infografia.pdf-mode .cmp-next-step-highlight,
+.compass-infografia.pdf-mode .cmp-footer {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+}
 
-.compass-infografia.exporting .cmp-hero-nivel,
-.compass-infografia.exporting .cmp-block-title,
-.compass-infografia.exporting .cmp-brand-title,
-.compass-infografia.exporting .cmp-ident-nombre,
-.compass-infografia.exporting .cmp-hallazgo-card h5 { color: #0f172a !important; }
+/* Un poco de aire vertical entre secciones al paginar */
+.compass-infografia.pdf-mode section { padding-top: 14px !important; padding-bottom: 22px !important; }
 
-.compass-infografia.exporting .cmp-nivel-global { background: #c5a059 !important; color: #0f172a !important; }
-.compass-infografia.exporting .cmp-rango { background: #fdf8ee !important; color: #a17d33 !important; }
+/* ── Colores hex forzados (nada de oklch heredado) ── */
+.compass-infografia.pdf-mode .cmp-header { background: #0f172a !important; }
+.compass-infografia.pdf-mode .cmp-header * { color: #ffffff !important; }
+.compass-infografia.pdf-mode .cmp-ident-tag { color: #f0d9a8 !important; }
 
-.compass-infografia.exporting .cmp-hero-right { background: #1e293b !important; }
-.compass-infografia.exporting .cmp-hero-right * { color: #ffffff !important; }
-.compass-infografia.exporting .cmp-camino-label { color: #ffffff !important; }
-.compass-infografia.exporting .cmp-camino-you { background: #c5a059 !important; color: #0f172a !important; }
-.compass-infografia.exporting .cmp-camino-dot { background: #64748b !important; }
-.compass-infografia.exporting .cmp-camino-step.activo .cmp-camino-dot { background: #c5a059 !important; }
+.compass-infografia.pdf-mode .cmp-hero-nivel,
+.compass-infografia.pdf-mode .cmp-block-title,
+.compass-infografia.pdf-mode .cmp-brand-title,
+.compass-infografia.pdf-mode .cmp-ident-nombre,
+.compass-infografia.pdf-mode .cmp-hallazgo-card h5 { color: #0f172a !important; }
 
-.compass-infografia.exporting .cmp-disclaimer { background: #f8fafc !important; }
-.compass-infografia.exporting .cmp-hallazgo-card.fortalezas { background: #f0fdf4 !important; }
-.compass-infografia.exporting .cmp-hallazgo-card.oportunidades { background: #fefce8 !important; }
-.compass-infografia.exporting .cmp-hallazgo-card.riesgos { background: #fef2f2 !important; }
-.compass-infografia.exporting .cmp-dim-row,
-.compass-infografia.exporting .cmp-standard-card { background: #f8fafc !important; }
-.compass-infografia.exporting .cmp-footer { background: #fdfbf7 !important; }
-.compass-infografia.exporting .cmp-footer-text p { color: #7a6336 !important; }
+.compass-infografia.pdf-mode .cmp-hero-eyebrow,
+.compass-infografia.pdf-mode .cmp-interpret-text,
+.compass-infografia.pdf-mode .cmp-dim-name,
+.compass-infografia.pdf-mode .cmp-hallazgo-card p,
+.compass-infografia.pdf-mode .cmp-next-step p { color: #334155 !important; }
 
+.compass-infografia.pdf-mode .cmp-nivel-global { background: #c5a059 !important; color: #0f172a !important; }
+.compass-infografia.pdf-mode .cmp-rango { background: #fdf8ee !important; color: #a17d33 !important; }
+
+.compass-infografia.pdf-mode .cmp-hero-right { background: #1e293b !important; }
+.compass-infografia.pdf-mode .cmp-hero-right * { color: #ffffff !important; }
+.compass-infografia.pdf-mode .cmp-camino-you { background: #c5a059 !important; color: #0f172a !important; }
+.compass-infografia.pdf-mode .cmp-camino-dot { background: #64748b !important; }
+.compass-infografia.pdf-mode .cmp-camino-step.activo .cmp-camino-dot { background: #c5a059 !important; }
+
+.compass-infografia.pdf-mode .cmp-disclaimer { background: #f8fafc !important; }
+.compass-infografia.pdf-mode .cmp-hallazgo-card.fortalezas { background: #f0fdf4 !important; }
+.compass-infografia.pdf-mode .cmp-hallazgo-card.oportunidades { background: #fefce8 !important; }
+.compass-infografia.pdf-mode .cmp-hallazgo-card.riesgos { background: #fef2f2 !important; }
+.compass-infografia.pdf-mode .cmp-dim-row,
+.compass-infografia.pdf-mode .cmp-standard-card { background: #f8fafc !important; }
+.compass-infografia.pdf-mode .cmp-footer { background: #fdfbf7 !important; }
+.compass-infografia.pdf-mode .cmp-footer-text p { color: #7a6336 !important; }
+.compass-infografia.pdf-mode .cmp-next-step-highlight { background: #fdfbf7 !important; color: #7a6336 !important; }
 
 
 

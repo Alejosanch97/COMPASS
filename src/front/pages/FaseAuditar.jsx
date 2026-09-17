@@ -437,7 +437,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         document.body.appendChild(s);
     });
 
-    // ── Descarga la infografía como PDF (nodo aislado + colores forzados) ──
+        // ── Descarga la infografía como PDF (layout propio + paginado nativo) ──
     const descargarPDF = async () => {
         const nodo = infografiaRef.current;
         if (!nodo) return;
@@ -450,111 +450,42 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
 
         let sandbox = null;
         try {
-            const { toPng } = await import("html-to-image");
             await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+            await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
 
-            // 1. Clonamos la infografía y le quitamos los botones
+            // Clon con estilos de impresión (ancho A4 ≈ 794px a 96dpi)
             const clon = nodo.cloneNode(true);
-            clon.classList.add("exporting");
+            clon.classList.add("pdf-mode");
             clon.querySelectorAll(".cmp-no-print").forEach(el => el.remove());
 
-            // 2. Contenedor aislado fuera de la vista (no hereda estilos globales)
             sandbox = document.createElement("div");
             sandbox.style.position = "fixed";
             sandbox.style.left = "-99999px";
             sandbox.style.top = "0";
-            sandbox.style.width = "1100px";
+            sandbox.style.width = "794px";
             sandbox.style.background = "#ffffff";
-            sandbox.style.color = "#1e293b";
             sandbox.appendChild(clon);
             document.body.appendChild(sandbox);
 
-            await new Promise(r => setTimeout(r, 80));
-
-            // 3. Medimos puntos de corte "seguros": fin de cada bloque Y también
-            //    los espacios entre tarjetas/párrafos internos (para bloques altos).
-            const clonRect = clon.getBoundingClientRect();
-            const cortesSet = new Set();
-
-            // Fin de cada sección principal
-            clon.querySelectorAll(".cmp-header, section, .cmp-brand-footer").forEach(b => {
-                cortesSet.add(Math.round(b.getBoundingClientRect().bottom - clonRect.top));
-            });
-
-            // Fin de elementos internos que se pueden partir sin romper diseño:
-            // párrafos de interpretación, tarjetas de hallazgos, filas de dimensión,
-            // tarjetas de estándares y párrafos del próximo paso.
-            clon.querySelectorAll(
-                ".cmp-interpret p, .cmp-interpret .cmp-disclaimer, " +
-                ".cmp-hallazgo-card, .cmp-dim-row, .cmp-standard-card, " +
-                ".cmp-next-step p, .radar-compass-svg"
-            ).forEach(el => {
-                cortesSet.add(Math.round(el.getBoundingClientRect().bottom - clonRect.top));
-            });
-
-            const cortesPx = [...cortesSet].sort((a, b) => a - b);
-            const totalPx = clon.scrollHeight;
-
-            // 4. Capturamos el clon aislado
-            const dataUrl = await toPng(clon, {
-                pixelRatio: 2,
-                backgroundColor: "#ffffff",
-                width: 1100,
-                cacheBust: true,
-            });
-
-            const img = new Image();
-            img.src = dataUrl;
-            await new Promise(res => { img.onload = res; });
+            await new Promise(r => setTimeout(r, 100));
 
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF("p", "mm", "a4");
-            const pw = pdf.internal.pageSize.getWidth();
-            const ph = pdf.internal.pageSize.getHeight();
+            const pdf = new jsPDF("p", "pt", "a4");
 
-            // px del render -> mm del PDF
-            const pxToMm = pw / img.width;               // ancho imagen -> ancho página
-            const escala = img.width / clon.offsetWidth; // ratio pixelRatio real
-            const phPx = ph / pxToMm / escala;           // alto de una página A4, en px del clon
-            const cortesClon = cortesPx.map(c => c);     // ya están en px del clon
-
-            // Calcula los cortes de página: avanza por A4 pero retrocede al fin
-            // del último bloque que cabe entero.
-            const paginas = [];
-            let inicio = 0;
-            while (inicio < totalPx - 1) {
-                let limite = inicio + phPx;
-                if (limite >= totalPx) { limite = totalPx; }
-                else {
-                    // busca el último punto de corte seguro dentro de [inicio, limite]
-                    const candidatos = cortesClon.filter(c => c > inicio + 60 && c <= limite);
-                    if (candidatos.length) {
-                        limite = Math.max(...candidatos);
-                    }
-                    // si no hubo ninguno (bloque enorme), se corta en el límite A4
-                    // para no dejar página en blanco.
-                }
-                paginas.push([inicio, limite]);
-                inicio = limite;
-            }
-
-            // Dibuja cada segmento en su propia página (recortando el canvas fuente)
-            const canvasFuente = document.createElement("canvas");
-            const ctx = canvasFuente.getContext("2d");
-            for (let i = 0; i < paginas.length; i++) {
-                const [ini, fin] = paginas[i];
-                const hPx = (fin - ini) * escala;
-                canvasFuente.width = img.width;
-                canvasFuente.height = hPx;
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, canvasFuente.width, canvasFuente.height);
-                ctx.drawImage(img, 0, ini * escala, img.width, hPx, 0, 0, img.width, hPx);
-
-                const segUrl = canvasFuente.toDataURL("image/png");
-                const segMmH = (hPx * pw) / img.width;
-                if (i > 0) pdf.addPage();
-                pdf.addImage(segUrl, "PNG", 0, 0, pw, segMmH);
-            }
+            await pdf.html(clon, {
+                x: 0,
+                y: 0,
+                width: 595,              // ancho A4 en pt
+                windowWidth: 794,        // ancho del clon en px
+                autoPaging: "text",      // pagina respetando líneas/bloques
+                html2canvas: {
+                    scale: 595 / 794,
+                    backgroundColor: "#ffffff",
+                    useCORS: true,
+                    letterRendering: true,
+                },
+                margin: [0, 0, 0, 0],
+            });
 
             const nombre = (userData.nombre_completo || "diagnostico").replace(/\s+/g, "_");
             pdf.save(`COMPASS_${nombre}.pdf`);
