@@ -12,10 +12,42 @@ const nivelColorCompass = (nivel) =>
         nivel === "Intermedio" ? "#3182ce" :
             nivel === "Básico" ? "#dd6b20" : "#e53e3e";
 
+// ── Iconos SVG (reemplazan emojis para que el PDF no los deforme) ──
+const IconDiamond = ({ size = 22, color = "#c5a059" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24"><path d="M12 2 L22 12 L12 22 L2 12 Z" fill={color} /></svg>
+);
+const IconChart = ({ size = 15, color = "#0f172a" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+        <rect x="3" y="12" width="4" height="9" fill={color} />
+        <rect x="10" y="7" width="4" height="14" fill={color} />
+        <rect x="17" y="3" width="4" height="18" fill={color} />
+    </svg>
+);
+const IconStar = ({ size = 20, color = "#16a34a" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+        <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.9L5.7 21l1.7-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+);
+const IconTrendUp = ({ size = 20, color = "#a16207" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+        <polyline points="3,17 9,11 13,15 21,5" /><polyline points="14,5 21,5 21,12" />
+    </svg>
+);
+const IconWarning = ({ size = 20, color = "#dc2626" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+        <path d="M12 2 L22 20 H2 Z" /><rect x="11" y="9" width="2" height="6" fill="#fff" /><rect x="11" y="16" width="2" height="2" fill="#fff" />
+    </svg>
+);
+const IconCheck = ({ size = 14, color = "#16a34a" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3">
+        <polyline points="4,12 9,18 20,5" />
+    </svg>
+);
+
 // ── Radar / gráfico de araña reutilizable (sin librerías) ──
 const RadarCompass = ({ dimensiones = [] }) => {
-    const size = 440, box = 400;
-    const cx = size / 2, cy = box / 2 + 5, maxR = 118;
+    const size = 560, box = 420;          // antes: 440 x 400 → más espacio horizontal
+    const cx = size / 2, cy = box / 2 + 10, maxR = 100; // polígono un poco más chico
     const n = dimensiones.length;
     if (!n) return null;
 
@@ -42,12 +74,13 @@ const RadarCompass = ({ dimensiones = [] }) => {
                 <circle key={i} cx={p[0]} cy={p[1]} r="4.5" fill="#c5a059" stroke="#fff" strokeWidth="1.5" />
             ))}
             {dimensiones.map((d, i) => {
-                const [lx, ly] = pt(i, maxR + 22);
+                const [lxRaw, ly] = pt(i, maxR + 34); // más separación de la línea
+                const lx = Math.max(45, Math.min(size - 45, lxRaw)); // nunca se sale del viewBox
                 const a = ang(i);
                 const anchor = Math.abs(Math.cos(a)) < 0.3 ? "middle" : (Math.cos(a) > 0 ? "start" : "end");
                 const palabras = d.dimension.split(" ");
                 let l1 = d.dimension, l2 = "";
-                if (palabras.length > 2) {
+                if (palabras.length > 1) {              // 👈 antes era "> 2"; ahora parte siempre que haya 2+ palabras
                     const mid = Math.ceil(palabras.length / 2);
                     l1 = palabras.slice(0, mid).join(" ");
                     l2 = palabras.slice(mid).join(" ");
@@ -437,7 +470,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         document.body.appendChild(s);
     });
 
-        // ── Descarga la infografía como PDF (layout propio + paginado nativo) ──
+    // ── Descarga la infografía como PDF (layout propio + paginado nativo) ──
     const descargarPDF = async () => {
         const nodo = infografiaRef.current;
         if (!nodo) return;
@@ -631,7 +664,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                         {/* HEADER */}
                         <header className="cmp-header">
                             <div className="cmp-header-brand">
-                                <div className="cmp-logo">◭</div>
+                                <div className="cmp-logo"><IconDiamond size={28} /></div>
                                 <div>
                                     <h1 className="cmp-brand-title">COMPASS</h1>
                                     <p className="cmp-brand-sub">Gobernanza y Sentido Crítico de la IA</p>
@@ -653,8 +686,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             <div className="cmp-hero-left">
                                 <p className="cmp-hero-eyebrow">Tu nivel de uso responsable de IA</p>
                                 <h2 className="cmp-hero-nivel">{compass.nivel}</h2>
-                                <div className="cmp-nivel-global">
-                                    📊 Nivel global: <strong>{nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}</strong>
+                                <div className="cmp-nivel-global" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <IconChart /> Nivel global: <strong>{nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}</strong>
                                 </div>
                                 <span className="cmp-rango">Rango ATLAS: {compass.rango}</span>
                             </div>
@@ -712,17 +745,17 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                     <h4 className="cmp-block-title">Tus principales hallazgos</h4>
 
                                     <div className="cmp-hallazgo-card fortalezas">
-                                        <span className="cmp-hallazgo-icon">⭐</span>
+                                        <span className="cmp-hallazgo-icon"><IconStar /></span>
                                         <div>
                                             <h5>Fortalezas</h5>
                                             {perfilDimensiones.fortalezas.length > 0
-                                                ? perfilDimensiones.fortalezas.map(f => <p key={f}>✅ {f}</p>)
+                                                ? perfilDimensiones.fortalezas.map(f => <p key={f} style={{ display: "flex", alignItems: "center", gap: "6px" }}><IconCheck /> {f}</p>)
                                                 : <p className="cmp-muted">Sigue trabajando para consolidar fortalezas.</p>}
                                         </div>
                                     </div>
 
                                     <div className="cmp-hallazgo-card oportunidades">
-                                        <span className="cmp-hallazgo-icon">📈</span>
+                                        <span className="cmp-hallazgo-icon"><IconTrendUp /></span>
                                         <div>
                                             <h5>Oportunidades de crecimiento</h5>
                                             {perfilDimensiones.oportunidades.length > 0
@@ -732,7 +765,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                     </div>
 
                                     <div className="cmp-hallazgo-card riesgos">
-                                        <span className="cmp-hallazgo-icon">⚠️</span>
+                                        <span className="cmp-hallazgo-icon"><IconWarning /></span>
                                         <div>
                                             <h5>Riesgos a tener en cuenta</h5>
                                             {riesgos.length > 0
@@ -809,8 +842,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             </div>
                         </section>
 
-                        <footer className="cmp-brand-footer">
-                            ◭ COMPASS · Educación hoy. Posibilidades mañana.
+                        <footer className="cmp-brand-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                            <IconDiamond size={14} color="#94a3b8" /> COMPASS · Educación hoy. Posibilidades mañana.
                         </footer>
                     </div>
                 );
