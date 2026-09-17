@@ -1135,3 +1135,29 @@
 .compass-infografia.exporting .cmp-standard-card { background: #f8fafc !important; }
 .compass-infografia.exporting .cmp-footer { background: #fdfbf7 !important; }
 .compass-infografia.exporting .cmp-footer-text p { color: #7a6336 !important; }
+
+
+
+
+/* ── Próximo paso estratégico (directivo) ── */
+.cmp-next-step {
+    padding: 10px 40px 30px;
+}
+.cmp-next-step p {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #334155;
+    margin: 0 0 16px;
+}
+.cmp-next-step-highlight {
+    background: #fdfbf7;
+    border-left: 4px solid #c5a059;
+    border-radius: 14px;
+    padding: 18px 22px;
+    font-weight: 700;
+    color: #7a6336 !important;
+    margin-top: 4px !important;
+}
+@media (max-width: 900px) {
+    .cmp-next-step { padding-left: 22px; padding-right: 22px; }
+}

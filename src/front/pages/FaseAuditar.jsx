@@ -779,6 +779,34 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             </div>
                         </section>
 
+                        {/* PRÓXIMO PASO ESTRATÉGICO (solo directivo) */}
+                        {esDirectivo && (
+                            <section className="cmp-next-step">
+                                <h4 className="cmp-block-title">Próximo paso estratégico</h4>
+                                <p>
+                                    Los principales marcos internacionales para la gobernanza de la inteligencia
+                                    artificial en educación coinciden en que una implementación responsable requiere
+                                    combinar liderazgo institucional, desarrollo de capacidades, supervisión humana y
+                                    mejora continua.
+                                </p>
+                                <p>
+                                    COMPASS le permitirá transformar los hallazgos de este diagnóstico en una hoja de
+                                    ruta institucional basada en evidencia. A medida que avance por las fases del modelo
+                                    ATLAS, podrá fortalecer progresivamente las capacidades de gobernanza, gestión de
+                                    riesgos, toma de decisiones y uso responsable de la IA en toda la institución.
+                                </p>
+                                <p>
+                                    Al mismo tiempo, la participación de la planta docente permitirá comprender cómo se
+                                    están viviendo estos procesos en la práctica, facilitando una visión más completa de
+                                    las fortalezas, necesidades y oportunidades de mejora de la comunidad educativa.
+                                </p>
+                                <p className="cmp-next-step-highlight">
+                                    La gobernanza efectiva se construye cuando las decisiones institucionales están
+                                    alineadas con las prácticas reales de enseñanza y aprendizaje.
+                                </p>
+                            </section>
+                        )}
+
                         {/* FOOTER */}
                         <section className="cmp-footer">
                             <div className="cmp-footer-text">
