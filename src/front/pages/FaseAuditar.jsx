@@ -491,34 +491,108 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             clon.classList.add("pdf-mode");
             clon.querySelectorAll(".cmp-no-print").forEach(el => el.remove());
 
+            // (a) Partir el texto de interpretación en párrafos independientes,
+            //     así el corte de página cae siempre entre párrafos.
+            clon.querySelectorAll(".cmp-interpret-text").forEach(nodoTexto => {
+                const partes = (nodoTexto.textContent || "")
+                    .split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
+                if (partes.length < 2) return;
+                const cont = document.createElement("div");
+                partes.forEach(t => {
+                    const p = document.createElement("p");
+                    p.className = "cmp-interpret-text pdf-block";
+                    p.style.margin = "0 0 12px";
+                    p.textContent = t;
+                    cont.appendChild(p);
+                });
+                nodoTexto.replaceWith(cont);
+            });
+
+            // (b) Marcar las unidades que NUNCA deben partirse entre páginas.
+            clon.querySelectorAll([
+                ".cmp-header",
+                ".cmp-hero-left",
+                ".cmp-hero-right",
+                ".cmp-block-title",
+                ".cmp-interpret-text",
+                ".cmp-disclaimer",
+                ".radar-compass-svg",
+                ".cmp-dim-row",
+                ".cmp-hallazgo-card",
+                ".cmp-standard-card",
+                ".cmp-next-step p",
+                ".cmp-footer",
+                ".cmp-brand-footer",
+            ].join(", ")).forEach(el => el.classList.add("pdf-block"));
+
             sandbox = document.createElement("div");
             sandbox.style.position = "fixed";
             sandbox.style.left = "-99999px";
             sandbox.style.top = "0";
             sandbox.style.width = "794px";
+            sandbox.style.zIndex = "-1";
+            clon.style.width = "794px";
             sandbox.style.background = "#ffffff";
             sandbox.appendChild(clon);
             document.body.appendChild(sandbox);
 
-            await new Promise(r => setTimeout(r, 100));
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            await new Promise(r => setTimeout(r, 350));
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF("p", "pt", "a4");
+            const PW = pdf.internal.pageSize.getWidth();
+            const PH = pdf.internal.pageSize.getHeight();
+            const M = 26;                       // margen en pt
+            const usableW = PW - M * 2;
+            const usableH = PH - M * 2;
 
-            await pdf.html(clon, {
-                x: 0,
-                y: 0,
-                width: 595,              // ancho A4 en pt
-                windowWidth: 794,        // ancho del clon en px
-                autoPaging: "text",      // pagina respetando líneas/bloques
-                html2canvas: {
-                    scale: 595 / 794,
+            // Solo los bloques "hoja" (si uno contiene a otro, se descarta el padre)
+            const todos = Array.from(clon.querySelectorAll(".pdf-block"));
+            const bloques = todos.filter(b => !todos.some(o => o !== b && o.contains(b)));
+
+            let y = M;
+            let paginaVacia = true;
+
+            for (const bloque of bloques) {
+                const canvas = await window.html2canvas(bloque, {
+                    scale: 2,
                     backgroundColor: "#ffffff",
                     useCORS: true,
-                    letterRendering: true,
-                },
-                margin: [0, 0, 0, 0],
-            });
+                    logging: false,
+                });
+                if (!canvas.width || !canvas.height) continue;
+
+                const escala = usableW / canvas.width;
+                const alturaPt = canvas.height * escala;
+                const img = canvas.toDataURL("image/jpeg", 0.95);
+
+                if (alturaPt <= usableH) {
+                    // Cabe entero: si no cabe en lo que queda, salta de página
+                    if (!paginaVacia && y + alturaPt > PH - M) {
+                        pdf.addPage();
+                        y = M;
+                    }
+                    pdf.addImage(img, "JPEG", M, y, usableW, alturaPt);
+                    y += alturaPt + 10;
+                    paginaVacia = false;
+                } else {
+                    // Bloque más alto que una hoja: se trocea, cada trozo en su hoja
+                    const pxPorPagina = Math.floor(usableH / escala);
+                    for (let off = 0; off < canvas.height; off += pxPorPagina) {
+                        const alto = Math.min(pxPorPagina, canvas.height - off);
+                        const trozo = document.createElement("canvas");
+                        trozo.width = canvas.width;
+                        trozo.height = alto;
+                        trozo.getContext("2d").drawImage(canvas, 0, -off);
+                        if (!paginaVacia) pdf.addPage();
+                        pdf.addImage(trozo.toDataURL("image/jpeg", 0.95), "JPEG",
+                            M, M, usableW, alto * escala);
+                        y = M + alto * escala + 10;
+                        paginaVacia = false;
+                    }
+                }
+            }
 
             const nombre = (userData.nombre_completo || "diagnostico").replace(/\s+/g, "_");
             pdf.save(`COMPASS_${nombre}.pdf`);

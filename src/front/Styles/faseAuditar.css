@@ -1134,8 +1134,8 @@
     page-break-inside: avoid !important;
 }
 
-/* Un poco de aire vertical entre secciones al paginar */
-.compass-infografia.pdf-mode section { padding-top: 14px !important; padding-bottom: 22px !important; }
+/* El aire entre bloques ahora lo controla el bucle de paginación en JS */
+.compass-infografia.pdf-mode section { padding-top: 0 !important; padding-bottom: 0 !important; }
 
 /* ── Colores hex forzados (nada de oklch heredado) ── */
 .compass-infografia.pdf-mode .cmp-header { background: #0f172a !important; }
@@ -1144,8 +1144,6 @@
 
 .compass-infografia.pdf-mode .cmp-hero-nivel,
 .compass-infografia.pdf-mode .cmp-block-title,
-.compass-infografia.pdf-mode .cmp-brand-title,
-.compass-infografia.pdf-mode .cmp-ident-nombre,
 .compass-infografia.pdf-mode .cmp-hallazgo-card h5 { color: #0f172a !important; }
 
 .compass-infografia.pdf-mode .cmp-hero-eyebrow,
@@ -1207,3 +1205,56 @@
     break-inside: avoid;
     page-break-inside: avoid;
 }
+
+/* ═══════════════════════════════════════════
+   PDF — correcciones finales (debe ir al final)
+   ═══════════════════════════════════════════ */
+
+/* 1. Header siempre blanco (gana por ir de último) */
+.compass-infografia.pdf-mode .cmp-header,
+.compass-infografia.pdf-mode .cmp-header * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+.compass-infografia.pdf-mode .cmp-brand-title {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    letter-spacing: 3px !important;
+}
+.compass-infografia.pdf-mode .cmp-ident-tag {
+    color: #f0d9a8 !important;
+    -webkit-text-fill-color: #f0d9a8 !important;
+    background: rgba(197, 160, 89, 0.25) !important;
+}
+
+/* 2. Radar con tamaño fijo (si no, colapsa y sale en blanco) */
+.compass-infografia.pdf-mode .radar-compass-svg {
+    width: 470px !important;
+    height: 355px !important;
+    max-width: none !important;
+    margin: 10px auto !important;
+}
+
+/* 3. Una sola columna: bloques más bajos = cortes más limpios */
+.compass-infografia.pdf-mode .cmp-hero,
+.compass-infografia.pdf-mode .cmp-analysis,
+.compass-infografia.pdf-mode .cmp-standards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+}
+
+/* 4. Unidad mínima que nunca se parte */
+.compass-infografia.pdf-mode .pdf-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+.compass-infografia.pdf-mode .cmp-hero-left,
+.compass-infografia.pdf-mode .cmp-hero-right,
+.compass-infografia.pdf-mode .cmp-interpret,
+.compass-infografia.pdf-mode .cmp-analysis,
+.compass-infografia.pdf-mode .cmp-standards,
+.compass-infografia.pdf-mode .cmp-next-step {
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+}
+.compass-infografia.pdf-mode .cmp-header { padding: 26px 40px !important; }
