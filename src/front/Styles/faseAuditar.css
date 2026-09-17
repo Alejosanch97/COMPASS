@@ -1094,3 +1094,44 @@
         height: 2px;
     }
 }
+
+
+/* ── Modo exportación PDF: fuerza colores planos (evita PDF en blanco) ── */
+.compass-infografia.exporting,
+.compass-infografia.exporting * {
+    color: #1e293b !important;
+    opacity: 1 !important;
+    filter: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-shadow: none !important;
+}
+.compass-infografia.exporting { background: #ffffff !important; }
+
+.compass-infografia.exporting .cmp-header { background: #0f172a !important; }
+.compass-infografia.exporting .cmp-header * { color: #ffffff !important; }
+.compass-infografia.exporting .cmp-ident-tag { color: #f0d9a8 !important; }
+
+.compass-infografia.exporting .cmp-hero-nivel,
+.compass-infografia.exporting .cmp-block-title,
+.compass-infografia.exporting .cmp-brand-title,
+.compass-infografia.exporting .cmp-ident-nombre,
+.compass-infografia.exporting .cmp-hallazgo-card h5 { color: #0f172a !important; }
+
+.compass-infografia.exporting .cmp-nivel-global { background: #c5a059 !important; color: #0f172a !important; }
+.compass-infografia.exporting .cmp-rango { background: #fdf8ee !important; color: #a17d33 !important; }
+
+.compass-infografia.exporting .cmp-hero-right { background: #1e293b !important; }
+.compass-infografia.exporting .cmp-hero-right * { color: #ffffff !important; }
+.compass-infografia.exporting .cmp-camino-label { color: #ffffff !important; }
+.compass-infografia.exporting .cmp-camino-you { background: #c5a059 !important; color: #0f172a !important; }
+.compass-infografia.exporting .cmp-camino-dot { background: #64748b !important; }
+.compass-infografia.exporting .cmp-camino-step.activo .cmp-camino-dot { background: #c5a059 !important; }
+
+.compass-infografia.exporting .cmp-disclaimer { background: #f8fafc !important; }
+.compass-infografia.exporting .cmp-hallazgo-card.fortalezas { background: #f0fdf4 !important; }
+.compass-infografia.exporting .cmp-hallazgo-card.oportunidades { background: #fefce8 !important; }
+.compass-infografia.exporting .cmp-hallazgo-card.riesgos { background: #fef2f2 !important; }
+.compass-infografia.exporting .cmp-dim-row,
+.compass-infografia.exporting .cmp-standard-card { background: #f8fafc !important; }
+.compass-infografia.exporting .cmp-footer { background: #fdfbf7 !important; }
+.compass-infografia.exporting .cmp-footer-text p { color: #7a6336 !important; }

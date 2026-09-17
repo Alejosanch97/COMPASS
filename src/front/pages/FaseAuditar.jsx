@@ -427,7 +427,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         }
     };
 
-        // ── Carga jsPDF una sola vez (html-to-image se importa arriba) ──
+    // ── Carga jsPDF una sola vez (html-to-image se importa arriba) ──
     const cargarScript = (src) => new Promise((resolve, reject) => {
         if ([...document.scripts].some(s => s.src === src)) return resolve();
         const s = document.createElement("script");
@@ -437,7 +437,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         document.body.appendChild(s);
     });
 
-    // ── Descarga la infografía como PDF (con html-to-image) ──
+    // ── Descarga la infografía como PDF (nodo aislado + colores forzados) ──
     const descargarPDF = async () => {
         const nodo = infografiaRef.current;
         if (!nodo) return;
@@ -447,32 +447,47 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading(),
         });
+
+        let sandbox = null;
         try {
             const { toPng } = await import("html-to-image");
             await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
 
-            // Oculta los botones (no deben salir en el PDF)
-            const noPrint = nodo.querySelectorAll(".cmp-no-print");
-            noPrint.forEach(el => (el.style.visibility = "hidden"));
+            // 1. Clonamos la infografía y le quitamos los botones
+            const clon = nodo.cloneNode(true);
+            clon.classList.add("exporting");
+            clon.querySelectorAll(".cmp-no-print").forEach(el => el.remove());
 
-            const dataUrl = await toPng(nodo, {
+            // 2. Contenedor aislado fuera de la vista (no hereda estilos globales)
+            sandbox = document.createElement("div");
+            sandbox.style.position = "fixed";
+            sandbox.style.left = "-99999px";
+            sandbox.style.top = "0";
+            sandbox.style.width = "1100px";
+            sandbox.style.background = "#ffffff";
+            sandbox.style.color = "#1e293b";
+            sandbox.appendChild(clon);
+            document.body.appendChild(sandbox);
+
+            await new Promise(r => setTimeout(r, 80));
+
+            // 3. Capturamos el clon aislado
+            const dataUrl = await toPng(clon, {
                 pixelRatio: 2,
                 backgroundColor: "#ffffff",
+                width: 1100,
                 cacheBust: true,
             });
 
-            noPrint.forEach(el => (el.style.visibility = ""));
-
+            // 4. Armamos el PDF
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF("p", "mm", "a4");
             const pw = pdf.internal.pageSize.getWidth();
             const ph = pdf.internal.pageSize.getHeight();
 
-            // Necesitamos las dimensiones reales de la imagen generada
             const img = new Image();
             img.src = dataUrl;
             await new Promise(res => { img.onload = res; });
-
             const imgH = (img.height * pw) / img.width;
 
             let heightLeft = imgH, position = 0;
@@ -491,6 +506,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         } catch (e) {
             console.error(e);
             Swal.fire("Error", "No se pudo generar el PDF. Intenta de nuevo.", "error");
+        } finally {
+            if (sandbox) document.body.removeChild(sandbox);
         }
     };
 
