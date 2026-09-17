@@ -427,7 +427,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         }
     };
 
-    // ── Carga un script externo solo una vez ──
+        // ── Carga jsPDF una sola vez (html-to-image se importa arriba) ──
     const cargarScript = (src) => new Promise((resolve, reject) => {
         if ([...document.scripts].some(s => s.src === src)) return resolve();
         const s = document.createElement("script");
@@ -437,7 +437,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
         document.body.appendChild(s);
     });
 
-    // ── Descarga la infografía como PDF ──
+    // ── Descarga la infografía como PDF (con html-to-image) ──
     const descargarPDF = async () => {
         const nodo = infografiaRef.current;
         if (!nodo) return;
@@ -448,58 +448,40 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             didOpen: () => Swal.showLoading(),
         });
         try {
-            await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+            const { toPng } = await import("html-to-image");
             await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
 
-            const canvas = await window.html2canvas(nodo, {
-                scale: 2,
+            // Oculta los botones (no deben salir en el PDF)
+            const noPrint = nodo.querySelectorAll(".cmp-no-print");
+            noPrint.forEach(el => (el.style.visibility = "hidden"));
+
+            const dataUrl = await toPng(nodo, {
+                pixelRatio: 2,
                 backgroundColor: "#ffffff",
-                useCORS: true,
-                logging: false,
-                windowWidth: nodo.scrollWidth,
-                ignoreElements: (el) => el.classList && el.classList.contains("cmp-no-print"),
-                onclone: (doc) => {
-                    // Fuerza colores planos en la copia que se rasteriza,
-                    // porque html2canvas no interpreta oklch/color-mix/var().
-                    const root = doc.querySelector(".compass-infografia");
-                    if (!root) return;
-                    root.style.background = "#ffffff";
-                    root.style.boxShadow = "none";
-
-                    const todos = root.querySelectorAll("*");
-                    todos.forEach((el) => {
-                        const cs = window.getComputedStyle(el);
-                        // Normaliza texto a un color legible si viene translúcido/raro
-                        const col = cs.color;
-                        if (col && col.includes("oklch")) el.style.color = "#1e293b";
-                        // Fuerza opacidad completa
-                        if (cs.opacity && parseFloat(cs.opacity) < 1) el.style.opacity = "1";
-                        // Filtros grayscale (por la clase .locked u otras)
-                        if (cs.filter && cs.filter !== "none") el.style.filter = "none";
-                    });
-
-                    // Asegura contraste mínimo en textos clave
-                    doc.querySelectorAll(".cmp-interpret-text, .cmp-dim-name, .cmp-hero-eyebrow, .cmp-footer-text p, .cmp-standard-info span")
-                        .forEach(el => { if (!el.style.color) el.style.color = "#334155"; });
-                    doc.querySelectorAll(".cmp-hero-nivel, .cmp-block-title, .cmp-brand-title, .cmp-ident-nombre, .cmp-hallazgo-card h5")
-                        .forEach(el => { el.style.color = "#0f172a"; });
-                },
+                cacheBust: true,
             });
 
-            const imgData = canvas.toDataURL("image/png");
+            noPrint.forEach(el => (el.style.visibility = ""));
+
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF("p", "mm", "a4");
             const pw = pdf.internal.pageSize.getWidth();
             const ph = pdf.internal.pageSize.getHeight();
-            const imgH = (canvas.height * pw) / canvas.width;
+
+            // Necesitamos las dimensiones reales de la imagen generada
+            const img = new Image();
+            img.src = dataUrl;
+            await new Promise(res => { img.onload = res; });
+
+            const imgH = (img.height * pw) / img.width;
 
             let heightLeft = imgH, position = 0;
-            pdf.addImage(imgData, "PNG", 0, position, pw, imgH);
+            pdf.addImage(dataUrl, "PNG", 0, position, pw, imgH);
             heightLeft -= ph;
             while (heightLeft > 0) {
                 position -= ph;
                 pdf.addPage();
-                pdf.addImage(imgData, "PNG", 0, position, pw, imgH);
+                pdf.addImage(dataUrl, "PNG", 0, position, pw, imgH);
                 heightLeft -= ph;
             }
 
@@ -508,7 +490,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             Swal.close();
         } catch (e) {
             console.error(e);
-            Swal.fire("Error", "No se pudo generar el PDF. Verifica tu conexión a internet.", "error");
+            Swal.fire("Error", "No se pudo generar el PDF. Intenta de nuevo.", "error");
         }
     };
 
