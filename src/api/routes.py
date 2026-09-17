@@ -827,6 +827,58 @@ def calcular_perfil_dimensiones(usuario_id):
     }
 
 
+
+# ── Dimensiones del formulario DIRECTIVO (mapean por orden_pregunta) ──
+DIMENSIONES_AUDITAR_DIRECTIVO = {
+    "Gobernanza y política":  {"ordenes": [3, 4, 5, 6, 7],       "max": 34},
+    "Gestión de riesgos":     {"ordenes": [8, 9, 10, 11],        "max": 24},
+    "Datos y cumplimiento":   {"ordenes": [12, 13, 14, 15, 16],  "max": 24},
+    "Visión estratégica":     {"ordenes": [17, 18, 19],          "max": 18},
+}
+
+
+def calcular_perfil_dimensiones_directivo(usuario_id):
+    """Igual que calcular_perfil_dimensiones pero con las 4 dimensiones
+    del formulario DIRECTIVO (Gobernanza, Riesgos, Datos, Visión)."""
+    filas = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
+        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
+    ).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == usuario_id,
+        Formulario.fase_atlas == "AUDITAR"
+    ).all()
+
+    puntos_por_orden = {}
+    for resp, preg in filas:
+        if preg.orden_pregunta is None:
+            continue
+        puntos_por_orden[preg.orden_pregunta] = \
+            puntos_por_orden.get(preg.orden_pregunta, 0) + float(resp.puntos_ganados or 0)
+
+    dimensiones = []
+    for nombre, cfg in DIMENSIONES_AUDITAR_DIRECTIVO.items():
+        obtenido = sum(puntos_por_orden.get(o, 0) for o in cfg["ordenes"])
+        maximo = cfg["max"]
+        pct = round((obtenido / maximo) * 100, 1) if maximo else 0
+        dimensiones.append({
+            "dimension": nombre,
+            "obtenido": round(obtenido, 1),
+            "maximo": maximo,
+            "porcentaje": pct,
+            "nivel": _nivel_por_porcentaje(pct),
+        })
+
+    fortalezas = [d["dimension"] for d in dimensiones if d["nivel"] == "Avanzado"]
+    oportunidades = [d["dimension"] for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
+
+    return {
+        "dimensiones": dimensiones,
+        "fortalezas": fortalezas,
+        "oportunidades": oportunidades,
+    }
+
+
 # ── ASIGNAR / DESASIGNAR formularios y retos existentes ─────────────────
 
 @api.route('/empresas/<int:eid>/formularios/<int:fid>/asignar', methods=['POST'])
@@ -1272,8 +1324,11 @@ def crear_respuestas_batch():
 @api.route('/auditar/mi-perfil-dimensiones', methods=['GET'])
 @jwt_required()
 def auditar_mi_perfil_dimensiones():
-    """Perfil cualitativo por dimensiones del docente actual (radar COMPASS)."""
+    """Perfil cualitativo por dimensiones del usuario actual (radar COMPASS).
+    Docente y directivo usan mapas de dimensiones distintos."""
     u = get_usuario_actual()
+    if u.rol == "DIRECTIVO":
+        return jsonify(calcular_perfil_dimensiones_directivo(u.id)), 200
     return jsonify(calcular_perfil_dimensiones(u.id)), 200
 
 @api.route('/mi-empresa/formularios', methods=['GET'])

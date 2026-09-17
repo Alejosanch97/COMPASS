@@ -530,9 +530,11 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                     <div className="layer-badge">A2</div>
                     <div className="layer-content">
                         <h3>Capa 2: Diagnóstico institucional basado en evidencia</h3>
-                        <p className="layer-microtext">
-                            Evalúa la capacidad de tu institución para liderar, gestionar riesgos y establecer lineamientos para el uso responsable de la inteligencia artificial.
-                        </p>
+                        {userData.rol === "DIRECTIVO" && (
+                            <p className="layer-microtext">
+                                Evalúa la capacidad de tu institución para liderar, gestionar riesgos y establecer lineamientos para el uso responsable de la inteligencia artificial.
+                            </p>
+                        )}
 
                         {sinFormulariosAsignados ? (
                             <div className="status-indicator-box">
@@ -594,11 +596,17 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 };
 
                 const RIESGO_POR_DIM = {
+                    // Docente
                     "Integración pedagógica": "Uso de IA desconectado de objetivos curriculares.",
                     "Pensamiento crítico": "Escasa evaluación crítica de las respuestas de IA.",
                     "Gestión de riesgos y datos": "Manejo de datos sin criterios de privacidad claros.",
                     "Gobernanza institucional": "Falta de lineamientos institucionales claros.",
                     "Visión y madurez": "Adopción de IA sin una visión estratégica.",
+                    // Directivo
+                    "Gobernanza y política": "Ausencia de política institucional formal y supervisión humana obligatoria.",
+                    "Gestión de riesgos": "No hay protocolos ni evaluación de riesgos antes de implementar IA.",
+                    "Datos y cumplimiento": "Manejo de datos (incluidos menores) sin protocolos verificables.",
+                    "Visión estratégica": "Decisiones sobre IA sin criterio pedagógico ni evaluación de impacto.",
                 };
                 const riesgos = (perfilDimensiones?.oportunidades || [])
                     .map(o => RIESGO_POR_DIM[o]).filter(Boolean);
@@ -667,11 +675,11 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             </div>
                         </section>
 
-                        {/* RADAR + HALLAZGOS (docente con perfil) */}
-                        {perfilDimensiones && !esDirectivo && (
+                        {/* RADAR + HALLAZGOS (docente y directivo) */}
+                        {perfilDimensiones && perfilDimensiones.dimensiones?.length > 0 && (
                             <section className="cmp-analysis">
                                 <div className="cmp-radar-box">
-                                    <h4 className="cmp-block-title">Radar COMPASS — Perfil por dimensiones</h4>
+                                    <h4 className="cmp-block-title">{esDirectivo ? "Radar de gobernanza institucional" : "Radar COMPASS — Perfil por dimensiones"}</h4>
                                     <RadarCompass dimensiones={perfilDimensiones.dimensiones} />
                                     <div className="cmp-dim-list">
                                         {perfilDimensiones.dimensiones.map(d => (
