@@ -1264,3 +1264,19 @@
     padding-right: 40px !important;
 }
 .compass-infografia.pdf-mode .cmp-header { padding: 26px 40px !important; }
+
+
+/* ── COMPASS · escala única + logo + camino (nuevo) ── */
+.cmp-logo-img { height: 46px; width: auto; display: block; object-fit: contain; }
+.cmp-hero-nivel { transition: color .2s ease; }
+
+.cmp-nivel-escala { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.cmp-escala-dot { width: 12px; height: 12px; border-radius: 50%; background: #e2e8f0; transition: transform .2s ease; }
+.cmp-escala-dot.activo { transform: scale(1.35); box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+
+.cmp-camino-img-wrap { position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(15,23,42,.12); }
+.cmp-camino-img { display: block; width: 100%; height: auto; object-fit: cover; }
+.cmp-camino-tag { position: absolute; left: 14px; bottom: 14px; color: #fff; font-weight: 800; font-size: .82rem; padding: 7px 14px; border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.25); letter-spacing: .2px; }
+
+.cmp-dim-chip { font-weight: 800; font-size: .8rem; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.cmp-footer-logo { height: 20px; width: auto; object-fit: contain; opacity: .9; }

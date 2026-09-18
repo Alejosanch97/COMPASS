@@ -3,14 +3,30 @@ import React, { useState, useEffect } from "react";
 import "../Styles/faseAuditar.css";
 import Swal from "sweetalert2";
 
+// ── Recursos de marca ──
+const LOGO_COMPASS = "/logo3.png"; // está en /public → se sirve desde la raíz
+// ⚠️ Para el PDF conviene DESCARGAR la imagen a /public (ver nota al final):
+const IMG_CAMINO = "/camino.jpeg";
 
 
 
-// ── Color de nivel para el radar COMPASS ──
-const nivelColorCompass = (nivel) =>
-    nivel === "Avanzado" ? "#38a169" :
-        nivel === "Intermedio" ? "#3182ce" :
-            nivel === "Básico" ? "#dd6b20" : "#e53e3e";
+// ── ESCALA ÚNICA DE MADUREZ COMPASS ──
+// Un solo lenguaje para todo el diagnóstico (docente y directivo).
+// Reemplaza la vieja mezcla Inicial / Básico / Intermedio / Avanzado.
+const ESCALA_MADUREZ = [
+    { nombre: "Exploración", color: "#e11d48" }, // 0
+    { nombre: "Integración", color: "#dd6b20" }, // 1
+    { nombre: "Consolidación", color: "#3182ce" }, // 2
+    { nombre: "Liderazgo", color: "#38a169" }, // 3
+    { nombre: "Transformación", color: "#c5a059" }, // 4
+];
+
+// % (0-100) → etapa de madurez (0-4). Mismos cortes que la interpretación COMPASS.
+const etapaPorPorcentaje = (pct) =>
+    pct >= 90 ? 4 : pct >= 75 ? 3 : pct >= 60 ? 2 : pct >= 40 ? 1 : 0;
+
+// % → { nombre, color } de la escala única
+const madurezPorPorcentaje = (pct) => ESCALA_MADUREZ[etapaPorPorcentaje(pct || 0)];
 
 // ── Iconos SVG (reemplazan emojis para que el PDF no los deforme) ──
 const IconDiamond = ({ size = 22, color = "#c5a059" }) => (
@@ -93,8 +109,8 @@ const RadarCompass = ({ dimensiones = [] }) => {
                             {l2 && <tspan x={lx} dy="13">{l2}</tspan>}
                         </text>
                         <text x={lx} y={ly + (l2 ? 21 : 15)} textAnchor={anchor}
-                            fontSize="9.5" fontWeight="800" fill={nivelColorCompass(d.nivel)}>
-                            {d.nivel}
+                            fontSize="9.5" fontWeight="800" fill={madurezPorPorcentaje(d.porcentaje || 0).color}>
+                            {madurezPorPorcentaje(d.porcentaje || 0).nombre}
                         </text>
                     </g>
                 );
@@ -171,18 +187,19 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
 
     const puntajeFinal = React.useMemo(() => obtenerPuntajeDirecto(), [respuestasUsuario, formulariosFase]);
 
-    // ── NIVEL GLOBAL a partir del PROMEDIO de las dimensiones ──
-    const nivelGlobalPromedio = React.useMemo(() => {
-        if (!perfilDimensiones || !perfilDimensiones.dimensiones?.length) return null;
-        const dims = perfilDimensiones.dimensiones;
-        const promedio = dims.reduce((acc, d) => acc + (d.porcentaje || 0), 0) / dims.length;
-        let nivel, color;
-        if (promedio >= 80) { nivel = "Avanzado"; color = "#38a169"; }
-        else if (promedio >= 55) { nivel = "Intermedio"; color = "#3182ce"; }
-        else if (promedio >= 30) { nivel = "Básico"; color = "#dd6b20"; }
-        else { nivel = "Inicial"; color = "#e53e3e"; }
-        return { nivel, color, promedio: Math.round(promedio) };
-    }, [perfilDimensiones]);
+    // ── PUNTAJE ÚNICO DE MADUREZ ──
+    // Si hay dimensiones usamos su promedio (así el headline concuerda con el radar);
+    // si no, caemos al puntaje directo del formulario. Todo el informe sale de aquí.
+    const puntajeMadurez = React.useMemo(() => {
+        if (perfilDimensiones && perfilDimensiones.dimensiones?.length) {
+            const dims = perfilDimensiones.dimensiones;
+            return dims.reduce((acc, d) => acc + (d.porcentaje || 0), 0) / dims.length;
+        }
+        return puntajeFinal;
+    }, [perfilDimensiones, puntajeFinal]);
+
+    const madurezGlobal = React.useMemo(
+        () => madurezPorPorcentaje(puntajeMadurez), [puntajeMadurez]);
 
     // ── INTERPRETACIONES COMPASS — DOCENTE (texto original sin modificar) ──
     const getCompassData = (score) => {
@@ -384,9 +401,9 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
 
     const compass = React.useMemo(() => {
         return userData.rol === "DIRECTIVO"
-            ? getCompassDataDirectivo(puntajeFinal)
-            : getCompassData(puntajeFinal);
-    }, [puntajeFinal, userData.rol]);
+            ? getCompassDataDirectivo(puntajeMadurez)
+            : getCompassData(puntajeMadurez);
+    }, [puntajeMadurez, userData.rol]);
 
     const checkFormulariosCompletos = () => {
         if (formulariosFase.length === 0) return false;
@@ -402,7 +419,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
     useEffect(() => {
         if (isProcessComplete && !loading) {
             Swal.fire({
-                title: `Nivel: ${compass.nivel}`,
+                title: `Nivel: ${madurezGlobal.nombre}`,
                 text: userData.rol === "DIRECTIVO"
                     ? "Se ha completado el diagnóstico de gobernanza institucional."
                     : "Has completado con éxito la primera etapa de Auditoría ATLAS.",
@@ -719,15 +736,11 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             {isProcessComplete && (() => {
                 const fechaHoy = new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
                 const esDirectivo = userData.rol === "DIRECTIVO";
-                const CAMINO = ["Exploración", "Integración", "Consolidación", "Liderazgo", "Transformación"];
-                const etapaActual = puntajeFinal >= 90 ? 4 : puntajeFinal >= 75 ? 3 : puntajeFinal >= 60 ? 2 : puntajeFinal >= 40 ? 1 : 0;
+                const etapaActual = etapaPorPorcentaje(puntajeMadurez);
 
                 const nivelEstandar = (offset = 0) => {
                     const e = Math.max(0, etapaActual - offset);
-                    return e >= 3 ? { t: "Consolidado", c: "#38a169" }
-                        : e >= 2 ? { t: "En desarrollo", c: "#3182ce" }
-                            : e >= 1 ? { t: "En progreso", c: "#dd6b20" }
-                                : { t: "Inicial", c: "#e53e3e" };
+                    return { t: ESCALA_MADUREZ[e].nombre, c: ESCALA_MADUREZ[e].color };
                 };
 
                 const RIESGO_POR_DIM = {
@@ -752,10 +765,10 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                         {/* HEADER */}
                         <header className="cmp-header">
                             <div className="cmp-header-brand">
-                                <div className="cmp-logo"><IconDiamond size={28} /></div>
+                                <img src={LOGO_COMPASS} alt="COMPASS" className="cmp-logo-img" />
                                 <div>
                                     <h1 className="cmp-brand-title">COMPASS</h1>
-                                    <p className="cmp-brand-sub">Gobernanza y Sentido Crítico de la IA</p>
+                                    <p className="cmp-brand-sub">IA Responsable</p>
                                 </div>
                             </div>
                             <div className="cmp-header-ident">
@@ -772,31 +785,28 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                         {/* HERO: nivel + camino */}
                         <section className="cmp-hero">
                             <div className="cmp-hero-left">
-                                <p className="cmp-hero-eyebrow">Tu nivel de uso responsable de IA</p>
-                                <h2 className="cmp-hero-nivel">{compass.nivel}</h2>
-                                <div className="cmp-nivel-global" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <IconChart /> Nivel global: <strong>{nivelGlobalPromedio ? nivelGlobalPromedio.nivel : compass.nivel}</strong>
+                                <p className="cmp-hero-eyebrow">Tu nivel de madurez en IA responsable</p>
+                                <h2 className="cmp-hero-nivel" style={{ color: madurezGlobal.color }}>
+                                    {madurezGlobal.nombre}
+                                </h2>
+                                <div className="cmp-nivel-escala">
+                                    {ESCALA_MADUREZ.map((e, i) => (
+                                        <span key={e.nombre}
+                                            className={`cmp-escala-dot${i === etapaPorPorcentaje(puntajeMadurez) ? " activo" : ""}`}
+                                            style={{ background: i <= etapaPorPorcentaje(puntajeMadurez) ? e.color : "#e2e8f0" }}
+                                            title={e.nombre} />
+                                    ))}
                                 </div>
                             </div>
 
                             <div className="cmp-hero-right">
                                 <h3 className="cmp-camino-title">Un camino de crecimiento profesional y colectivo</h3>
-                                <div className="cmp-camino">
-                                    {CAMINO.map((_, idx) => {
-                                        const i = CAMINO.length - 1 - idx; // de arriba (más alto) a abajo
-                                        const nombre = CAMINO[i];
-                                        const activo = i === etapaActual;
-                                        const alcanzado = i <= etapaActual;
-                                        return (
-                                            <div key={nombre} className={`cmp-camino-step${activo ? " activo" : ""}${alcanzado ? " alcanzado" : ""}`}>
-                                                <span className="cmp-camino-dot" />
-                                                <span className="cmp-camino-label">{nombre}</span>
-                                                {activo && <span className="cmp-camino-you">Tú estás aquí</span>}
-                                            </div>
-                                        );
-                                    })}
+                                <div className="cmp-camino-img-wrap">
+                                    <img src={IMG_CAMINO} alt="Camino de crecimiento COMPASS" className="cmp-camino-img" />
+                                    <span className="cmp-camino-tag" style={{ background: madurezGlobal.color }}>
+                                        Tú estás aquí · {ESCALA_MADUREZ[etapaActual].nombre}
+                                    </span>
                                 </div>
-                                <p className="cmp-camino-foot">Misma educación. Nuevas posibilidades.</p>
                             </div>
                         </section>
 
@@ -816,15 +826,19 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                     <h4 className="cmp-block-title">{esDirectivo ? "Radar de gobernanza institucional" : "Radar COMPASS — Perfil por dimensiones"}</h4>
                                     <RadarCompass dimensiones={perfilDimensiones.dimensiones} />
                                     <div className="cmp-dim-list">
-                                        {perfilDimensiones.dimensiones.map(d => (
-                                            <div key={d.dimension} className="cmp-dim-row"
-                                                style={{ borderLeftColor: nivelColorCompass(d.nivel) }}>
-                                                <span className="cmp-dim-name">{d.dimension}</span>
-                                                <span className="cmp-dim-nivel" style={{ color: nivelColorCompass(d.nivel) }}>
-                                                    {d.nivel} · {d.porcentaje}%
-                                                </span>
-                                            </div>
-                                        ))}
+                                        {perfilDimensiones.dimensiones.map(d => {
+                                            const m = madurezPorPorcentaje(d.porcentaje || 0);
+                                            return (
+                                                <div key={d.dimension} className="cmp-dim-row"
+                                                    style={{ borderLeftColor: m.color }}>
+                                                    <span className="cmp-dim-name">{d.dimension}</span>
+                                                    <span className="cmp-dim-chip"
+                                                        style={{ color: m.color, background: `${m.color}18` }}>
+                                                        {m.nombre}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -929,8 +943,9 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             </div>
                         </section>
 
-                        <footer className="cmp-brand-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                            <IconDiamond size={14} color="#94a3b8" /> COMPASS · Educación hoy. Posibilidades mañana.
+                        <footer className="cmp-brand-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                            <img src={LOGO_COMPASS} alt="COMPASS" className="cmp-footer-logo" />
+                            <span>COMPASS · Educación hoy. Posibilidades mañana.</span>
                         </footer>
                     </div>
                 );
