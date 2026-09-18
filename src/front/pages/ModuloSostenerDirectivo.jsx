@@ -154,6 +154,7 @@ const ModuloSostenerDirectivo = ({ userData, apiFetch, onNavigate }) => {
 
     const [cierreStep, setCierreStep] = useState(1);
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const cierreTopRef = useRef(null);
 
     const initialFormDataCierre = {
         reflexionPuntoPartida: "", estadoCumplimientoAsegurar: "", analisisImplementacion: "",
@@ -448,6 +449,7 @@ const ModuloSostenerDirectivo = ({ userData, apiFetch, onNavigate }) => {
             return;
         }
         setCierreStep(prev => prev + 1);
+        cierreTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const handleFinalSaveCierre = async () => {
@@ -990,7 +992,7 @@ const ModuloSostenerDirectivo = ({ userData, apiFetch, onNavigate }) => {
 
             {/* ======================== CIERRE DE CICLO ======================== */}
             {view === "cierre" && (
-                <div className="sostener-cuestionario animate-fade-in cierre-full-view">
+                <div ref={cierreTopRef} className="sostener-cuestionario animate-fade-in cierre-full-view">
                     <div className="cierre-nav-header">
                         <button className="btn-sos-back" onClick={() => setView("menu")}>⬅ Salir del Cierre</button>
                         <div className="cierre-stepper">
@@ -1579,7 +1581,10 @@ const ModuloSostenerDirectivo = ({ userData, apiFetch, onNavigate }) => {
 
                         <div className="cierre-actions-footer">
                             {cierreStep > 1 && (
-                                <button className="btn-sos-secondary" onClick={() => setCierreStep(cierreStep - 1)}>Anterior</button>
+                                <button className="btn-sos-secondary" onClick={() => {
+                                    setCierreStep(cierreStep - 1);
+                                    cierreTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }}>Anterior</button>
                             )}
                             <button className="btn-sos-primary btn-large" disabled={loading} onClick={handleNextStep}>
                                 {loading ? "Guardando..." : cierreStep === 5
