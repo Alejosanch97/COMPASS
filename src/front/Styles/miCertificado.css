@@ -1,63 +1,64 @@
-/* Certificado del alumno + acciones */
+/* Certificado del alumno + acciones — Paleta ATLAS (azul · dorado · blanco) */
 .cert-container {
     max-width: 640px;
     margin: 24px auto;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-.cert-loading { text-align: center; color: #6b7c7a; padding: 40px; }
+.cert-loading { text-align: center; color: #64748b; padding: 40px; }
 
 /* ---- Estado bloqueado ---- */
 .cert-bloqueado {
     max-width: 520px;
     margin: 24px auto;
     background: #fff;
-    border: 1px dashed #cdd8d6;
+    border: 1px dashed #d9cba9;
     border-radius: 16px;
     padding: 28px;
     text-align: center;
-    font-family: system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
 }
-.cert-bloqueado h3 { color: #14807a; margin-bottom: 8px; }
-.cert-bloqueado p { color: #55645f; font-size: 14px; line-height: 1.5; }
+.cert-bloqueado h3 { color: #b08a34; margin-bottom: 8px; }
+.cert-bloqueado p { color: #64748b; font-size: 14px; line-height: 1.5; }
+.cert-bloqueado strong { color: #1e293b; }
 .cert-barra {
-    height: 10px; background: #e6edeb; border-radius: 999px;
+    height: 10px; background: #eef1f6; border-radius: 999px;
     overflow: hidden; margin-top: 16px;
 }
 .cert-barra-fill {
-    height: 100%; background: linear-gradient(90deg, #16a394, #14807a);
+    height: 100%; background: linear-gradient(90deg, #d9b96a, #c5a059);
     transition: width .4s ease;
 }
 
 /* ---- Diploma (se exporta a PNG) ---- */
 .cert-diploma {
     position: relative;
-    background: linear-gradient(155deg, #ffffff 0%, #f3faf8 100%);
-    border: 1px solid #e0eeeb;
+    background: linear-gradient(155deg, #ffffff 0%, #fbf7ee 100%);
+    border: 1px solid #ece1c6;
     border-radius: 18px;
     padding: 40px 44px 32px;
     text-align: center;
-    box-shadow: 0 10px 34px rgba(20, 80, 75, 0.10);
+    box-shadow: 0 10px 34px rgba(15, 23, 42, 0.12);
     overflow: hidden;
 }
 .cert-topbar {
     position: absolute; top: 0; left: 0; right: 0; height: 6px;
-    background: linear-gradient(90deg, #16a394, #14807a, #0e5f5a);
+    background: linear-gradient(90deg, #e0c47e, #c5a059, #9c7a34);
 }
 .cert-brand {
-    font-weight: 700; letter-spacing: 4px; color: #14807a;
+    font-weight: 700; letter-spacing: 4px; color: #c5a059;
     font-size: 15px; margin-bottom: 20px;
 }
 .cert-eyebrow {
-    font-size: 11px; letter-spacing: 2px; color: #8aa09c;
+    font-size: 11px; letter-spacing: 2px; color: #94a3b8;
     text-transform: uppercase; margin-bottom: 6px;
 }
 .cert-nombre {
-    font-size: 28px; color: #12302d; margin: 4px 0 10px;
+    font-size: 28px; color: #0f172a; margin: 4px 0 10px;
     font-weight: 700;
 }
-.cert-texto { font-size: 13px; color: #6b7c7a; margin-bottom: 4px; }
+.cert-texto { font-size: 13px; color: #64748b; margin-bottom: 4px; }
 .cert-programa {
-    font-size: 18px; color: #14807a; margin: 4px 0 18px;
+    font-size: 18px; color: #b08a34; margin: 4px 0 18px;
     font-weight: 600; line-height: 1.35;
 }
 
@@ -66,30 +67,30 @@
     margin-bottom: 20px;
 }
 .cert-chip {
-    background: #e3f3f0; color: #14807a; border-radius: 999px;
+    background: #f7f1e3; color: #a07d2f; border-radius: 999px;
     padding: 3px 11px; font-size: 11px; font-weight: 600; letter-spacing: .5px;
 }
 
 .cert-meta {
     display: flex; justify-content: center; gap: 48px;
-    padding: 16px 0; border-top: 1px solid #eaf2f0;
-    border-bottom: 1px solid #eaf2f0; margin-bottom: 18px;
+    padding: 16px 0; border-top: 1px solid #eef1f6;
+    border-bottom: 1px solid #eef1f6; margin-bottom: 18px;
 }
 .cert-meta div { display: flex; flex-direction: column; gap: 2px; }
-.cert-meta-label { font-size: 10px; color: #96a6a2; letter-spacing: 1px; text-transform: uppercase; }
-.cert-meta-val { font-size: 16px; color: #12302d; font-weight: 700; }
+.cert-meta-label { font-size: 10px; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
+.cert-meta-val { font-size: 16px; color: #0f172a; font-weight: 700; }
 
 .cert-footer {
     display: flex; align-items: center; justify-content: center; gap: 10px;
 }
 .cert-seal {
     width: 30px; height: 30px; border-radius: 50%;
-    background: #16a394; color: #fff; font-size: 15px;
+    background: #c5a059; color: #0f172a; font-size: 15px; font-weight: 800;
     display: flex; align-items: center; justify-content: center;
 }
 .cert-footer-txt { display: flex; flex-direction: column; text-align: left; }
-.cert-footer-txt span:first-child { font-size: 12px; color: #55645f; }
-.cert-id { font-size: 12px; font-weight: 700; color: #14807a; letter-spacing: 1px; }
+.cert-footer-txt span:first-child { font-size: 12px; color: #64748b; }
+.cert-id { font-size: 12px; font-weight: 700; color: #b08a34; letter-spacing: 1px; }
 
 /* ---- Botones ---- */
 .cert-acciones {
@@ -103,11 +104,12 @@
     transition: transform .1s ease, box-shadow .2s ease;
 }
 .cert-btn:active { transform: translateY(1px); }
-.cert-btn-download { background: #14807a; color: #fff; }
-.cert-btn-linkedin { background: #0a66c2; color: #fff; }
-.cert-btn-verify { background: #eef4f3; color: #14807a; }
+.cert-btn-download { background: #1e293b; color: #fff; }
+.cert-btn-download:hover { box-shadow: 0 6px 18px rgba(30,41,59,.25); }
+.cert-btn-linkedin { background: #0a66c2; color: #fff; } /* azul LinkedIn: marca de la plataforma */
+.cert-btn-verify { background: #f4f1e9; color: #b08a34; border: 1px solid #ece1c6; }
 
 .cert-hint {
-    text-align: center; font-size: 12px; color: #8aa09c;
+    text-align: center; font-size: 12px; color: #94a3b8;
     margin-top: 16px; line-height: 1.5;
 }

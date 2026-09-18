@@ -802,7 +802,8 @@ def calcular_perfil_dimensiones(usuario_id):
         if preg.orden_pregunta is None:
             continue
         puntos_por_orden[preg.orden_pregunta] = \
-            puntos_por_orden.get(preg.orden_pregunta, 0) + float(resp.puntos_ganados or 0)
+            puntos_por_orden.get(preg.orden_pregunta, 0) + \
+            float(resp.puntos_ganados or 0)
 
     dimensiones = []
     for nombre, cfg in DIMENSIONES_AUDITAR.items():
@@ -817,15 +818,16 @@ def calcular_perfil_dimensiones(usuario_id):
             "nivel": _nivel_por_porcentaje(pct),
         })
 
-    fortalezas = [d["dimension"] for d in dimensiones if d["nivel"] == "Avanzado"]
-    oportunidades = [d["dimension"] for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
+    fortalezas = [d["dimension"]
+                  for d in dimensiones if d["nivel"] == "Avanzado"]
+    oportunidades = [d["dimension"]
+                     for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
 
     return {
         "dimensiones": dimensiones,
         "fortalezas": fortalezas,
         "oportunidades": oportunidades,
     }
-
 
 
 # ── Dimensiones del formulario DIRECTIVO (mapean por orden_pregunta) ──
@@ -854,7 +856,8 @@ def calcular_perfil_dimensiones_directivo(usuario_id):
         if preg.orden_pregunta is None:
             continue
         puntos_por_orden[preg.orden_pregunta] = \
-            puntos_por_orden.get(preg.orden_pregunta, 0) + float(resp.puntos_ganados or 0)
+            puntos_por_orden.get(preg.orden_pregunta, 0) + \
+            float(resp.puntos_ganados or 0)
 
     dimensiones = []
     for nombre, cfg in DIMENSIONES_AUDITAR_DIRECTIVO.items():
@@ -869,8 +872,10 @@ def calcular_perfil_dimensiones_directivo(usuario_id):
             "nivel": _nivel_por_porcentaje(pct),
         })
 
-    fortalezas = [d["dimension"] for d in dimensiones if d["nivel"] == "Avanzado"]
-    oportunidades = [d["dimension"] for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
+    fortalezas = [d["dimension"]
+                  for d in dimensiones if d["nivel"] == "Avanzado"]
+    oportunidades = [d["dimension"]
+                     for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
 
     return {
         "dimensiones": dimensiones,
@@ -1330,6 +1335,7 @@ def auditar_mi_perfil_dimensiones():
     if u.rol == "DIRECTIVO":
         return jsonify(calcular_perfil_dimensiones_directivo(u.id)), 200
     return jsonify(calcular_perfil_dimensiones(u.id)), 200
+
 
 @api.route('/mi-empresa/formularios', methods=['GET'])
 @jwt_required()
@@ -3300,8 +3306,12 @@ def emitir_credencial_si_corresponde(usuario_id):
     if not usuario:
         return None
 
-    # Huella REAL calculada en vivo (no el campo usuario.huella_compass_total, que queda en 0)
-    h = _calcular_huella_docente(usuario_id)
+    # Huella REAL calculada en vivo, según el rol del usuario
+    # (el DIRECTIVO completa sus fases distinto que el DOCENTE)
+    if usuario.rol == "DIRECTIVO":
+        h = _calcular_huella_directivo(usuario_id)
+    else:
+        h = _calcular_huella_docente(usuario_id)
     huella = h["huella_total"]
 
     if huella < HUELLA_MINIMA_CERTIFICADO:
@@ -3349,12 +3359,13 @@ def mi_credencial():
         cred = emitir_credencial_si_corresponde(u.id)
 
     if not cred:
-        h = _calcular_huella_docente(u.id)
-        return jsonify({
-            "tiene_credencial": False,
-            "huella_actual": h["huella_total"],
-            "huella_requerida": HUELLA_MINIMA_CERTIFICADO,
-        }), 200
+        h = _calcular_huella_directivo(
+        u.id) if u.rol == "DIRECTIVO" else _calcular_huella_docente(u.id)
+    return jsonify({
+        "tiene_credencial": False,
+        "huella_actual": h["huella_total"],
+        "huella_requerida": HUELLA_MINIMA_CERTIFICADO,
+    }), 200
 
     # Construimos el enlace de LinkedIn ya listo para usar
     base = os.getenv("PUBLIC_URL", "https://tusitio.com").rstrip("/")

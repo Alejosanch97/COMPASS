@@ -551,21 +551,22 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                         {/* CARD: CERTIFICADO DISPONIBLE (solo si huella >= 80) */}
                         {huellaTotal >= 80 && (
                             <div className="info-card wide-card" style={{
-                                background: "linear-gradient(135deg, #0f766e 0%, #134e4a 100%)",
-                                color: "#fff", textAlign: "center", padding: "28px"
+                                background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+                                color: "#fff", textAlign: "center", padding: "28px",
+                                border: "1px solid rgba(197,160,89,0.35)"
                             }}>
                                 <div style={{ fontSize: "2.4rem", marginBottom: "8px" }}>🎓</div>
                                 <h2 style={{ color: "#fff", margin: "0 0 6px" }}>
                                     ¡Completaste el programa COMPASS!
                                 </h2>
-                                <p style={{ color: "#d1faf5", margin: "0 0 18px", fontSize: "0.9rem" }}>
+                                <p style={{ color: "#e7d9b8", margin: "0 0 18px", fontSize: "0.9rem" }}>
                                     Alcanzaste una Huella de {Math.round(huellaTotal)}/100. Tu credencial
                                     verificable está lista para descargar y compartir en LinkedIn.
                                 </p>
                                 <button
                                     onClick={() => navigate("/mi-certificado")}
                                     style={{
-                                        padding: "12px 28px", background: "#fff", color: "#0f766e",
+                                        padding: "12px 28px", background: "#c5a059", color: "#0f172a",
                                         border: "none", borderRadius: "10px", cursor: "pointer",
                                         fontWeight: 800, fontSize: "0.95rem"
                                     }}
