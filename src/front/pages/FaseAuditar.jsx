@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 
 // ── Recursos de marca ──
 const LOGO_COMPASS = "/logo3.png"; // está en /public → se sirve desde la raíz
+const LOGO_COMPASSfoo = "/logo7.png"; // está en /public → se sirve desde la raíz
 // ⚠️ Para el PDF conviene DESCARGAR la imagen a /public (ver nota al final):
 const IMG_CAMINO = "/camino.jpeg";
 
@@ -767,7 +768,6 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             <div className="cmp-header-brand">
                                 <img src={LOGO_COMPASS} alt="COMPASS" className="cmp-logo-img" />
                                 <div>
-                                    <h1 className="cmp-brand-title">COMPASS</h1>
                                     <p className="cmp-brand-sub">IA Responsable</p>
                                 </div>
                             </div>
@@ -944,7 +944,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                         </section>
 
                         <footer className="cmp-brand-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-                            <img src={LOGO_COMPASS} alt="COMPASS" className="cmp-footer-logo" />
+                            <img src={LOGO_COMPASSfoo} alt="COMPASS" className="cmp-footer-logo" />
                             <span>COMPASS · Educación hoy. Posibilidades mañana.</span>
                         </footer>
                     </div>
