@@ -292,16 +292,15 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                 status_reto: statusFinal,
             };
 
-            // Navegar inmediatamente si el estado es COMPLETADO sin bloquear el hilo principal
+            // COMPLETADO: guardamos PRIMERO y luego navegamos, para que
+            // FaseTransformar reciba el id ya con el backend consistente.
             if (statusFinal === 'COMPLETADO') {
-                setStatusActual(statusFinal);
-                onNavigate('fase_transformar', { retoCompletadoId: reto.id });
-
-                // Guardar silenciosamente en background
-                apiFetch("/api/retos-transformar", {
+                await apiFetch("/api/retos-transformar", {
                     method: "POST",
                     body: JSON.stringify(payload),
-                }).catch(e => console.error("Error guardando en background:", e));
+                });
+                setStatusActual(statusFinal);
+                onNavigate('fase_transformar', { retoCompletadoId: reto.id });
             } else {
                 // Para el modo BORRADOR sí esperamos la respuesta (el usuario continúa en el formulario)
                 await apiFetch("/api/retos-transformar", {
