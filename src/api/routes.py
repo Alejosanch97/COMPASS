@@ -3359,13 +3359,12 @@ def mi_credencial():
         cred = emitir_credencial_si_corresponde(u.id)
 
     if not cred:
-        h = _calcular_huella_directivo(
-        u.id) if u.rol == "DIRECTIVO" else _calcular_huella_docente(u.id)
-    return jsonify({
+        h = _calcular_huella_directivo(u.id) if u.rol == "DIRECTIVO" else _calcular_huella_docente(u.id)
+        return jsonify({
         "tiene_credencial": False,
         "huella_actual": h["huella_total"],
         "huella_requerida": HUELLA_MINIMA_CERTIFICADO,
-    }), 200
+        }), 200
 
     # Construimos el enlace de LinkedIn ya listo para usar
     base = os.getenv("PUBLIC_URL", "https://tusitio.com").rstrip("/")
