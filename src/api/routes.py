@@ -3370,10 +3370,11 @@ def mi_credencial():
     base = os.getenv("PUBLIC_URL", "https://tusitio.com").rstrip("/")
     cert_url = f"{base}/verify/{cred.id_credencial}"
 
-    fecha = cred.fecha_emision
+    fecha = cred.fecha_emision or datetime.now(timezone.utc)
+    programa = cred.programa or "ATLAS Framework 2026 - Adopción Ética de IA"
     params = {
         "startTask": "CERTIFICATION_NAME",
-        "name": cred.programa,
+        "name": programa,
         "issueYear": str(fecha.year),
         "issueMonth": str(fecha.month),
         "certUrl": cert_url,
