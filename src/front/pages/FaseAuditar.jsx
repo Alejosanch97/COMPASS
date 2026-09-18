@@ -945,7 +945,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
 
                         <footer className="cmp-brand-footer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
                             <img src={LOGO_COMPASSfoo} alt="COMPASS" className="cmp-footer-logo" />
-                            <span>COMPASS · Educación hoy. Posibilidades mañana.</span>
+                            <span>Educación hoy. Posibilidades mañana.</span>
                         </footer>
                     </div>
                 );
