@@ -133,6 +133,9 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     const versionCambios = useRef(0);
     const celebrados = useRef(new Set());
     const inicioRef = useRef(null);
+    const [aviso, setAviso] = useState(null);
+    const avisoTimer = useRef(null);
+    useEffect(() => () => clearTimeout(avisoTimer.current), []);
     const [secuenciaDeepen, setSecuenciaDeepen] = useState({
         inicioIA: null, inicioDocente: null, inicioEstudiante: null,
         desarrolloIA: null, desarrolloDocente: null, desarrolloEstudiante: null,
@@ -476,11 +479,17 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     let contadorVisible = 0;
     preguntas.forEach((_, i) => { if (!ocultas.has(i)) numeroVisible[i] = ++contadorVisible; });
 
+    const mostrarAviso = (titulo) => {
+        clearTimeout(avisoTimer.current);
+        setAviso({ id: Date.now(), titulo, detalle: `Llevas ${pctProgreso}% de tu misión` });
+        avisoTimer.current = setTimeout(() => setAviso(null), 2400);
+    };
+
     const irAPaso = (destino) => {
         const i = Math.max(0, Math.min(pasos.length - 1, destino));
         if (i > pasoActual && pasoInfo.indices && pasoCompleto(pasoActual) && !celebrados.current.has(pasoActual)) {
             celebrados.current.add(pasoActual);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', iconColor: '#c5a059', title: `¡${pasoInfo.titulo} completada!`, showConfirmButton: false, timer: 1500 });
+            mostrarAviso(pasoInfo.titulo);
         }
         setVisitados(prev => new Set(prev).add(i));
         setPasoActual(i);
@@ -743,6 +752,17 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     return (
         <div className="atlas-unique-page-wrapper">
             <main className="atlas-unique-main-content" ref={inicioRef}>
+
+                {aviso && (
+                    <div className="atlas-toast" key={aviso.id} role="status" aria-live="polite">
+                        <span className="atlas-toast-check"><Icono nombre="check" size={16} /></span>
+                        <div className="atlas-toast-text">
+                            <strong>{aviso.titulo} completada</strong>
+                            <span>{aviso.detalle}</span>
+                        </div>
+                        <span className="atlas-toast-bar" />
+                    </div>
+                )}
 
                 {/* CABECERA + RECORRIDO (no fija) */}
                 <div className="atlas-unique-header-container atlas-header-card">
