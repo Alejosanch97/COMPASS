@@ -1418,3 +1418,101 @@ input[type="range"] {
         margin-bottom: 20px;
     }
 }
+
+
+
+
+/* =========================================
+   ATLAS V3 · MISIÓN DOSIFICADA (añadido)
+   ========================================= */
+.atlas-sticky-header { position: sticky; top: 0; z-index: 60; padding-top: 8px; background: linear-gradient(#f1f5f9 88%, rgba(241,245,249,0)); }
+.atlas-sticky-header .reto-header-inline { margin-bottom: 0; border-radius: 20px 20px 0 0; border-bottom: 1px solid #f1f5f9; padding: 18px 30px; }
+.atlas-autosave-hint { font-size: .72rem; color: #94a3b8; font-weight: 600; margin-top: 4px; text-align: center; min-height: 14px; }
+.atlas-journey-bar { background: white; border-radius: 0 0 20px 20px; padding: 14px 30px 18px; box-shadow: var(--atlas-shadow); margin-bottom: 30px; border-bottom: 4px solid var(--atlas-gold); }
+.atlas-journey-track { height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.atlas-journey-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--atlas-gold-light), var(--atlas-gold)); transition: width .6s cubic-bezier(.4,0,.2,1); }
+.atlas-journey-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .8rem; font-weight: 700; color: #64748b; margin: 10px 0 12px; }
+.atlas-journey-steps { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: none; }
+.atlas-journey-steps::-webkit-scrollbar { display: none; }
+.atlas-step-dot { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--atlas-border); background: #f8fafc; color: #64748b; font-size: 1rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .25s; }
+.atlas-step-dot:hover { border-color: var(--atlas-gold-light); transform: translateY(-2px); }
+.atlas-step-dot.hecho { background: #fffbeb; border-color: var(--atlas-gold); color: var(--atlas-gold); }
+.atlas-step-dot.actual { background: var(--atlas-dark); border-color: var(--atlas-gold); box-shadow: 0 0 0 4px rgba(197,160,89,.2); transform: scale(1.1); }
+
+.atlas-step-anim { animation: fadeIn .45s ease-out; }
+.atlas-step-intro, .atlas-station-header { margin-bottom: 25px; }
+.atlas-step-kicker { display: inline-block; background: rgba(197,160,89,.12); color: var(--atlas-gold); font-weight: 800; font-size: .75rem; letter-spacing: 1px; text-transform: uppercase; padding: 6px 14px; border-radius: 50px; }
+.atlas-step-intro h3, .atlas-station-header h3 { font-size: 1.7rem; font-weight: 900; color: var(--atlas-dark); margin: 12px 0 6px; }
+.atlas-station-header p { color: #64748b; font-size: 1rem; margin: 0; }
+
+.atlas-mission-hero { grid-column: 1 / -1; display: flex; align-items: center; gap: 40px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 20px; padding: 40px; color: white; border-left: 6px solid var(--atlas-gold); position: relative; overflow: hidden; }
+.atlas-mission-hero::after { content: ""; position: absolute; right: -60px; bottom: -60px; width: 220px; height: 220px; border-radius: 50%; background: var(--atlas-gold); opacity: .06; }
+.atlas-mission-hero-text h4 { color: var(--atlas-gold); font-size: 1.5rem; font-weight: 900; margin: 8px 0; }
+.atlas-mission-hero-text p { color: #e2e8f0; font-size: 1.05rem; line-height: 1.6; margin: 0; }
+.atlas-orbit { position: relative; width: 170px; height: 170px; flex-shrink: 0; border-radius: 50%; border: 2px dashed rgba(197,160,89,.45); animation: atlasSpin 26s linear infinite; }
+.atlas-orbit-core { position: absolute; inset: 45px; border-radius: 50%; background: rgba(197,160,89,.15); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; box-shadow: 0 0 45px rgba(197,160,89,.35); animation: atlasSpin 26s linear infinite reverse; }
+.atlas-orbit-sat { position: absolute; width: 46px; height: 46px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 6px 16px rgba(0,0,0,.35); animation: atlasSpin 26s linear infinite reverse; }
+.atlas-orbit-sat.s1 { top: -23px; left: 62px; }
+.atlas-orbit-sat.s2 { bottom: 4px; left: -12px; }
+.atlas-orbit-sat.s3 { bottom: 4px; right: -12px; }
+@keyframes atlasSpin { to { transform: rotate(360deg); } }
+
+.form-card.is-answered { border-left: 5px solid var(--atlas-gold); }
+.form-card.is-answered .form-section-title::after { content: "✓"; margin-left: auto; background: var(--atlas-gold); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; flex-shrink: 0; }
+.atlas-empty-station { text-align: center; color: #64748b; font-weight: 600; }
+
+.atlas-step-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 35px 0 60px; flex-wrap: wrap; }
+.atlas-nav-btn { background: var(--atlas-dark); color: var(--atlas-gold); border: none; padding: 16px 34px; border-radius: 16px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: .3s; box-shadow: 0 10px 25px rgba(15,23,42,.2); margin-left: auto; }
+.atlas-nav-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(15,23,42,.3); }
+.atlas-nav-btn.ghost { background: white; color: #64748b; border: 2px solid var(--atlas-border); box-shadow: none; margin-left: 0; }
+.atlas-nav-btn.ghost:hover:not(:disabled) { border-color: var(--atlas-gold); color: var(--atlas-gold); }
+.atlas-nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.atlas-seq-wrapper { display: flex; flex-direction: column; gap: 20px; }
+.atlas-seq-moment { background: #fff; padding: 20px; border-radius: 18px; border: 1px solid var(--atlas-border); }
+.atlas-seq-moment h5 { color: var(--atlas-gold); font-weight: 800; font-size: .9rem; letter-spacing: .5px; margin: 0 0 15px; }
+.atlas-seq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.atlas-seq-item { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 14px; background: #f8fafc; border: 2px solid transparent; transition: .25s; }
+.atlas-seq-item.respondida { border-color: var(--atlas-gold-light); background: #fffdf9; }
+.atlas-seq-label { font-size: .9rem; font-weight: 700; color: var(--atlas-slate); }
+.atlas-seq-help { font-size: .78rem; color: #94a3b8; line-height: 1.35; flex: 1; }
+.atlas-seq-binary { display: flex; gap: 8px; margin-top: 6px; }
+.atlas-seq-binary button { flex: 1; padding: 8px; border-radius: 10px; border: 2px solid var(--atlas-border); background: white; color: #64748b; font-weight: 800; font-size: .8rem; cursor: pointer; transition: .2s; }
+.atlas-seq-binary button.activo { background: var(--atlas-gold); border-color: var(--atlas-gold); color: white; }
+.atlas-seq-pending { padding: 20px; border-radius: 16px; border: 2px dashed var(--atlas-gold-light); background: #fffdf9; color: #92400e; font-weight: 600; text-align: center; }
+.atlas-seq-result { padding: 25px; border-radius: 20px; border: 2px solid; animation: fadeIn .5s ease; }
+.atlas-seq-result h4 { font-weight: 900; margin: 15px 0 10px; }
+.atlas-seq-result p { line-height: 1.6; }
+.atlas-balance-labels { display: flex; justify-content: space-between; font-size: .8rem; font-weight: 700; color: #64748b; margin-bottom: 6px; }
+.atlas-balance-labels strong { font-size: 1.3rem; }
+.atlas-balance-track { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+.atlas-balance-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+.atlas-seq-tips { background: white; border-radius: 12px; padding: 14px 18px; margin: 12px 0; border-left: 4px solid var(--atlas-gold); }
+.atlas-seq-tips ul { margin: 8px 0 0; padding-left: 18px; color: #475569; font-size: .92rem; }
+.atlas-seq-tips li { margin-bottom: 4px; }
+
+.atlas-monitor-box { background: #fffdf9; border: 1.5px solid var(--atlas-gold-light); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+.atlas-monitor-box > strong { color: var(--atlas-slate); display: block; margin-bottom: 10px; }
+.atlas-monitor-box small { color: #94a3b8; display: block; margin-top: 10px; }
+.atlas-monitor-chips { display: flex; flex-direction: column; gap: 8px; }
+.atlas-monitor-chip { display: flex; align-items: center; gap: 10px; text-align: left; background: white; border: 2px solid var(--atlas-border); border-radius: 12px; padding: 10px 14px; font-size: .88rem; color: var(--atlas-slate); cursor: pointer; transition: .2s; }
+.atlas-monitor-chip em { margin-left: auto; font-style: normal; font-weight: 900; color: var(--atlas-gold); }
+.atlas-monitor-chip:hover:not(:disabled) { border-color: var(--atlas-gold); transform: translateX(6px); }
+.atlas-monitor-chip.agregada { background: #fffbeb; border-color: var(--atlas-gold); cursor: default; }
+
+.atlas-pending-box { background: white; border-radius: 18px; padding: 20px 25px; border: 2px dashed var(--atlas-gold-light); color: var(--atlas-slate); }
+.atlas-pending-box.completo { border-style: solid; border-color: var(--atlas-gold); background: #fffbeb; font-weight: 700; text-align: center; }
+.atlas-pending-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.atlas-pending-list button { background: #f8fafc; border: 1.5px solid var(--atlas-gold-light); color: var(--atlas-gold); font-weight: 700; padding: 6px 14px; border-radius: 50px; cursor: pointer; }
+.atlas-pending-list button:hover { background: var(--atlas-gold); color: white; }
+
+@media (max-width: 768px) {
+    .atlas-sticky-header .reto-header-inline { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 12px 14px; gap: 8px; }
+    .atlas-sticky-header .atlas-unique-title-box { order: 3; width: 100%; }
+    .atlas-sticky-header .atlas-unique-title-box h2 { font-size: 1rem; }
+    .atlas-journey-bar { padding: 12px 14px 14px; }
+    .atlas-step-dot { width: 32px; height: 32px; font-size: .85rem; }
+    .atlas-mission-hero { flex-direction: column; text-align: center; padding: 30px 20px; }
+    .atlas-step-intro h3, .atlas-station-header h3 { font-size: 1.3rem; }
+    .atlas-nav-btn { width: 100%; margin-left: 0; }
+}

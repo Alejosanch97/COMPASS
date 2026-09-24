@@ -42,6 +42,14 @@ const CLAVES_ANALISIS = [
     { value: "validacion_impacto", label: "Validación de impacto" },
     { value: "riesgos_sistemicos", label: "Riesgos sistémicos" },
     { value: "fortalecer_mision", label: "Proyección / Fortalecer misión" },
+    // ── Ramificación y monitoreo guiado ──
+    { value: "modalidad_uso", label: "🔀 Modalidad de uso (ramifica)" },
+    { value: "requiere_uso_estudiantes", label: "↳ Solo si estudiantes usan IA" },
+    { value: "riesgos_identificados", label: "🔀 Riesgos identificados (ramifica)" },
+    { value: "requiere_riesgo", label: "↳ Solo si hay riesgos" },
+    { value: "esfuerzo_cognitivo", label: "Esfuerzo cognitivo" },
+    { value: "prueba_retiro", label: "Prueba de retiro" },
+    { value: "monitoreo_guiado", label: "🔎 Monitoreo guiado (sugerencias)" },
 ];
 
 const nuevaPregunta = () => ({
