@@ -97,6 +97,109 @@ const ModuloSostener = ({ userData, apiFetch, onNavigate, datosExistentes }) => 
         }
     ];
 
+    // ═══════════ AUTOEVALUACIÓN: una afirmación a la vez ═══════════
+    const ESCALA_SOSTENER = [
+        { v: 1, t: "No lo hago" },
+        { v: 2, t: "Pocas veces" },
+        { v: 3, t: "A veces" },
+        { v: 4, t: "Con frecuencia" },
+        { v: 5, t: "Siempre, con criterio" },
+    ];
+
+    const INFO_DIM = {
+        D1: { corto: "Uso pedagógico", idea: "Para qué y cómo usas la IA en tu clase." },
+        D2: { corto: "Ética y datos", idea: "Cómo cuidas a tus estudiantes y su información." },
+        D3: { corto: "Impacto", idea: "Qué cambia en el aprendizaje de tus estudiantes." },
+        D4: { corto: "Desarrollo", idea: "Cómo sigues creciendo como docente." },
+    };
+
+    const preguntasPlanas = dimensiones.flatMap((d, di) =>
+        d.preguntas.map(p => ({ ...p, dimId: d.id, dimNombre: d.nombre, dimIndex: di }))
+    );
+
+    const [qFase, setQFase] = useState("intro"); // intro | pregunta | transicion | resumen
+    const [qIndex, setQIndex] = useState(0);
+    const [qDir, setQDir] = useState(1);
+    const avanceTimer = useRef(null);
+    const cuestionarioTopRef = useRef(null);
+
+    const totalRespondidas = preguntasPlanas.filter(p => respuestas[p.id]).length;
+    const primerPendiente = Math.max(0, preguntasPlanas.findIndex(p => !respuestas[p.id]));
+
+    const promedioDim = (dimIndex) => {
+        const vals = dimensiones[dimIndex].preguntas.map(p => respuestas[p.id]).filter(Boolean);
+        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    };
+
+    const avanzarPregunta = (desde) => {
+        const actual = preguntasPlanas[desde];
+        const sig = preguntasPlanas[desde + 1];
+        if (!sig) { setQFase("resumen"); return; }
+        if (sig.dimIndex !== actual.dimIndex) { setQFase("transicion"); return; }
+        setQDir(1);
+        setQIndex(desde + 1);
+    };
+
+    const responderPregunta = (valor) => {
+        const p = preguntasPlanas[qIndex];
+        if (!p) return;
+        setRespuestas(prev => ({ ...prev, [p.id]: valor }));
+        clearTimeout(avanceTimer.current);
+        const desde = qIndex;
+        avanceTimer.current = setTimeout(() => avanzarPregunta(desde), 380);
+    };
+
+    const retrocederPregunta = () => {
+        clearTimeout(avanceTimer.current);
+        if (qIndex === 0) { setQFase("intro"); return; }
+        setQDir(-1);
+        setQIndex(i => i - 1);
+    };
+
+    const continuarTrasTransicion = () => {
+        setQDir(1);
+        setQIndex(i => i + 1);
+        setQFase("pregunta");
+    };
+
+    const irAPregunta = (idx) => {
+        clearTimeout(avanceTimer.current);
+        setQDir(1);
+        setQIndex(idx);
+        setQFase("pregunta");
+    };
+
+    // Al entrar al cuestionario: si ya está completo, va directo al resumen
+    useEffect(() => {
+        if (view !== "cuestionario") return;
+        clearTimeout(avanceTimer.current);
+        setQFase(totalRespondidas >= 24 ? "resumen" : "intro");
+        setQIndex(primerPendiente);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [view]);
+
+    // Subir al inicio del cuestionario en cada cambio de etapa
+    useEffect(() => {
+        if (view !== "cuestionario") return;
+        cuestionarioTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [qFase, view]);
+
+    // Atajos de teclado: 1-5 responde, flechas navegan
+    useEffect(() => {
+        if (view !== "cuestionario" || qFase !== "pregunta") return;
+        const onKey = (e) => {
+            if (["TEXTAREA", "INPUT", "SELECT"].includes(e.target.tagName)) return;
+            const n = Number(e.key);
+            if (n >= 1 && n <= 5) responderPregunta(n);
+            else if (e.key === "ArrowLeft") retrocederPregunta();
+            else if (e.key === "ArrowRight" && respuestas[preguntasPlanas[qIndex]?.id]) avanzarPregunta(qIndex);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    });
+
+    useEffect(() => () => clearTimeout(avanceTimer.current), []);
+
     const getCompassData = (score) => {
         if (score >= 90) return {
             nivel: "Gobernanza madura",
@@ -899,57 +1002,176 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                 </div>
             )}
 
-            {view === "cuestionario" && (
-                <div className="atl-q-page-container animate-fade-in">
-                    <button className="atl-q-btn-back" onClick={() => setView("menu")}>⬅ Volver</button>
+            {view === "cuestionario" && (() => {
+                const p = preguntasPlanas[qIndex];
+                const dimActual = p ? p.dimIndex : 0;
+                return (
+                    <div className="sq-page animate-fade-in" ref={cuestionarioTopRef}>
+                        <div className="sq-topbar">
+                            <button className="atl-q-btn-back" onClick={() => setView("menu")}>⬅ Volver</button>
+                            <span className="sq-count"><strong>{totalRespondidas}</strong> de 24 respondidas</span>
+                        </div>
 
-                    <div className="atl-q-main-card">
-                        <header className="atl-q-header">
-                            <h2 className="atl-q-title">Autoevaluación Docente IA</h2>
-                            <p className="atl-q-subtitle">Sostener: Consolidación del Marco ATLAS 2026</p>
-                        </header>
+                        {/* Progreso por dimensión */}
+                        <div className="sq-dims-progress">
+                            {dimensiones.map((d, di) => {
+                                const hechas = d.preguntas.filter(q => respuestas[q.id]).length;
+                                const activa = (qFase === "pregunta" || qFase === "transicion") && di === dimActual;
+                                return (
+                                    <div key={d.id} className={`sq-dim-seg ${activa ? "activa" : ""} ${hechas === 6 ? "lista" : ""}`}>
+                                        <div className="sq-dim-track"><span style={{ width: `${(hechas / 6) * 100}%` }} /></div>
+                                        <small>{INFO_DIM[d.id].corto}</small>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
-                        {dimensiones.map(dim => (
-                            <section key={dim.id} className="atl-q-dimension-section">
-                                <h3 className="atl-q-dim-title">{dim.nombre}</h3>
-                                <p className="atl-q-dim-description">
-                                    A continuación, realizarás la siguiente evaluación. Valora cada aspecto en una escala de 1 a 5, donde 1 significa que el criterio no se evidencia o se aplica de manera muy limitada, y 5 significa que se cumple de forma sobresaliente, con un uso estratégico, crítico y adecuado al contexto.
+                        {/* INICIO */}
+                        {qFase === "intro" && (
+                            <section className="sq-card sq-intro">
+                                <h2>Autoevaluación docente IA</h2>
+                                <p className="sq-lead">
+                                    24 afirmaciones sobre tu práctica, organizadas en 4 dimensiones. Toma unos 5 minutos.
+                                    Responde con lo que haces hoy, no con lo que te gustaría hacer.
                                 </p>
-
-                                <div className="atl-q-questions-list">
-                                    {dim.preguntas.map(p => (
-                                        <div key={p.id} className="atl-q-item-row">
-                                            <span className="atl-q-question-text">{p.text}</span>
-
-                                            <div className="atl-q-likert-scale">
-                                                {[1, 2, 3, 4, 5].map(v => (
-                                                    <button
-                                                        key={v}
-                                                        className={`atl-q-likert-btn ${respuestas[p.id] === v ? 'is-active' : ''} ${v === 5 ? 'is-premium' : ''}`}
-                                                        onClick={() => setRespuestas({ ...respuestas, [p.id]: v })}
-                                                    >
-                                                        {v}
-                                                    </button>
-                                                ))}
+                                <div className="sq-intro-dims">
+                                    {dimensiones.map((d, di) => (
+                                        <div key={d.id} className="sq-intro-dim">
+                                            <span className="sq-intro-num">{di + 1}</span>
+                                            <div>
+                                                <strong>{d.nombre}</strong>
+                                                <small>{INFO_DIM[d.id].idea}</small>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+                                <div className="sq-escala-guia">
+                                    <span>1 = No lo hago</span>
+                                    <span>3 = A veces</span>
+                                    <span>5 = Siempre, con criterio</span>
+                                </div>
+                                <p className="sq-tip">Al elegir una opción pasas sola a la siguiente. En computador también puedes responder con las teclas 1 a 5.</p>
+                                <button className="sq-btn-primary" onClick={() => irAPregunta(primerPendiente)}>
+                                    {totalRespondidas > 0 ? "Continuar donde quedé" : "Empezar"}
+                                </button>
                             </section>
-                        ))}
+                        )}
 
-                        <footer className="atl-q-footer">
-                            <button
-                                className="atl-q-btn-submit"
-                                onClick={handleSave}
-                                disabled={loading}
-                            >
-                                {loading ? "Sincronizando con ATLAS..." : "Finalizar y Guardar Evaluación"}
-                            </button>
-                        </footer>
+                        {/* UNA AFIRMACIÓN A LA VEZ */}
+                        {qFase === "pregunta" && p && (
+                            <section key={qIndex} className={`sq-card sq-question ${qDir > 0 ? "entra-der" : "entra-izq"}`}>
+                                <div className="sq-q-meta">
+                                    <span className="sq-q-dim">{p.dimNombre}</span>
+                                    <span className="sq-q-num">{qIndex + 1} / 24</span>
+                                </div>
+                                <h3 className="sq-q-text">{p.text}</h3>
+                                <div className="sq-escala" role="radiogroup" aria-label="Qué tanto se cumple esta afirmación">
+                                    {ESCALA_SOSTENER.map(op => {
+                                        const activo = respuestas[p.id] === op.v;
+                                        return (
+                                            <button key={op.v} type="button" role="radio" aria-checked={activo}
+                                                className={`sq-opcion nivel-${op.v} ${activo ? "activo" : ""}`}
+                                                onClick={() => responderPregunta(op.v)}>
+                                                <span className="sq-opcion-num">{op.v}</span>
+                                                <span className="sq-opcion-txt">{op.t}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="sq-q-nav">
+                                    <button className="sq-btn-ghost" onClick={retrocederPregunta}>Anterior</button>
+                                    {respuestas[p.id] && (
+                                        <button className="sq-btn-ghost" onClick={() => avanzarPregunta(qIndex)}>Siguiente</button>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* RESPIRO ENTRE DIMENSIONES */}
+                        {qFase === "transicion" && p && (() => {
+                            const prom = promedioDim(dimActual);
+                            const siguiente = dimensiones[dimActual + 1];
+                            return (
+                                <section className="sq-card sq-transicion">
+                                    <span className="sq-trans-kicker">Dimensión {dimActual + 1} de 4 completada</span>
+                                    <h3>{dimensiones[dimActual].nombre}</h3>
+                                    <div className="sq-trans-score">
+                                        <strong>{prom.toFixed(1)}</strong>
+                                        <small>de 5 en promedio</small>
+                                    </div>
+                                    <div className="sq-trans-track"><span style={{ width: `${(prom / 5) * 100}%` }} /></div>
+                                    {siguiente && (
+                                        <div className="sq-trans-next">
+                                            <small>Lo que sigue</small>
+                                            <strong>{siguiente.nombre}</strong>
+                                            <p>{INFO_DIM[siguiente.id].idea}</p>
+                                        </div>
+                                    )}
+                                    <button className="sq-btn-primary" onClick={continuarTrasTransicion}>Continuar</button>
+                                </section>
+                            );
+                        })()}
+
+                        {/* RESUMEN FINAL */}
+                        {qFase === "resumen" && (
+                            <section className="sq-card sq-resumen">
+                                <h2>Revisa tus respuestas</h2>
+                                <p className="sq-lead">
+                                    Así quedó tu autoevaluación. Despliega una dimensión para ver sus 6 respuestas y cambiar cualquiera antes de guardar.
+                                </p>
+
+                                <div className="sq-res-dims">
+                                    {dimensiones.map((d, di) => {
+                                        const prom = promedioDim(di);
+                                        return (
+                                            <details key={d.id} className="sq-res-dim">
+                                                <summary>
+                                                    <div className="sq-res-head">
+                                                        <strong>{d.nombre}</strong>
+                                                        <span>{prom.toFixed(1)} / 5</span>
+                                                    </div>
+                                                    <div className="sq-trans-track light"><span style={{ width: `${(prom / 5) * 100}%` }} /></div>
+                                                    <small className="sq-res-hint">Ver y editar las 6 respuestas</small>
+                                                </summary>
+                                                <div className="sq-res-list">
+                                                    {d.preguntas.map(q => (
+                                                        <div key={q.id} className={`sq-res-row ${respuestas[q.id] ? "" : "pendiente"}`}>
+                                                            <span>{q.text}</span>
+                                                            <div className="sq-res-chips">
+                                                                {[1, 2, 3, 4, 5].map(v => (
+                                                                    <button key={v} type="button"
+                                                                        className={respuestas[q.id] === v ? "activo" : ""}
+                                                                        onClick={() => setRespuestas(prev => ({ ...prev, [q.id]: v }))}>
+                                                                        {v}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </details>
+                                        );
+                                    })}
+                                </div>
+
+                                {totalRespondidas < 24 && (
+                                    <p className="sq-faltan">
+                                        Te faltan {24 - totalRespondidas} respuestas.{" "}
+                                        <button className="sq-link" onClick={() => irAPregunta(primerPendiente)}>Responderlas ahora</button>
+                                    </p>
+                                )}
+
+                                <div className="sq-res-actions">
+                                    <button className="sq-btn-ghost" onClick={() => irAPregunta(0)}>Recorrer desde el inicio</button>
+                                    <button className="sq-btn-primary" onClick={handleSave} disabled={loading || totalRespondidas < 24}>
+                                        {loading ? "Guardando..." : "Finalizar y guardar evaluación"}
+                                    </button>
+                                </div>
+                            </section>
+                        )}
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {view === "dashboard" && historial.length > 0 && (
                 <div className="sostener-dashboard animate-fade-in">
