@@ -132,6 +132,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     const hidratado = useRef(false);
     const versionCambios = useRef(0);
     const celebrados = useRef(new Set());
+    const inicioRef = useRef(null);
     const [secuenciaDeepen, setSecuenciaDeepen] = useState({
         inicioIA: null, inicioDocente: null, inicioEstudiante: null,
         desarrolloIA: null, desarrolloDocente: null, desarrolloEstudiante: null,
@@ -483,8 +484,17 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
         }
         setVisitados(prev => new Set(prev).add(i));
         setPasoActual(i);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    // Subir al inicio del reto cada vez que cambia el paso
+    // (funciona aunque el scroll esté en el panel del dashboard y no en la ventana)
+    useEffect(() => {
+        const el = inicioRef.current;
+        if (!el) return;
+        requestAnimationFrame(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }, [pasoActual]);
 
     // Campo libre cuando se elige "Otro"
     const renderCampoOtro = (idx) => {
@@ -732,7 +742,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
 
     return (
         <div className="atlas-unique-page-wrapper">
-            <main className="atlas-unique-main-content">
+            <main className="atlas-unique-main-content" ref={inicioRef}>
 
                 {/* CABECERA + RECORRIDO (no fija) */}
                 <div className="atlas-unique-header-container atlas-header-card">

@@ -1567,3 +1567,5 @@ input[type="range"] {
     .atlas-orbit, .atlas-orbit-core, .atlas-orbit-sat, .atlas-step-anim, .atlas-otro-field { animation: none; }
     .atlas-phase-fill, .atlas-balance-fill { transition: none; }
 }
+
+.atlas-unique-main-content { scroll-margin-top: 24px; }
