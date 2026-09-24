@@ -1684,7 +1684,7 @@ El progreso dependerá de fortalecer comprensión conceptual antes de escalar el
                                         {/* CABECERA INSTITUCIONAL */}
                                         <div className="at-c4-report-header">
                                             <div className="at-c4-logo-section">
-                                                <div className="at-c4-brand">ATLAS <span>PROJECT</span></div>
+                                                <div className="at-c4-brand">COMPASS <span>PROJECT</span></div>
                                                 <div className="at-c4-docente-info">
                                                     <strong>DOCENTE:</strong> {userData.nombre_completo} <br />
                                                     <strong>ID:</strong> {userData.teacher_key} | {new Date().toLocaleDateString()}
