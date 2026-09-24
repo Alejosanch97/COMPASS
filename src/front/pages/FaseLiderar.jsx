@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import "../Styles/faseTransformar.css";
+import { Icono } from "./Icono";
 
 const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
     const [progreso, setProgreso] = useState(null);
@@ -140,6 +141,59 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
         if (v <= 2) return textos[dimension].bajo;
         if (v <= 3.9) return textos[dimension].medio;
         return textos[dimension].alto;
+    };
+
+    // ═══════════ DICTAMEN POR PASOS ═══════════
+    const DIMENSIONES_REPORTE = [
+        { key: "etica", campo: "puntaje_etica", label: "Ética y no discriminación", icono: "balanza", marco: "UNESCO 2024: ética de la IA" },
+        { key: "privacidad", campo: "puntaje_privacidad", label: "Privacidad y datos", icono: "candado", marco: "AI Act: gobernanza de datos" },
+        { key: "agencia", campo: "puntaje_agencia", label: "Agencia docente", icono: "docente", marco: "UNESCO 2024: enfoque centrado en lo humano" },
+        { key: "dependencia", campo: "puntaje_dependencia", label: "Autonomía del estudiante", icono: "bombillo", marco: "UNESCO 2024: agencia estudiantil" },
+    ];
+
+    const LUCES_SEMAFORO = {
+        verde: { titulo: "Riesgo bajo", color: "#22c55e", texto: "Mantienes el control docente, proteges la identidad de tus estudiantes y usas la IA con transparencia." },
+        amarillo: { titulo: "Riesgo moderado", color: "#f59e0b", texto: "El uso es aceptable con supervisión, pero hay puntos ciegos en la validación del resultado o en la transparencia con tus estudiantes." },
+        rojo: { titulo: "Riesgo alto", color: "#ef4444", texto: "El prompt delega decisiones importantes, usa datos sensibles o no es transparente. Conviene rediseñar el flujo antes de llevarlo al aula." },
+    };
+
+    const SIGUIENTE_PASO = {
+        etica: "Agrega a tu prompt una instrucción explícita para evitar estereotipos y pide a la IA que revise posibles sesgos en su respuesta.",
+        privacidad: "Reemplaza cualquier dato real por datos ficticios o anonimizados antes de escribir el prompt.",
+        agencia: "Pide a la IA propuestas o borradores y deja por escrito que la decisión final es tuya.",
+        dependencia: "Pide a la IA preguntas, pistas o ejemplos en lugar de respuestas terminadas para tus estudiantes.",
+    };
+
+    const listarDimensiones = (arr) => {
+        const n = arr.map(d => d.label.toLowerCase());
+        return n.length <= 1 ? n[0] : `${n.slice(0, -1).join(", ")} y ${n[n.length - 1]}`;
+    };
+
+    const construirReporte = () => {
+        if (!datosPrompt) return null;
+        const dims = DIMENSIONES_REPORTE.map(d => {
+            const valor = Number(datosPrompt[d.campo]) || 0;
+            return {
+                ...d, valor,
+                nivel: valor >= 4 ? "alto" : valor >= 3 ? "medio" : "bajo",
+                color: getSemaforoColor(valor),
+                texto: getInterpretacionDinamica(d.key, valor),
+            };
+        });
+        const promedio = dims.reduce((a, d) => a + d.valor, 0) / dims.length;
+        const clasif = (datosPrompt.clasificacion_riesgo || "").toUpperCase();
+        const luz = clasif.includes("ALTO") ? "rojo" : clasif.includes("MODERADO") ? "amarillo" : "verde";
+        const fortalezas = dims.filter(d => d.nivel === "alto");
+        const vigilar = dims.filter(d => d.nivel !== "alto").sort((a, b) => a.valor - b.valor);
+        return {
+            dims, promedio, luz,
+            luzInfo: LUCES_SEMAFORO[luz],
+            score: Number(datosPrompt.simulador_puntaje) || 0,
+            fortalezas, vigilar,
+            siguiente: vigilar[0]
+                ? SIGUIENTE_PASO[vigilar[0].key]
+                : "Comparte tu prompt en la Galería de Inspiración para que otros docentes aprendan de tu práctica.",
+        };
     };
 
     const handleNavegacionSegura = (destino, id) => {
@@ -333,71 +387,126 @@ const FaseLiderar = ({ userData, apiFetch, onNavigate, onRefreshProgreso }) => {
                         </div>
                     </div>
 
-                    {verReporte ? (
-                        <div className="liderar-report-canvas animate-slide-up">
-                            <div className="report-narrative-section">
-                                <div className="narrative-step-header">
-                                    <span className="step-circle">1</span>
-                                    <h3>Análisis de tu interacción</h3>
+                    {verReporte ? (() => {
+                        const rep = construirReporte();
+                        if (!rep) {
+                            return (
+                                <div className="lid-report">
+                                    <p className="lid-verdict-foot">Aún no hay un prompt completado para analizar. Completa primero el Laboratorio de Prompts.</p>
                                 </div>
-                                <div className="narrative-content-box">
-                                    <p className="narrative-label">Tu prompt original fue:</p>
-                                    <blockquote className="prompt-blockquote">"{datosPrompt?.prompt_original}"</blockquote>
-                                </div>
-                            </div>
-
-                            <div className="report-narrative-section">
-                                <div className="narrative-step-header">
-                                    <span className="step-circle">2</span>
-                                    <h3>Tu Autoevaluación Ética</h3>
-                                </div>
-                                <div className="narrative-content-box">
-                                    <div className="resultado-indice-global">
-                                        <p className="indice-at-label">Índice Global ATLAS:</p>
-                                        <h4 className="indice-at-value">{getTextoIndiceATLAS()}</h4>
+                            );
+                        }
+                        return (
+                            <div className="lid-report animate-slide-up">
+                                <header className="lid-report-head">
+                                    <div>
+                                        <p className="lid-report-kicker">Dictamen de tu laboratorio</p>
+                                        <h3>{getTextoIndiceATLAS()}</h3>
+                                        <p className="lid-report-sub">Promedio de tu autoevaluación: <strong>{rep.promedio.toFixed(1)} de 5</strong></p>
                                     </div>
-                                    <p className="interpreta-text">
-                                        Este resultado refleja tu nivel de consciencia sobre la integridad pedagógica y técnica de tu interacción. {Number(datosPrompt?.puntaje_etica) > 4 ? "Demuestras una alta sensibilidad hacia la equidad y la transparencia." : "Existen dimensiones donde la supervisión humana debe fortalecerse."}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="report-narrative-section">
-                                <div className="narrative-step-header">
-                                    <span className="step-circle">3</span>
-                                    <h3>Dictamen del Semáforo de Riesgo</h3>
-                                </div>
-                                <div className="narrative-content-box">
-                                    <div className="resultado-semaforo-badge" style={{
-                                        backgroundColor: datosPrompt?.clasificacion_riesgo?.includes('ALTO') ? '#ef4444' : (datosPrompt?.clasificacion_riesgo?.includes('MODERADO') ? '#f59e0b' : '#22c55e')
-                                    }}>
-                                        {datosPrompt?.clasificacion_riesgo?.split('|')[0]}
+                                    <div className="lid-report-score" style={{ "--lid-color": getSemaforoColor(rep.promedio) }}>
+                                        <span>{rep.promedio.toFixed(1)}</span>
+                                        <small>de 5</small>
                                     </div>
-                                    <p className="dictamen-desc-text">El sistema valida que tu proceso respeta la <strong>Gobernanza de Decisión Docente</strong> y establece un marco de transparencia adecuado para la implementación en el aula.</p>
-                                </div>
-                            </div>
+                                </header>
 
-                            <div className="analisis-final-master">
-                                <div className="dictamen-header">
-                                    <span className="badge-atlas-audit">DICTAMEN FINAL LIDERAR</span>
-                                    <h3>Análisis de Liderazgo Pedagógico</h3>
-                                </div>
-                                <div className="parrafo-analisis-format">
-                                    <p>
-                                        Tras completar el Laboratorio de Prompt Ético, el análisis integral concluye que tu interacción con la IA presenta un <strong>{datosPrompt?.clasificacion_riesgo?.split('|')[0]} ({datosPrompt?.simulador_puntaje || "0"}/14)</strong>.
-                                        Alineado con los marcos de la <strong>UNESCO 2024 (AI for Teachers)</strong> y la <strong>AI Act</strong>, tu prompt ("{datosPrompt?.prompt_original}")
-                                        ha sido auditado bajo la premisa de que la IA debe fortalecer, no reemplazar, la agencia humana.
-                                        En la dimensión de Privacidad, se observa que {Number(datosPrompt?.puntaje_privacidad) < 3 ? "existe un riesgo crítico por uso de datos identificables que requiere anonimización inmediata." : "has mantenido un protocolo seguro de minimización de datos."}
-                                        Respecto a la Dependencia Cognitiva, el sistema detecta que tu enfoque {Number(datosPrompt?.puntaje_dependencia) > 3 ? "promueve el aprendizaje profundo y el pensamiento crítico," : "podría estar delegando procesos de pensamiento esenciales del estudiante,"} lo cual es vital para el desarrollo de la autonomía intelectual.
-                                        Tu rol como docente líder no es evitar la tecnología, sino supervisar que cada salida algorítmica pase por tu filtro profesional.
-                                    </p>
-                                </div>
-                                <div className="reporte-actions-footer">
-                                    <button className="btn-launch-mission" onClick={() => setVerReporte(false)}>Finalizar Auditoría</button>
+                                <section className="lid-step">
+                                    <div className="lid-step-num">1</div>
+                                    <div className="lid-step-body">
+                                        <h4>Tu prompt</h4>
+                                        <blockquote className="lid-prompt">{datosPrompt?.prompt_original}</blockquote>
+                                    </div>
+                                </section>
+
+                                <section className="lid-step">
+                                    <div className="lid-step-num">2</div>
+                                    <div className="lid-step-body">
+                                        <h4>Cómo te evaluaste en cada dimensión</h4>
+                                        <div className="lid-dims">
+                                            {rep.dims.map(d => (
+                                                <article key={d.key} className="lid-dim">
+                                                    <div className="lid-dim-top">
+                                                        <span className="lid-dim-icon" style={{ color: d.color }}><Icono nombre={d.icono} size={18} /></span>
+                                                        <strong>{d.label}</strong>
+                                                        <span className="lid-dim-val" style={{ color: d.color }}>{d.valor}/5</span>
+                                                    </div>
+                                                    <div className="lid-dim-track">
+                                                        <span style={{ width: `${(d.valor / 5) * 100}%`, background: d.color }} />
+                                                    </div>
+                                                    <p>{d.texto}</p>
+                                                    <small>{d.marco}</small>
+                                                </article>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="lid-step">
+                                    <div className="lid-step-num">3</div>
+                                    <div className="lid-step-body">
+                                        <h4>Semáforo de riesgo operativo</h4>
+                                        <div className="lid-semaforo">
+                                            <div className="lid-lights" aria-hidden="true">
+                                                {["rojo", "amarillo", "verde"].map(l => (
+                                                    <span key={l} className={`lid-light ${l} ${rep.luz === l ? "on" : ""}`} />
+                                                ))}
+                                            </div>
+                                            <div className="lid-semaforo-text">
+                                                <strong style={{ color: rep.luzInfo.color }}>{rep.luzInfo.titulo}</strong>
+                                                <p>{rep.luzInfo.texto}</p>
+                                                <div className="lid-riskbar-track">
+                                                    <span className="lid-riskbar-marker"
+                                                        style={{ left: `${Math.min(100, (rep.score / 14) * 100)}%`, borderColor: rep.luzInfo.color }} />
+                                                </div>
+                                                <div className="lid-riskbar-labels">
+                                                    <span>Seguro</span>
+                                                    <span>{rep.score} de 14 puntos de riesgo</span>
+                                                    <span>Crítico</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="lid-step lid-step-last">
+                                    <div className="lid-step-num">4</div>
+                                    <div className="lid-step-body">
+                                        <h4>Tu dictamen en tres ideas</h4>
+                                        <div className="lid-verdict">
+                                            <article className="lid-verdict-card ok">
+                                                <span className="lid-verdict-icon"><Icono nombre="check" size={18} /></span>
+                                                <h5>Lo que haces bien</h5>
+                                                <p>{rep.fortalezas.length
+                                                    ? `Mantienes un nivel alto en ${listarDimensiones(rep.fortalezas)}.`
+                                                    : "Diste el primer paso: auditar tu propio prompt con honestidad."}</p>
+                                            </article>
+                                            <article className="lid-verdict-card warn">
+                                                <span className="lid-verdict-icon"><Icono nombre="alerta" size={18} /></span>
+                                                <h5>Lo que debes vigilar</h5>
+                                                <p>{rep.vigilar.length
+                                                    ? `Refuerza ${listarDimensiones(rep.vigilar.slice(0, 2))}: es donde tu prompt podría exponer a tus estudiantes.`
+                                                    : "Ninguna dimensión en riesgo. Sigue revisando cada respuesta de la IA antes de usarla."}</p>
+                                            </article>
+                                            <article className="lid-verdict-card next">
+                                                <span className="lid-verdict-icon"><Icono nombre="adelante" size={18} /></span>
+                                                <h5>Tu siguiente paso</h5>
+                                                <p>{rep.siguiente}</p>
+                                            </article>
+                                        </div>
+                                        <p className="lid-verdict-foot">
+                                            Tu rol no es evitar la tecnología, sino asegurarte de que cada respuesta de la IA pase por tu criterio profesional.
+                                            Marcos de referencia: UNESCO 2024 (AI Competency Framework for Teachers) y AI Act.
+                                        </p>
+                                    </div>
+                                </section>
+
+                                <div className="lid-report-actions">
+                                    <button className="btn-back-atlas" onClick={() => handleNavegacionSegura('retos_liderar', 1)}>Mejorar mi prompt</button>
+                                    <button className="btn-launch-mission lid-btn-auto" onClick={() => setVerReporte(false)}>Volver a mis misiones</button>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
+                        );
+                    })() : (
                         <div className="retos-roadmap-v2">
                             {isDirectivo ? (
                                 <>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "../Styles/LaboratorioEtico.css";
+import { Icono } from "./Icono";
 
 // ── Los 5 casos con estructura completa (estilo Morales-Chan) ──
 // Cada opción trae su texto formativo (formativo) y lo que sostiene/expone
@@ -89,16 +90,71 @@ const PRINCIPIOS = [
     "Equidad", "Inclusión y acceso", "Privacidad", "No dañar", "Alfabetización crítica",
 ];
 
-const ETIQUETA_CORTA = {
-    "Agencia humana": "Agencia",
-    "Supervisión humana": "Supervisión",
-    "Transparencia": "Transparencia",
-    "Responsabilidad": "Responsabilidad",
-    "Equidad": "Equidad",
-    "Inclusión y acceso": "Inclusión",
-    "Privacidad": "Privacidad",
-    "No dañar": "No dañar",
-    "Alfabetización crítica": "Alfabetización",
+// La clave interna no cambia (el backend sigue igual). Aquí solo cambia cómo se muestra y se explica.
+const PRINCIPIOS_INFO = {
+    "Agencia humana": { nombre: "Agencia humana", idea: "Las personas deciden; la IA solo propone.", marco: "UNESCO 2024: enfoque centrado en lo humano", consejo: "Antes de decidir, pregúntate quién tiene la última palabra y si esa persona puede explicar su decisión." },
+    "Supervisión humana": { nombre: "Supervisión humana", idea: "Alguien revisa lo que hace la IA y puede corregirlo.", marco: "AI Act: supervisión humana de los sistemas de IA", consejo: "Define un momento fijo en el que revisas lo que produce la IA antes de que afecte a un estudiante." },
+    "Transparencia": { nombre: "Transparencia", idea: "Se sabe cuándo y cómo se usa IA.", marco: "UNESCO 2021: transparencia y explicabilidad", consejo: "Cuéntale a tus estudiantes cuándo y cómo usas IA, y pídeles lo mismo." },
+    "Responsabilidad": { nombre: "Responsabilidad", idea: "Alguien responde por la decisión y por sus efectos.", marco: "UNESCO 2021: responsabilidad y rendición de cuentas", consejo: "Si una decisión sale mal, deja claro quién responde y cómo se corrige." },
+    "Equidad": { nombre: "Equidad", idea: "Una misma regla no debe producir daños desiguales.", marco: "UNESCO 2021: equidad y no discriminación", consejo: "Pregúntate si aplicarías la misma medida a todo el grupo; si no, revisa el diseño de la medida." },
+    "Inclusión y acceso": { nombre: "Inclusión y acceso", idea: "Nadie queda por fuera por su condición o sus recursos.", marco: "UNESCO 2024: inclusión; Decreto 1421 de 2017", consejo: "Verifica que tu decisión no deje por fuera a quien tiene menos tiempo, recursos o apoyos." },
+    "Privacidad": { nombre: "Privacidad", idea: "Los datos personales se cuidan y se usan solo para lo necesario.", marco: "UNESCO 2021: privacidad; Ley 1581 de 2012", consejo: "Usa solo los datos necesarios y avisa qué queda registrado." },
+    "No dañar": { nombre: "Prevención del daño", idea: "Primero evitar que alguien salga lastimado, física, emocional o académicamente.", marco: "UNESCO 2021: proporcionalidad e inocuidad", consejo: "Cuando hay una persona en riesgo, atiéndela primero y después ajusta el sistema." },
+    "Alfabetización crítica": { nombre: "Alfabetización crítica", idea: "Entender cómo funciona la IA, dónde falla y por qué.", marco: "UNESCO 2021 y 2024: alfabetización en IA", consejo: "Convierte los errores de la IA en ocasiones para enseñar cómo funciona y dónde falla." },
+};
+const nombreP = (p) => PRINCIPIOS_INFO[p]?.nombre || p;
+
+// Copia de la matriz del backend (routes.py → DILEMAS_MATRIZ), para dar la retroalimentación al instante
+const MATRIZ = {
+    caso01: {
+        A: { sostiene: ["No dañar", "Inclusión y acceso"], expone: ["Transparencia", "Responsabilidad"] },
+        B: { sostiene: ["Transparencia", "Agencia humana"], expone: ["No dañar", "Inclusión y acceso"] },
+        C: { sostiene: ["Equidad", "Responsabilidad"], expone: ["Alfabetización crítica"] },
+        D: { sostiene: ["Transparencia", "Equidad"], expone: ["No dañar"] },
+    },
+    caso02: {
+        A: { sostiene: ["Responsabilidad", "Equidad"], expone: ["Inclusión y acceso", "No dañar"] },
+        B: { sostiene: ["Supervisión humana", "No dañar"], expone: ["Transparencia"] },
+        C: { sostiene: ["Transparencia", "Alfabetización crítica"], expone: ["Responsabilidad"] },
+        D: { sostiene: ["Inclusión y acceso", "Equidad"], expone: ["Transparencia"] },
+    },
+    caso03: {
+        A: { sostiene: ["Equidad"], expone: ["Transparencia", "Responsabilidad", "Alfabetización crítica"] },
+        B: { sostiene: ["Transparencia", "Responsabilidad"], expone: [] },
+        C: { sostiene: ["Supervisión humana"], expone: ["Equidad", "Transparencia"] },
+        D: { sostiene: ["Agencia humana", "Supervisión humana"], expone: ["No dañar", "Inclusión y acceso"] },
+    },
+    caso04: {
+        A: { sostiene: ["Responsabilidad"], expone: ["Alfabetización crítica", "No dañar"] },
+        B: { sostiene: ["Alfabetización crítica", "Agencia humana"], expone: ["Responsabilidad"] },
+        C: { sostiene: ["Alfabetización crítica"], expone: ["Equidad", "No dañar"] },
+        D: { sostiene: ["Agencia humana", "Alfabetización crítica"], expone: ["Inclusión y acceso"] },
+    },
+    caso05: {
+        A: { sostiene: ["No dañar", "Supervisión humana"], expone: ["Responsabilidad"] },
+        B: { sostiene: ["No dañar", "Responsabilidad"], expone: ["Inclusión y acceso"] },
+        C: { sostiene: ["Responsabilidad", "Transparencia"], expone: ["Supervisión humana"] },
+        D: { sostiene: ["Supervisión humana", "No dañar"], expone: ["Privacidad"] },
+    },
+};
+
+// Opción más equilibrada por caso (revisable por el equipo pedagógico)
+const RECOMENDADAS = {
+    caso01: { opcion: "C", porque: "Decides por la evidencia y no por cómo está escrito el correo: evitas que tu sospecha sobre la IA se convierta en un sesgo contra el estudiante." },
+    caso02: { opcion: "D", porque: "El ajuste razonable ya aprobado es un derecho reconocido. Tu criterio, apoyado en él, pesa más que un detector con falsos positivos." },
+    caso03: { opcion: "B", porque: "Declarar el uso de IA y ofrecer revisión humana mantiene la transparencia y el derecho a reclamar, sin frenar a quienes necesitan la nota." },
+    caso04: { opcion: "B", porque: "Convertir el sesgo en objeto de análisis enseña a leer críticamente la IA y respalda a la estudiante que se atrevió a señalarlo." },
+    caso05: { opcion: "B", porque: "Ante una posible crisis, primero se protege a la persona y se detiene el sistema que falló hasta rediseñarlo: prevenir el daño va antes que la utilidad." },
+};
+
+// Videos o audios por caso (pega el enlace cuando los tengas)
+// Formato: { tipo: "video", url: "https://..." }  o  { tipo: "audio", url: "https://....mp3" }
+const MEDIA_CASOS = {
+    caso01: null,
+    caso02: null,
+    caso03: null,
+    caso04: null,
+    caso05: null,
 };
 
 const elegirAlAzar = (obj, n) => {
@@ -110,86 +166,86 @@ const elegirAlAzar = (obj, n) => {
     return keys.slice(0, n);
 };
 
-// ── Radar SVG ──
-const RadarDilemas = ({ conteo }) => {
-    const size = 640, cx = size / 2, cy = size / 2, R = 180;
-    const N = PRINCIPIOS.length;
-    const VERDE = "#2f7a5b", CAFE = "#b07a2e";
-
-    const punto = (i, frac) => {
-        const ang = (Math.PI * 2 * i) / N - Math.PI / 2;
-        return [cx + Math.cos(ang) * R * frac, cy + Math.sin(ang) * R * frac];
-    };
-    const fracs = (tipo) => PRINCIPIOS.map(p => {
-        const c = conteo[p] || { en_juego: 0 };
-        return c.en_juego > 0 ? (c[tipo] || 0) / c.en_juego : 0;
-    });
-    const puntosDe = (tipo) => fracs(tipo).map((f, i) => punto(i, f));
-    const pathDe = (tipo) => puntosDe(tipo).map(pt => pt.join(",")).join(" ");
-    const anillos = [0.2, 0.4, 0.6, 0.8, 1];
-
+const MediaCaso = ({ media }) => {
+    if (!media?.url) return null;
+    if (media.tipo === "audio") return <audio className="dil-media-audio" controls src={media.url} />;
     return (
-        <svg viewBox={`0 0 ${size} ${size}`}
-            style={{ width: "100%", maxWidth: 560, margin: "0 auto", display: "block", overflow: "visible" }}>
-            {anillos.map(f => (
-                <polygon key={f}
-                    points={PRINCIPIOS.map((_, i) => punto(i, f).join(",")).join(" ")}
-                    fill="none" stroke="#d9d3c7" strokeWidth="1" />
-            ))}
-            {PRINCIPIOS.map((_, i) => {
-                const [x, y] = punto(i, 1);
-                return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#d9d3c7" strokeWidth="1" />;
-            })}
-            <polygon points={pathDe("expuesto")} fill="rgba(176,122,46,0.15)" stroke={CAFE} strokeWidth="3" strokeLinejoin="round" />
-            <polygon points={pathDe("sostenido")} fill="rgba(47,122,91,0.15)" stroke={VERDE} strokeWidth="3" strokeLinejoin="round" />
-            {puntosDe("expuesto").map(([x, y], i) => (<circle key={`e${i}`} cx={x} cy={y} r="5" fill={CAFE} />))}
-            {puntosDe("sostenido").map(([x, y], i) => (<circle key={`s${i}`} cx={x} cy={y} r="5" fill={VERDE} />))}
-            {PRINCIPIOS.map((p, i) => {
-                const [lx, ly] = punto(i, 1.18);
-                const c = conteo[p] || { sostenido: 0, expuesto: 0, en_juego: 0 };
-                const ancla = Math.abs(lx - cx) < 20 ? "middle" : (lx > cx ? "start" : "end");
-                return (
-                    <text key={p} x={lx} y={ly} textAnchor={ancla} fontSize="16" fill="#1e293b" style={{ fontFamily: "monospace" }}>
-                        <tspan x={lx} dy="0" fontWeight="600">{ETIQUETA_CORTA[p]}</tspan>
-                        <tspan x={lx} dy="20" fontSize="15">
-                            <tspan fill={VERDE}>{c.sostenido}</tspan>
-                            <tspan fill="#94a3b8"> · </tspan>
-                            <tspan fill={CAFE}>{c.expuesto}</tspan>
-                        </tspan>
-                    </text>
-                );
-            })}
-        </svg>
+        <div className="dil-media-video">
+            <iframe src={media.url} title="Video del caso" allow="fullscreen; encrypted-media" />
+        </div>
     );
 };
 
-// Fila de datos "En juego / Lo que sabes / ..."
-const FilaDato = ({ etiqueta, valor }) => (
-    <div style={{ marginBottom: 10 }}>
-        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#c5a059", textTransform: "uppercase", letterSpacing: "0.5px" }}>{etiqueta}</span>
-        <p style={{ margin: "2px 0 0", fontSize: "0.9rem", color: "#475569", lineHeight: 1.5 }}>{valor}</p>
+const Dato = ({ icono, etiqueta, valor }) => (
+    <div className="dil-dato">
+        <span><Icono nombre={icono} size={14} /> {etiqueta}</span>
+        <p>{valor}</p>
     </div>
 );
+
+// ── Balanza de responsabilidad: rojo a la izquierda (expuesto), verde a la derecha (sostenido) ──
+const BalanzaResponsabilidad = ({ conteo }) => {
+    const filas = PRINCIPIOS
+        .map(p => ({ p, ...(conteo?.[p] || { sostenido: 0, expuesto: 0, en_juego: 0 }) }))
+        .filter(f => f.en_juego > 0)
+        .sort((a, b) => (b.sostenido - b.expuesto) - (a.sostenido - a.expuesto));
+    const max = Math.max(1, ...filas.map(f => Math.max(f.sostenido, f.expuesto)));
+
+    return (
+        <div className="dil-balanza">
+            <div className="dil-balanza-head">
+                <span />
+                <span>Quedó expuesto</span>
+                <span>Lo protegiste</span>
+            </div>
+            {filas.map(f => (
+                <div key={f.p} className="dil-balanza-row">
+                    <div className="dil-balanza-label">
+                        <strong>{nombreP(f.p)}</strong>
+                        <small>{PRINCIPIOS_INFO[f.p]?.idea}</small>
+                    </div>
+                    <div className="dil-balanza-bars">
+                        <div className="dil-bar-side izq">
+                            {f.expuesto > 0 && (
+                                <span className="dil-bar expuesto" style={{ width: `${(f.expuesto / max) * 100}%` }}>{f.expuesto}</span>
+                            )}
+                        </div>
+                        <div className="dil-bar-eje" />
+                        <div className="dil-bar-side der">
+                            {f.sostenido > 0 && (
+                                <span className="dil-bar sostenido" style={{ width: `${(f.sostenido / max) * 100}%` }}>{f.sostenido}</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [casosAsignados, setCasosAsignados] = useState([]);
     const [selecciones, setSelecciones] = useState({});
+    const [confirmados, setConfirmados] = useState({});
     const [resultado, setResultado] = useState(null);
-
-    // ── CAMBIO CLAVE: los 5 casos, no 2 ──
+    const [vista, setVista] = useState("intro"); // intro | caso | resultado
+    const [indice, setIndice] = useState(0);
+    const inicioRef = useRef(null);
     const N_CASOS = 5;
 
     useEffect(() => {
-        window.scrollTo(0, 0);
         const init = async () => {
             try {
                 const reg = await apiFetch("/api/liderar/dilemas/mi-registro").catch(() => null);
                 if (reg && reg.status === "COMPLETADO") {
+                    const casos = reg.casos_asignados || [];
                     setResultado(reg);
-                    setCasosAsignados(reg.casos_asignados || []);
+                    setCasosAsignados(casos);
                     setSelecciones(reg.selecciones || {});
+                    setConfirmados(Object.fromEntries(casos.map(c => [c, true])));
+                    setVista("resultado");
                 } else {
                     setCasosAsignados(elegirAlAzar(CASOS, N_CASOS));
                 }
@@ -201,17 +257,32 @@ const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
             }
         };
         init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const seleccionar = (caso, opcion) => {
-        if (resultado) return;
-        setSelecciones(prev => ({ ...prev, [caso]: opcion }));
+    // Subir al inicio en cada cambio de pantalla (funciona también dentro del panel del dashboard)
+    useEffect(() => {
+        if (loading) return;
+        requestAnimationFrame(() => inicioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }, [vista, indice, loading]);
+
+    const casoId = casosAsignados[indice];
+    const caso = CASOS[casoId];
+    const total = casosAsignados.length;
+    const esAcierto = (c) => selecciones[c] === RECOMENDADAS[c]?.opcion;
+
+    const seleccionar = (letra) => {
+        if (resultado || confirmados[casoId]) return;
+        setSelecciones(prev => ({ ...prev, [casoId]: letra }));
     };
 
-    const todosRespondidos = casosAsignados.length > 0 && casosAsignados.every(c => selecciones[c]);
+    const confirmar = () => {
+        if (!selecciones[casoId]) return;
+        setConfirmados(prev => ({ ...prev, [casoId]: true }));
+    };
 
     const handleFinalizar = async () => {
-        if (!todosRespondidos || isSaving) return;
+        if (isSaving) return;
         setIsSaving(true);
         try {
             const reg = await apiFetch("/api/liderar/dilemas", {
@@ -219,21 +290,27 @@ const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
                 body: JSON.stringify({ casos_asignados: casosAsignados, selecciones }),
             });
             setResultado(reg);
-            window.scrollTo(0, 0);
-            Swal.fire({ title: "Análisis listo", icon: "success", timer: 1400, showConfirmButton: false, confirmButtonColor: "#c5a059" });
+            setVista("resultado");
         } catch (e) {
             console.error(e);
-            Swal.fire("Error", "No se pudo guardar tu análisis.", "error");
+            Swal.fire({ title: "No se pudo guardar tu análisis", text: "Revisa tu conexión e inténtalo de nuevo.", icon: "error", confirmButtonColor: "#c5a059" });
         } finally {
             setIsSaving(false);
         }
     };
 
+    const siguiente = () => {
+        if (indice < total - 1) setIndice(i => i + 1);
+        else handleFinalizar();
+    };
+
     const rehacer = () => {
         setResultado(null);
         setSelecciones({});
+        setConfirmados({});
+        setIndice(0);
         setCasosAsignados(elegirAlAzar(CASOS, N_CASOS));
-        window.scrollTo(0, 0);
+        setVista("intro");
     };
 
     if (loading) {
@@ -241,7 +318,6 @@ const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
             <div className="latlab-unique-wrapper">
                 <div className="atlas-sync-float">
                     <div className="atlas-sync-pill">
-                        <span className="sync-icon">🔄</span>
                         <span className="sync-text">Cargando dilemas...</span>
                     </div>
                 </div>
@@ -249,10 +325,18 @@ const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
         );
     }
 
+    // ── Datos del resultado ──
+    const aciertosTotales = casosAsignados.filter(esAcierto).length;
+    const mensajeResumen = aciertosTotales >= 4
+        ? "Tus decisiones tienden a proteger los principios más importantes de cada situación. Mira abajo cuáles sostienes con más firmeza."
+        : aciertosTotales >= 2
+            ? "En algunos casos encontraste el equilibrio; en otros cediste principios que conviene revisar. La balanza te muestra cuáles."
+            : "Tus decisiones priorizan resolver rápido. Revisa abajo qué principios quedan expuestos con más frecuencia y por qué importan.";
+
     const recomendaciones = resultado
         ? PRINCIPIOS
             .map(p => {
-                const c = resultado.conteo_principios[p] || { en_juego: 0, expuesto: 0 };
+                const c = resultado.conteo_principios?.[p] || { en_juego: 0, expuesto: 0 };
                 return { p, ratio: c.en_juego > 0 ? c.expuesto / c.en_juego : -1, ...c };
             })
             .filter(x => x.ratio > 0)
@@ -261,171 +345,283 @@ const RetosDilemas = ({ userData, apiFetch, onNavigate }) => {
         : [];
 
     return (
-        <div className="latlab-unique-wrapper">
+        <div className="latlab-unique-wrapper" ref={inicioRef}>
             <header className="latlab-main-header">
                 <div className="latlab-header-brand">
-                    <button className="latlab-btn-back" onClick={() => onNavigate('fase_liderar')}>← Atrás</button>
-                    <h1>Dilemas Éticos</h1>
+                    <button className="latlab-btn-back dil-back" onClick={() => onNavigate('fase_liderar')}>
+                        <Icono nombre="atras" size={15} /> Atrás
+                    </button>
+                    <h1>Dilemas éticos</h1>
                 </div>
+                {vista === "caso" && <span className="dil-header-count">Caso {indice + 1} de {total}</span>}
             </header>
 
+            {vista === "caso" && (
+                <div className="dil-progress" aria-hidden="true">
+                    {casosAsignados.map((c, i) => (
+                        <span key={c} className={`dil-seg ${confirmados[c] ? (esAcierto(c) ? "ok" : "bad") : i === indice ? "actual" : ""}`} />
+                    ))}
+                </div>
+            )}
+
             <main className="latlab-vertical-container">
-                {!resultado ? (
-                    <>
-                        <section className="latlab-card">
-                            <div className="latlab-card-title-row">
-                                <div className="latlab-title-group">
-                                    <span className="latlab-step-badge">MISIÓN 3</span>
-                                    <h3 className="latlab-main-title">Tu mapa de decisiones</h3>
-                                </div>
-                                <p className="latlab-description">
-                                    Cinco casos, sin respuesta correcta. Cada opción sostiene unos principios y cede otros. No es un examen: es el dibujo de lo que tiendes a proteger y a ceder cuando hay que decidir rápido.
-                                </p>
+
+                {/* ═══════════ 1. INSTRUCCIONES ═══════════ */}
+                {vista === "intro" && (
+                    <section className="latlab-card dil-anim">
+                        <div className="latlab-card-title-row">
+                            <div className="latlab-title-group">
+                                <span className="latlab-step-badge">Misión 3</span>
+                                <h3 className="latlab-main-title">Cinco decisiones difíciles</h3>
                             </div>
-                        </section>
-
-                        {casosAsignados.map((casoId, idx) => {
-                            const caso = CASOS[casoId];
-                            if (!caso) return null;
-                            return (
-                                <section key={casoId} className="latlab-card">
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                                        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#94a3b8" }}>Caso {idx + 1} de {casosAsignados.length}</span>
-                                        <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{caso.momento}</span>
-                                    </div>
-                                    <h3 style={{ margin: "0 0 14px" }}>{caso.titulo}</h3>
-
-                                    {caso.aviso && (
-                                        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#854d0e", padding: "10px 14px", borderRadius: 8, fontSize: "0.85rem", marginBottom: 14 }}>
-                                            ⚠️ {caso.aviso}
-                                        </div>
-                                    )}
-
-                                    <p style={{ color: "#334155", lineHeight: 1.65, marginBottom: 18 }}>{caso.contexto}</p>
-
-                                    <div style={{ background: "#f8fafc", borderRadius: 12, padding: "16px 18px", marginBottom: 18 }}>
-                                        <FilaDato etiqueta="En juego" valor={caso.enJuego} />
-                                        <FilaDato etiqueta="Lo que sabes" valor={caso.sabes} />
-                                        <FilaDato etiqueta="Lo que no sabes" valor={caso.noSabes} />
-                                        <div style={{ marginBottom: 0 }}>
-                                            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#c5a059", textTransform: "uppercase", letterSpacing: "0.5px" }}>Plazo</span>
-                                            <p style={{ margin: "2px 0 0", fontSize: "0.9rem", color: "#475569", lineHeight: 1.5 }}>{caso.plazo}</p>
-                                        </div>
-                                    </div>
-
-                                    <p style={{ fontWeight: 700, color: "#1e293b", marginBottom: 12 }}>¿Qué haces?</p>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                                        {Object.entries(caso.opciones).map(([letra, o]) => {
-                                            const activo = selecciones[casoId] === letra;
-                                            return (
-                                                <button key={letra} type="button" onClick={() => seleccionar(casoId, letra)}
-                                                    style={{
-                                                        textAlign: "left", padding: "14px 18px", borderRadius: 12,
-                                                        border: `2px solid ${activo ? "#c5a059" : "#e2e8f0"}`,
-                                                        background: activo ? "#fffbeb" : "#fff", cursor: "pointer",
-                                                        display: "flex", gap: 14, alignItems: "flex-start", transition: "all 0.15s",
-                                                    }}>
-                                                    <span style={{
-                                                        flexShrink: 0, width: 30, height: 30, borderRadius: "50%",
-                                                        background: activo ? "#c5a059" : "#f1f5f9",
-                                                        color: activo ? "#fff" : "#64748b",
-                                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                                        fontWeight: 800, fontSize: "0.9rem",
-                                                    }}>{letra}</span>
-                                                    <span>
-                                                        <strong style={{ display: "block", color: "#1e293b", marginBottom: 3 }}>{o.titulo}</strong>
-                                                        <span style={{ fontSize: "0.85rem", color: "#64748b" }}>{o.desc}</span>
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </section>
-                            );
-                        })}
-
-                        <section className="latlab-card" style={{ textAlign: "center" }}>
-                            <button className="latlab-btn-finish" onClick={handleFinalizar}
-                                disabled={!todosRespondidos || isSaving}
-                                style={{ opacity: (!todosRespondidos || isSaving) ? 0.5 : 1, cursor: (!todosRespondidos || isSaving) ? "not-allowed" : "pointer" }}>
-                                {isSaving ? "Analizando..." : "Ver mi mapa"}
-                            </button>
-                            {!todosRespondidos && (
-                                <p style={{ fontSize: "0.8rem", color: "#94a3b8", marginTop: 10 }}>
-                                    Responde los {casosAsignados.length} casos para ver tu radar.
-                                </p>
-                            )}
-                        </section>
-                    </>
-                ) : (
-                    <>
-                        <section className="latlab-card">
-                            <div className="latlab-card-title-row">
-                                <div className="latlab-title-group">
-                                    <span className="latlab-step-badge">TU MAPA</span>
-                                    <h3 className="latlab-main-title">Tu mapa de decisiones</h3>
-                                </div>
-                                <p className="latlab-description">
-                                    No es una calificación ni un perfil que te mida. Es el dibujo de lo que tendiste a sostener (verde) y de lo que tendiste a ceder (café). Los dos polígonos casi nunca coinciden, y ahí está la información.
-                                </p>
-                            </div>
-                            <RadarDilemas conteo={resultado.conteo_principios} />
-                            <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 10, fontSize: "0.85rem" }}>
-                                <span style={{ color: "#2f7a5b", fontWeight: 700 }}>● Sostuviste</span>
-                                <span style={{ color: "#b07a2e", fontWeight: 700 }}>● Quedó expuesto</span>
-                            </div>
-                            <p style={{ textAlign: "center", fontSize: "0.78rem", color: "#94a3b8", marginTop: 8 }}>
-                                La distancia al centro es la proporción sobre las ocasiones en que el principio estuvo en juego.
+                            <p className="latlab-description">
+                                Vas a vivir cinco situaciones reales de aula donde la IA complica una decisión. Cada opción protege
+                                unos principios éticos y deja otros expuestos. Al final verás tu balanza de responsabilidad.
                             </p>
-                        </section>
+                        </div>
 
-                        {/* Devolución por cada caso elegido */}
-                        <section className="latlab-card">
-                            <div className="latlab-card-title-row">
-                                <span className="latlab-step-badge">Tus decisiones</span>
-                                <h3>Lo que dejó cada elección</h3>
+                        <ol className="dil-pasos">
+                            <li>
+                                <span className="dil-paso-num">1</span>
+                                <div><strong>Lee el caso</strong><p>Fíjate en lo que está en juego, lo que sabes, lo que no sabes y el plazo que tienes.</p></div>
+                            </li>
+                            <li>
+                                <span className="dil-paso-num">2</span>
+                                <div><strong>Decide</strong><p>Elige lo que harías tú de verdad, no lo que crees que se espera. Luego confirma tu decisión.</p></div>
+                            </li>
+                            <li>
+                                <span className="dil-paso-num">3</span>
+                                <div><strong>Descubre</strong><p>Verás en verde los principios que protegiste, en rojo los que dejaste expuestos, y cuál era la opción más equilibrada.</p></div>
+                            </li>
+                            <li>
+                                <span className="dil-paso-num">4</span>
+                                <div><strong>Mira tu balanza</strong><p>Con los cinco casos verás en qué principios eres firme y dónde tiendes a ceder.</p></div>
+                            </li>
+                        </ol>
+
+                        <div className="dil-principios">
+                            <h4>Los nueve principios que vas a poner en juego</h4>
+                            <p>Basados en la Recomendación UNESCO sobre la Ética de la IA (2021), el AI Competency Framework for Teachers (UNESCO 2024) y el AI Act.</p>
+                            <div className="dil-principios-grid">
+                                {PRINCIPIOS.map(p => (
+                                    <div key={p} className="dil-principio">
+                                        <strong>{nombreP(p)}</strong>
+                                        <p>{PRINCIPIOS_INFO[p].idea}</p>
+                                    </div>
+                                ))}
                             </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                                {casosAsignados.map(casoId => {
-                                    const caso = CASOS[casoId];
-                                    const letra = selecciones[casoId];
-                                    const op = caso?.opciones?.[letra];
-                                    if (!op) return null;
+                        </div>
+
+                        <div className="dil-actions">
+                            <button className="latlab-btn-finish dil-btn" onClick={() => setVista("caso")}>
+                                Empezar el primer caso <Icono nombre="adelante" size={18} />
+                            </button>
+                        </div>
+                    </section>
+                )}
+
+                {/* ═══════════ 2. UN CASO POR PANTALLA ═══════════ */}
+                {vista === "caso" && caso && (() => {
+                    const confirmado = !!confirmados[casoId];
+                    const letraElegida = selecciones[casoId];
+                    const rec = RECOMENDADAS[casoId];
+                    const acierto = letraElegida === rec?.opcion;
+                    const efecto = MATRIZ[casoId]?.[letraElegida] || { sostiene: [], expone: [] };
+                    const op = caso.opciones[letraElegida];
+
+                    return (
+                        <section className="latlab-card dil-anim" key={casoId}>
+                            <div className="dil-caso-meta">
+                                <span>Caso {indice + 1} de {total}</span>
+                                <span><Icono nombre="reloj" size={14} /> {caso.momento}</span>
+                            </div>
+                            <h3 className="dil-caso-titulo">{caso.titulo}</h3>
+
+                            <MediaCaso media={MEDIA_CASOS[casoId]} />
+
+                            {caso.aviso && (
+                                <div className="dil-aviso"><Icono nombre="alerta" size={16} /> {caso.aviso}</div>
+                            )}
+
+                            <p className="dil-contexto">{caso.contexto}</p>
+
+                            <div className="dil-datos">
+                                <Dato icono="diana" etiqueta="En juego" valor={caso.enJuego} />
+                                <Dato icono="reloj" etiqueta="Plazo" valor={caso.plazo} />
+                                <Dato icono="ojo" etiqueta="Lo que sabes" valor={caso.sabes} />
+                                <Dato icono="pregunta" etiqueta="Lo que no sabes" valor={caso.noSabes} />
+                            </div>
+
+                            <p className="dil-pregunta">¿Qué haces?</p>
+                            <div className="dil-opciones">
+                                {Object.entries(caso.opciones).map(([letra, o]) => {
+                                    const elegida = letraElegida === letra;
+                                    const esRecomendada = rec?.opcion === letra;
+                                    let estado = elegida ? "elegida" : "";
+                                    if (confirmado) {
+                                        if (elegida) estado = esRecomendada ? "acierto" : "error";
+                                        else estado = esRecomendada ? "recomendada" : "apagada";
+                                    }
                                     return (
-                                        <div key={casoId} style={{ padding: 16, borderLeft: "4px solid #c5a059", background: "#f8fafc", borderRadius: 8 }}>
-                                            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#94a3b8" }}>{caso.titulo}</span>
-                                            <strong style={{ display: "block", color: "#1e293b", margin: "4px 0 8px" }}>{letra}. {op.titulo}</strong>
-                                            <p style={{ fontSize: "0.9rem", color: "#475569", lineHeight: 1.6, margin: "0 0 10px" }}>{op.formativo}</p>
-                                            <p style={{ fontSize: "0.85rem", color: "#64748b", fontStyle: "italic", margin: 0 }}>Para el claustro: {op.claustro}</p>
-                                        </div>
+                                        <button key={letra} type="button" className={`dil-opcion ${estado}`}
+                                            onClick={() => seleccionar(letra)} disabled={confirmado}>
+                                            <span className="dil-opcion-letra">
+                                                {confirmado && elegida ? <Icono nombre={esRecomendada ? "check" : "alerta"} size={15} /> : letra}
+                                            </span>
+                                            <span className="dil-opcion-texto">
+                                                <strong>{o.titulo}</strong>
+                                                <small>{o.desc}</small>
+                                            </span>
+                                            {confirmado && esRecomendada && <em className="dil-opcion-tag">Más equilibrada</em>}
+                                        </button>
                                     );
                                 })}
                             </div>
+
+                            {!confirmado ? (
+                                <div className="dil-actions">
+                                    <button className="latlab-btn-finish dil-btn" disabled={!letraElegida} onClick={confirmar}>
+                                        Confirmar mi decisión
+                                    </button>
+                                    {!letraElegida && <small className="dil-hint">Elige una opción para continuar.</small>}
+                                </div>
+                            ) : (
+                                <div className={`dil-feedback ${acierto ? "ok" : "bad"}`}>
+                                    <div className="dil-feedback-head">
+                                        <span className="dil-feedback-icon"><Icono nombre={acierto ? "check" : "alerta"} size={20} /></span>
+                                        <div>
+                                            <strong>{acierto ? "Elegiste la opción más equilibrada" : "Hay una opción que protege más principios"}</strong>
+                                            <p>{acierto ? rec.porque : `La opción más equilibrada era la ${rec.opcion}. ${rec.porque}`}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="dil-feedback-cols">
+                                        <div>
+                                            <span className="dil-col-title ok">Tu decisión protege</span>
+                                            <div className="dil-chips">
+                                                {efecto.sostiene.map(p => <span key={p} className="dil-chip ok" title={PRINCIPIOS_INFO[p]?.idea}>{nombreP(p)}</span>)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="dil-col-title bad">Deja expuesto</span>
+                                            <div className="dil-chips">
+                                                {efecto.expone.length
+                                                    ? efecto.expone.map(p => <span key={p} className="dil-chip bad" title={PRINCIPIOS_INFO[p]?.idea}>{nombreP(p)}</span>)
+                                                    : <span className="dil-chip neutro">Ningún principio</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {op && <p className="dil-formativo">{op.formativo}</p>}
+                                    {op && <p className="dil-claustro"><strong>Para conversar con tus colegas:</strong> {op.claustro}</p>}
+
+                                    <div className="dil-actions">
+                                        <button className="latlab-btn-finish dil-btn" onClick={siguiente} disabled={isSaving}>
+                                            {indice < total - 1
+                                                ? <>Siguiente caso <Icono nombre="adelante" size={18} /></>
+                                                : isSaving ? "Analizando…" : <>Ver mi balanza <Icono nombre="adelante" size={18} /></>}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    );
+                })()}
+
+                {/* ═══════════ 3. RESULTADO ═══════════ */}
+                {vista === "resultado" && resultado && (
+                    <>
+                        <section className="latlab-card dil-anim">
+                            <div className="dil-resumen-head">
+                                <div className="dil-resumen-score">
+                                    <span>{aciertosTotales}</span>
+                                    <small>de {total} equilibradas</small>
+                                </div>
+                                <div>
+                                    <h3>Tu balanza de responsabilidad</h3>
+                                    <p>{mensajeResumen}</p>
+                                </div>
+                            </div>
+                            <div className="dil-progress dil-progress-inline" aria-hidden="true">
+                                {casosAsignados.map(c => <span key={c} className={`dil-seg ${esAcierto(c) ? "ok" : "bad"}`} />)}
+                            </div>
+                        </section>
+
+                        <section className="latlab-card">
+                            <div className="latlab-card-title-row">
+                                <div className="latlab-title-group">
+                                    <span className="latlab-step-badge">Tu balanza</span>
+                                    <h3 className="latlab-main-title">Qué protegiste y qué dejaste expuesto</h3>
+                                </div>
+                                <p className="latlab-description">
+                                    Cada fila es un principio. A la derecha, las veces que tus decisiones lo protegieron; a la izquierda,
+                                    las veces que lo dejaron expuesto. Arriba están tus principios más firmes; abajo, los que más cediste.
+                                </p>
+                            </div>
+                            <BalanzaResponsabilidad conteo={resultado.conteo_principios} />
                         </section>
 
                         {recomendaciones.length > 0 && (
                             <section className="latlab-card">
                                 <div className="latlab-card-title-row">
-                                    <span className="latlab-step-badge">Recomendaciones</span>
-                                    <h3>Empiezan por lo que más cediste</h3>
+                                    <div className="latlab-title-group">
+                                        <span className="latlab-step-badge">Recomendaciones</span>
+                                        <h3 className="latlab-main-title">Empieza por lo que más cediste</h3>
+                                    </div>
                                 </div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                                <div className="dil-recos">
                                     {recomendaciones.map(r => (
-                                        <div key={r.p} style={{ padding: 16, borderLeft: "4px solid #b07a2e", background: "#faf7f2", borderRadius: 8 }}>
-                                            <strong style={{ color: "#1e293b" }}>{r.p}</strong>
-                                            <p style={{ fontSize: "0.88rem", color: "#475569", margin: "6px 0 0" }}>
-                                                Estuvo en juego {r.en_juego} {r.en_juego === 1 ? "vez" : "veces"} y lo cediste {r.expuesto}. Antes de aplicar una medida, pregúntate si se la pedirías a todo el grupo: si la respuesta es no, el problema está en el diseño de la medida, no en el estudiante.
-                                            </p>
+                                        <div key={r.p} className="dil-reco">
+                                            <div className="dil-reco-top">
+                                                <strong>{nombreP(r.p)}</strong>
+                                                <small>Expuesto {r.expuesto} de {r.en_juego} {r.en_juego === 1 ? "vez" : "veces"} que estuvo en juego</small>
+                                            </div>
+                                            <p>{PRINCIPIOS_INFO[r.p]?.idea}</p>
+                                            <p className="dil-reco-consejo">{PRINCIPIOS_INFO[r.p]?.consejo}</p>
+                                            <span className="dil-reco-marco">{PRINCIPIOS_INFO[r.p]?.marco}</span>
                                         </div>
                                     ))}
                                 </div>
                             </section>
                         )}
 
-                        <section className="latlab-card" style={{ textAlign: "center" }}>
-                            <button className="latlab-btn-nuevo" onClick={rehacer}
-                                style={{ background: "#1e293b", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontWeight: 700, cursor: "pointer" }}>
-                                ↻ Volver a empezar
+                        <section className="latlab-card">
+                            <div className="latlab-card-title-row">
+                                <div className="latlab-title-group">
+                                    <span className="latlab-step-badge">Tus decisiones</span>
+                                    <h3 className="latlab-main-title">Lo que dejó cada elección</h3>
+                                </div>
+                                <p className="latlab-description">Toca cada caso para volver a leer la reflexión.</p>
+                            </div>
+                            {casosAsignados.map(c => {
+                                const cs = CASOS[c];
+                                const l = selecciones[c];
+                                const op = cs?.opciones?.[l];
+                                if (!op) return null;
+                                const ok = esAcierto(c);
+                                const rec = RECOMENDADAS[c];
+                                return (
+                                    <details key={c} className={`dil-recap ${ok ? "ok" : "bad"}`}>
+                                        <summary>
+                                            <small>{cs.titulo}</small>
+                                            <strong>{l}. {op.titulo}</strong>
+                                        </summary>
+                                        <div className="dil-recap-body">
+                                            <p>{op.formativo}</p>
+                                            {!ok && rec && <p><strong>Opción más equilibrada ({rec.opcion}):</strong> {rec.porque}</p>}
+                                            <p className="dil-claustro"><strong>Para conversar con tus colegas:</strong> {op.claustro}</p>
+                                        </div>
+                                    </details>
+                                );
+                            })}
+                        </section>
+
+                        <section className="latlab-card dil-final-actions">
+                            <button className="dil-btn-dark" onClick={rehacer}>
+                                <Icono nombre="reiniciar" size={16} /> Volver a empezar
+                            </button>
+                            <button className="latlab-btn-finish dil-btn" onClick={() => onNavigate('fase_liderar')}>
+                                Volver a Liderar
                             </button>
                         </section>
                     </>
