@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
 import "../Styles/AsegurarUpgrade.css";
 
@@ -20,31 +20,49 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
     // ── FÓRMULA R.E.C.T.O.R. (constructor guiado con las 6 piezas) ──
     // Rol · Escenario · Cometido · Topes éticos · Output · Revisión
     const anatomiaPrompt = [
-        { id: "rol", letra: "R", label: "Rol de la IA", icono: "🎭", dim: "agencia",
-          placeholder: "Actúa como asistente pedagógico de apoyo, no como evaluador final.",
-          ayuda: "Define el papel de la IA. 'Apoyo' preserva tu agencia; 'juez' la delega.",
-          leccion: "Nombrar el rol es el primer límite ético: la IA asiste, el docente decide." },
-        { id: "contexto", letra: "E", label: "Escenario / Contexto", icono: "🗺️", dim: "privacidad",
-          placeholder: "Estudiantes de 9°, asignatura de Sociales, tema derechos humanos.",
-          ayuda: "Da el marco sin datos personales. Nivel, materia y objetivo bastan.",
-          leccion: "El contexto mejora la respuesta sin comprometer la privacidad si evitas identificadores." },
-        { id: "tarea", letra: "C", label: "Cometido / Tarea", icono: "🎯", dim: "cognitiva",
-          placeholder: "Sugiere 3 preguntas de reflexión que yo revisaré antes de usarlas.",
-          ayuda: "Verbos como 'sugiere', 'propón', 'ayúdame a' mantienen tu control.",
-          leccion: "Pedir borradores (no productos finales) protege el esfuerzo cognitivo del estudiante." },
-        { id: "restricciones", letra: "T", label: "Topes éticos", icono: "🛡️", dim: "etica",
-          placeholder: "No asignes calificaciones. No uses lenguaje que estereotipe por origen o género.",
-          ayuda: "Las prohibiciones explícitas son tu escudo. Di qué NO debe hacer.",
-          leccion: "Sin restricciones explícitas, el modelo puede reproducir sesgos o exceder su rol." },
-        { id: "formato", letra: "O", label: "Output / Formato", icono: "📐", dim: "etica",
-          placeholder: "Lista de máximo 5 puntos, con una justificación breve por cada uno.",
-          ayuda: "Estructura la respuesta para poder auditarla con facilidad.",
-          leccion: "Pedir justificación por punto te permite verificar el razonamiento, no solo el resultado." },
-        { id: "supervision", letra: "R", label: "Revisión humana", icono: "👁️", dim: "agencia",
-          placeholder: "Recuérdame que la decisión final y la calificación son mi responsabilidad.",
-          ayuda: "Reafirma quién es responsable. Cierra el círculo de gobernanza.",
-          leccion: "Es la diferencia entre 'IA que decide' e 'IA que apoya una decisión humana'." }
+        {
+            id: "rol", letra: "R", label: "Rol de la IA", icono: "🎭", dim: "agencia",
+            placeholder: "Actúa como asistente pedagógico de apoyo, no como evaluador final.",
+            ayuda: "Define el papel de la IA. 'Apoyo' preserva tu agencia; 'juez' la delega.",
+            leccion: "Nombrar el rol es el primer límite ético: la IA asiste, el docente decide."
+        },
+        {
+            id: "contexto", letra: "E", label: "Escenario / Contexto", icono: "🗺️", dim: "privacidad",
+            placeholder: "Estudiantes de 9°, asignatura de Sociales, tema derechos humanos.",
+            ayuda: "Da el marco sin datos personales. Nivel, materia y objetivo bastan.",
+            leccion: "El contexto mejora la respuesta sin comprometer la privacidad si evitas identificadores."
+        },
+        {
+            id: "tarea", letra: "C", label: "Cometido / Tarea", icono: "🎯", dim: "cognitiva",
+            placeholder: "Sugiere 3 preguntas de reflexión que yo revisaré antes de usarlas.",
+            ayuda: "Verbos como 'sugiere', 'propón', 'ayúdame a' mantienen tu control.",
+            leccion: "Pedir borradores (no productos finales) protege el esfuerzo cognitivo del estudiante."
+        },
+        {
+            id: "restricciones", letra: "T", label: "Topes éticos", icono: "🛡️", dim: "etica",
+            placeholder: "No asignes calificaciones. No uses lenguaje que estereotipe por origen o género.",
+            ayuda: "Las prohibiciones explícitas son tu escudo. Di qué NO debe hacer.",
+            leccion: "Sin restricciones explícitas, el modelo puede reproducir sesgos o exceder su rol."
+        },
+        {
+            id: "formato", letra: "O", label: "Output / Formato", icono: "📐", dim: "etica",
+            placeholder: "Lista de máximo 5 puntos, con una justificación breve por cada uno.",
+            ayuda: "Estructura la respuesta para poder auditarla con facilidad.",
+            leccion: "Pedir justificación por punto te permite verificar el razonamiento, no solo el resultado."
+        },
+        {
+            id: "supervision", letra: "R", label: "Revisión humana", icono: "👁️", dim: "agencia",
+            placeholder: "Recuérdame que la decisión final y la calificación son mi responsabilidad.",
+            ayuda: "Reafirma quién es responsable. Cierra el círculo de gobernanza.",
+            leccion: "Es la diferencia entre 'IA que decide' e 'IA que apoya una decisión humana'."
+        }
     ];
+
+    // Mini-lección "el mismo pedido, dos versiones"
+    const ejemploPrompt = {
+        debil: "Hazme un examen de fotosíntesis y califica las respuestas de Juan Pérez.",
+        fuerte: "Actúa como asistente pedagógico. Mis estudiantes de 7° están aprendiendo fotosíntesis. Propón 5 preguntas abiertas de nivel análisis. No asignes calificaciones ni uses datos de estudiantes. Entrega una lista con una justificación breve por pregunta. Yo revisaré y decidiré cuáles uso."
+    };
 
     // Micro-lecciones: explican EL DAÑO de cada dimensión
     const microLecciones = {
@@ -115,6 +133,18 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
     const [isSaving, setIsSaving] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [constructorAbierto, setConstructorAbierto] = useState(false);
+
+    // ── Taller con vista en vivo ──
+    const workbenchRef = useRef(null);
+    const previewRef = useRef(null);
+    const [workbenchVisible, setWorkbenchVisible] = useState(false);
+    useEffect(() => {
+        const el = workbenchRef.current;
+        if (!el || typeof IntersectionObserver === "undefined") return;
+        const obs = new IntersectionObserver(([entry]) => setWorkbenchVisible(entry.isIntersecting), { threshold: 0.05 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [loading]);
 
     // ═══════════════════════════════════════════════════════════
     // SALVAGUARDAS: frases que SUMAN seguridad (crédito) por dimensión.
@@ -427,8 +457,8 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
                 riesgoFinal: analizarPromptHeuristico(nuevo)
             };
         });
-        Swal.fire({ title: "Prompt ensamblado", text: "Se cargó como tu prompt mejorado. Revisa el diff en el Paso 1.", icon: "success", timer: 1600, showConfirmButton: false });
-        window.scrollTo(0, 0);
+        Swal.fire({ title: "Prompt ensamblado", text: "Ya está en el taller del Paso 3: sigue mejorándolo con capas y reescrituras.", icon: "success", timer: 1800, showConfirmButton: false });
+        requestAnimationFrame(() => workbenchRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     };
 
     const handleFinalizar = async () => {
@@ -526,6 +556,11 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
     // ═══════════════════════════════════════════════════════════
     // RENDER
     // ═══════════════════════════════════════════════════════════
+    const colorNivel = (v) => v >= 4 ? "#16a34a" : v >= 3 ? "#d97706" : "#dc2626";
+    const bloquesPreview = (formData.promptMejorado || "")
+        .split(/\n\n+/).map(s => s.trim()).filter(Boolean)
+        .map(texto => ({ texto, nuevo: !(formData.promptOriginal || "").includes(texto) }));
+
     return (
         <div className="asegurar-upgrade-wrapper">
             {loading && !datosIniciales && <div className="loading-overlay">Sincronizando...</div>}
@@ -541,35 +576,35 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
 
             <main className="asegurar-upgrade-main">
 
-                {/* ───────── PASO 1: DIAGNÓSTICO + HALLAZGOS + DIFF ───────── */}
+                {/* ───────── PASO 1: DIAGNÓSTICO ───────── */}
                 <section className="asegurar-upgrade-section">
                     <div className="asegurar-upgrade-badge">Paso 1</div>
-                    <h3 className="asegurar-upgrade-title">Diagnóstico de tu prompt</h3>
+                    <h3 className="asegurar-upgrade-title">Tu prompt y su diagnóstico</h3>
                     <p className="asegurar-upgrade-subtitle">
                         Este es el prompt que traes de Liderar. Si no heredaste ninguno, escríbelo o pégalo abajo:
                         el motor lo analiza en cuatro dimensiones de riesgo.
                     </p>
 
-                    {/* Editor del prompt base (habilitado cuando no es solo lectura) */}
-                    {!isReadOnly && (
+                    {!isReadOnly ? (
                         <textarea
                             className="asegurar-upgrade-prompt-editor"
                             value={formData.promptOriginal}
                             onChange={(e) => handlePromptBaseChange(e.target.value)}
                             placeholder="Escribe o pega aquí el prompt que quieres asegurar..."
-                            style={{ width: '100%', minHeight: '90px', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.9rem', marginBottom: '16px', resize: 'vertical' }}
+                            style={{ width: '100%', minHeight: '110px', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.92rem', marginBottom: '16px', resize: 'vertical', boxSizing: 'border-box' }}
                         />
+                    ) : (
+                        <div className="asegurar-upgrade-box" style={{ minHeight: 'auto', marginBottom: '16px' }}>{formData.promptOriginal}</div>
                     )}
 
-                    {/* Radar simple de las 4 dimensiones */}
                     {formData.riesgoPrevio && (
-                        <div className="asegurar-upgrade-dims" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '18px' }}>
+                        <div className="asegurar-upgrade-dims" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', marginBottom: '14px' }}>
                             {["agencia", "cognitiva", "etica", "privacidad"].map(dim => {
                                 const val = formData.riesgoPrevio[dim] || 0;
-                                const color = val <= 2 ? '#dc2626' : val === 3 ? '#d97706' : '#16a34a';
+                                const color = colorNivel(val);
                                 return (
                                     <div key={dim} style={{ background: '#fff', border: `1px solid ${color}33`, borderLeft: `4px solid ${color}`, borderRadius: '10px', padding: '12px' }}>
-                                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.03em' }}>{nombreDimension[dim]}</div>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700 }}>{nombreDimension[dim]}</div>
                                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
                                             <span style={{ fontSize: '1.6rem', fontWeight: 800, color }}>{val}</span>
                                             <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/5</span>
@@ -583,215 +618,231 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
                         </div>
                     )}
 
-                    <div className="asegurar-upgrade-grid-split">
-                        <div className="asegurar-upgrade-panel original">
-                            <label>Prompt Original</label>
-                            <div className="asegurar-upgrade-box">
-                                {formData.promptOriginal || <em style={{ color: '#94a3b8' }}>Aún no hay prompt.</em>}
-                                <div className="asegurar-upgrade-tags">
-                                    {formData.alertasOriginal.length > 0 ?
-                                        formData.alertasOriginal.map(a => <span key={a} className="asegurar-upgrade-alert-tag">⚠ {a}</span>) :
-                                        <span className="asegurar-upgrade-safe-tag">Sin alertas críticas detectadas</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <div className="asegurar-upgrade-panel mejorado">
-                            <label>Prompt Mejorado (Evolución Ética)</label>
-                            <div className="asegurar-upgrade-box gold">
-                                {formData.promptMejorado || <em style={{ color: '#94a3b8' }}>Aplica capas o reescrituras para verlo aquí.</em>}
-                            </div>
-                        </div>
+                    <div className="asegurar-upgrade-tags">
+                        {formData.alertasOriginal.length > 0
+                            ? formData.alertasOriginal.map(a => <span key={a} className="asegurar-upgrade-alert-tag">{a}</span>)
+                            : <span className="asegurar-upgrade-safe-tag">Sin alertas críticas detectadas</span>}
                     </div>
-
-                    {/* DIFF VISUAL */}
-                    {fragmentosAnadidos.length > 0 && (
-                        <div className="asegurar-upgrade-diff" style={{ marginTop: '18px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '16px' }}>
-                            <h4 style={{ margin: '0 0 10px', color: '#15803d' }}>🟢 Protecciones añadidas ({fragmentosAnadidos.length})</h4>
-                            {fragmentosAnadidos.map((frag, i) => (
-                                <div key={i} style={{ fontSize: '0.85rem', color: '#166534', padding: '8px 12px', background: '#dcfce7', borderRadius: '6px', marginBottom: '6px', borderLeft: '3px solid #22c55e' }}>
-                                    + {frag.replace(/^✔\s*/, '').replace(/^\[[^\]]+\]:\s*/, '')}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <p className="asg-next-hint">En el Paso 3 verás cómo mejora este prompt mientras aplicas cambios.</p>
                 </section>
 
-                {/* ───────── PASO 2: LA FÓRMULA R.E.C.T.O.R. ───────── */}
+                {/* ───────── PASO 2: APRENDE A CONSTRUIR UN PROMPT ───────── */}
                 {!isReadOnly && (
                     <section className="asegurar-upgrade-section">
                         <div className="asegurar-upgrade-badge">Paso 2</div>
-                        <h3 className="asegurar-upgrade-title">La fórmula R.E.C.T.O.R. de un prompt formidable</h3>
+                        <h3 className="asegurar-upgrade-title">Aprende a construir un buen prompt</h3>
                         <p className="asegurar-upgrade-subtitle">
-                            Un buen prompt no se improvisa: se construye con seis piezas. Recuérdalas con <strong>RECTOR</strong> —
-                            <strong> R</strong>ol · <strong>E</strong>scenario · <strong>C</strong>ometido ·
-                            <strong> T</strong>opes éticos · <strong>O</strong>utput · <strong>R</strong>evisión.
-                            Complétalas y ensámblalo como tu prompt mejorado.
+                            Si nunca te has detenido a pensar cómo se escribe un prompt, empieza aquí: tres ideas cortas y un constructor guiado.
                         </p>
 
-                        {/* Medidor de completitud RECTOR */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 16px', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                                {anatomiaPrompt.map((c) => {
+                        <div className="asg-primer">
+                            <article className="asg-primer-card">
+                                <span className="asg-primer-num">1</span>
+                                <h4>¿Qué es un prompt?</h4>
+                                <p>Es la instrucción que le das a la IA. La IA no adivina lo que quieres: responde a lo que escribes. Mientras más claro seas sobre su papel, el contexto y los límites, más útil y más segura será la respuesta.</p>
+                            </article>
+                            <article className="asg-primer-card">
+                                <span className="asg-primer-num">2</span>
+                                <h4>El mismo pedido, dos versiones</h4>
+                                <div className="asg-versiones">
+                                    <div className="asg-version debil"><small>Débil</small><p>{ejemploPrompt.debil}</p></div>
+                                    <div className="asg-version fuerte"><small>Fuerte</small><p>{ejemploPrompt.fuerte}</p></div>
+                                </div>
+                            </article>
+                            <article className="asg-primer-card">
+                                <span className="asg-primer-num">3</span>
+                                <h4>Seis piezas para recordar</h4>
+                                <p>La versión fuerte tiene seis piezas. Para recordarlas usamos la palabra <strong>RECTOR</strong>: Rol, Escenario, Cometido, Topes éticos, Output y Revisión humana.</p>
+                            </article>
+                        </div>
+
+                        <div className="asg-credito">
+                            <strong>¿De dónde sale R.E.C.T.O.R.?</strong>
+                            <p>
+                                Es una fórmula creada por el equipo de COMPASS para este taller; no es una recomendación oficial de la UNESCO ni de otro organismo.
+                                Se inspira en marcos de prompting ampliamente usados, como CO-STAR (Sheila Teo, 2023) y las guías públicas de OpenAI y Anthropic,
+                                que coinciden en darle a la IA un rol, un contexto, una tarea clara y un formato de respuesta. Las piezas «Topes éticos» y
+                                «Revisión humana» las añadimos desde el enfoque centrado en lo humano de la UNESCO (2024) y el principio de supervisión humana del AI Act.
+                            </p>
+                        </div>
+
+                        <div className="asg-rector-meter">
+                            <div className="asg-rector-letras">
+                                {anatomiaPrompt.map(c => {
                                     const lleno = (formData.constructor[c.id] || "").trim().length > 3;
-                                    return (
-                                        <div key={c.id} title={c.label}
-                                            style={{ width: '34px', height: '34px', borderRadius: '8px', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '0.9rem', color: lleno ? '#fff' : '#94a3b8', background: lleno ? '#c5a059' : '#f1f5f9', border: `1px solid ${lleno ? '#c5a059' : '#e2e8f0'}`, transition: 'all .2s' }}>
-                                            {c.letra}
-                                        </div>
-                                    );
+                                    return <span key={c.id} title={c.label} className={lleno ? "lleno" : ""}>{c.letra}</span>;
                                 })}
                             </div>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: puntajeRector === 6 ? '#16a34a' : '#64748b' }}>
-                                {puntajeRector}/6 componentes {puntajeRector === 6 ? "— prompt completo ✔" : "listos"}
+                            <span className={puntajeRector === 6 ? "completo" : ""}>
+                                {puntajeRector}/6 piezas listas{puntajeRector === 6 ? ": prompt completo" : ""}
                             </span>
                         </div>
 
-                        <button
-                            className="asegurar-upgrade-constructor-toggle"
-                            onClick={() => setConstructorAbierto(!constructorAbierto)}
-                            style={{ background: constructorAbierto ? '#c5a059' : '#f1f5f9', color: constructorAbierto ? '#fff' : '#1e293b', border: '1px solid #c5a059', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', marginBottom: constructorAbierto ? '18px' : '0' }}
-                        >
-                            {constructorAbierto ? "▼ Ocultar constructor R.E.C.T.O.R." : "▶ Abrir constructor R.E.C.T.O.R. (6 componentes)"}
+                        <button type="button" className={`asg-constructor-toggle ${constructorAbierto ? "abierto" : ""}`}
+                            onClick={() => setConstructorAbierto(!constructorAbierto)}>
+                            {constructorAbierto ? "Ocultar el constructor" : "Construir mi prompt pieza por pieza"}
                         </button>
 
                         {constructorAbierto && (
                             <div className="asegurar-upgrade-constructor">
                                 {anatomiaPrompt.map((comp, idx) => (
-                                    <div key={comp.id} style={{ borderLeft: '4px solid #c5a059', background: '#fafaf8', padding: '16px', borderRadius: '10px', marginBottom: '14px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                                            <span style={{ background: '#c5a059', color: '#fff', width: '26px', height: '26px', borderRadius: '6px', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '0.85rem' }}>{comp.letra}</span>
-                                            <span style={{ fontSize: '1.2rem' }}>{comp.icono}</span>
+                                    <div key={comp.id} className="asg-pieza">
+                                        <div className="asg-pieza-head">
+                                            <span className="asg-pieza-letra">{comp.letra}</span>
                                             <strong>{idx + 1}. {comp.label}</strong>
-                                            <span style={{ marginLeft: 'auto', fontSize: '0.68rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>{nombreDimension[comp.dim]}</span>
+                                            <em>{nombreDimension[comp.dim]}</em>
                                         </div>
-                                        <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 8px' }}>{comp.ayuda}</p>
+                                        <p className="asg-pieza-ayuda">{comp.ayuda}</p>
                                         <textarea
                                             value={formData.constructor[comp.id]}
                                             placeholder={comp.placeholder}
                                             onChange={(e) => setFormData(prev => ({ ...prev, constructor: { ...prev.constructor, [comp.id]: e.target.value } }))}
-                                            style={{ width: '100%', minHeight: '58px', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.9rem', resize: 'vertical' }}
                                         />
-                                        <p style={{ fontSize: '0.78rem', color: '#c5a059', margin: '8px 0 0', fontStyle: 'italic' }}>💡 {comp.leccion}</p>
+                                        <p className="asg-pieza-leccion">{comp.leccion}</p>
                                     </div>
                                 ))}
-                                <button onClick={cargarConstructor}
-                                    style={{ background: '#1e293b', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', width: '100%' }}>
-                                    ⚙ Ensamblar como prompt mejorado
+                                <button type="button" className="asg-ensamblar" onClick={cargarConstructor}>
+                                    Usar este prompt y llevarlo al taller
                                 </button>
                             </div>
                         )}
                     </section>
                 )}
 
-                {/* ───────── PASO 3: REESCRITURA ASISTIDA ───────── */}
-                {!isReadOnly && (
-                    <section className="asegurar-upgrade-section">
-                        <div className="asegurar-upgrade-badge">Paso 3</div>
-                        <h3 className="asegurar-upgrade-title">Reescritura asistida</h3>
-                        <p className="asegurar-upgrade-subtitle">
-                            El motor detectó estos puntos mejorables en tu prompt original. Cada reescritura reemplaza un patrón
-                            riesgoso por una versión que preserva tu agencia docente. Puedes aplicarlas y quitarlas.
-                        </p>
-                        {sugerenciasDetectadas.length > 0 ? (
-                            sugerenciasDetectadas.map(sug => {
-                                const aplicada = formData.reescriturasAplicadas.includes(sug.id);
-                                const colorSev = sug.severidad === "alta" ? '#dc2626' : '#d97706';
-                                return (
-                                    <div key={sug.id} style={{ border: `1px solid ${aplicada ? '#22c55e' : '#e2e8f0'}`, borderRadius: '10px', padding: '14px', marginBottom: '12px', background: aplicada ? '#f0fdf4' : '#fff' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', gap: '10px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '0.62rem', textTransform: 'uppercase', color: '#fff', background: colorSev, padding: '2px 7px', borderRadius: '5px', fontWeight: 800 }}>{sug.severidad}</span>
-                                                <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sug.titulo}</strong>
-                                            </div>
-                                            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>{nombreDimension[sug.dimension]}</span>
-                                        </div>
-                                        <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 10px' }}>{sug.explicacion}</p>
-                                        <div style={{ background: '#f8fafc', borderLeft: '3px solid #c5a059', padding: '10px', borderRadius: '6px', fontSize: '0.85rem', color: '#334155', marginBottom: '10px' }}>
-                                            {sug.reescritura}
-                                        </div>
-                                        {aplicada ? (
-                                            <button onClick={() => quitarReescritura(sug.id)}
-                                                style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
-                                                ✔ Aplicada — quitar
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => aplicarReescritura(sug)}
-                                                style={{ background: '#1e293b', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
-                                                Aplicar reescritura
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <p className="asegurar-upgrade-subtitle" style={{ fontStyle: 'italic' }}>
-                                ✅ El motor no detectó patrones críticos de reescritura en tu prompt original.
-                            </p>
-                        )}
-                    </section>
-                )}
-
-                {/* ───────── PASO 4: BLINDAJE POR CAPAS (el bug arreglado) ───────── */}
-                <section className="asegurar-upgrade-section">
-                    <div className="asegurar-upgrade-badge">Paso 4</div>
-                    <h3 className="asegurar-upgrade-title">Blindaje por capas de protección</h3>
+                {/* ───────── PASO 3: TALLER DE MEJORA CON VISTA EN VIVO ───────── */}
+                <section className="asegurar-upgrade-section" ref={workbenchRef}>
+                    <div className="asegurar-upgrade-badge">Paso 3</div>
+                    <h3 className="asegurar-upgrade-title">Mejora tu prompt y mira el cambio en vivo</h3>
                     <p className="asegurar-upgrade-subtitle">
-                        Cada capa es una cláusula que se inyecta al final de tu prompt. Actívalas para mitigar los riesgos
-                        detectados. Se agrupan por la dimensión que protegen.
+                        A la izquierda eliges qué mejorar. A la derecha tu prompt y su nivel de seguridad se actualizan al instante,
+                        con lo nuevo resaltado en verde.
                     </p>
 
-                    {Object.keys(bloquesPorDimension).map(dim => {
-                        const enRiesgo = formData.riesgoPrevio && formData.riesgoPrevio[dim] <= 3;
-                        return (
-                            <div key={dim} style={{ marginBottom: '18px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: '#1e293b' }}>{nombreDimension[dim]}</span>
-                                    {enRiesgo && <span style={{ fontSize: '0.65rem', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>⚠ Recomendado por tu diagnóstico</span>}
-                                </div>
-                                <div className="asegurar-upgrade-blocks-container">
-                                    {bloquesPorDimension[dim].map(b => {
-                                        const activo = formData.bloquesActivados.includes(b.id);
-                                        // Redundante si el prompt base ya lo cubre y la capa no está activada
-                                        const redundante = !activo && bloqueYaCubierto(b.id, formData.promptBase);
+                    <div className="asg-workbench">
+                        <div className="asg-tools">
+                            {!isReadOnly && (
+                                <div className="asg-tool-group">
+                                    <h4 className="asg-tool-title">1. Reescrituras sugeridas</h4>
+                                    <p className="asg-tool-hint">Frases de tu prompt que el motor recomienda cambiar.</p>
+                                    {sugerenciasDetectadas.length > 0 ? sugerenciasDetectadas.map(sug => {
+                                        const aplicada = formData.reescriturasAplicadas.includes(sug.id);
                                         return (
-                                            <button
-                                                key={b.id}
-                                                className={`asegurar-upgrade-block-item ${activo ? 'active' : ''}`}
-                                                onClick={() => toggleBloque(b.id)}
-                                                disabled={isReadOnly || redundante}
-                                                style={{ opacity: (isReadOnly && !activo) || redundante ? 0.55 : 1 }}
-                                                title={redundante ? "Tu prompt ya cubre esta protección" : ""}
-                                            >
-                                                <span className="asegurar-upgrade-check">{activo ? "✅" : redundante ? "✔" : "➕"}</span>
-                                                <div className="asegurar-upgrade-block-info">
-                                                    <span className="asegurar-upgrade-block-label">
-                                                        {b.label}
-                                                        {redundante && <span style={{ marginLeft: '8px', fontSize: '0.62rem', textTransform: 'uppercase', color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: '20px', fontWeight: 700 }}>ya cubierto</span>}
-                                                    </span>
-                                                    <small className="asegurar-upgrade-block-preview" style={{ color: '#64748b' }}>
-                                                        {redundante ? "Tu prompt base ya incluye esta salvaguarda. No hace falta apilarla." : b.porque}
-                                                    </small>
+                                            <div key={sug.id} className={`asg-sug ${aplicada ? "aplicada" : ""}`}>
+                                                <div className="asg-sug-top">
+                                                    <span className={`asg-sev ${sug.severidad}`}>{sug.severidad === "alta" ? "Riesgo alto" : "Riesgo medio"}</span>
+                                                    <strong>{sug.titulo}</strong>
                                                 </div>
-                                            </button>
+                                                <p>{sug.explicacion}</p>
+                                                <blockquote>{sug.reescritura}</blockquote>
+                                                <button type="button" className={`asg-sug-btn ${aplicada ? "on" : ""}`}
+                                                    onClick={() => aplicada ? quitarReescritura(sug.id) : aplicarReescritura(sug)}>
+                                                    {aplicada ? "Aplicada, quitar" : "Aplicar reescritura"}
+                                                </button>
+                                            </div>
+                                        );
+                                    }) : <p className="asg-empty">El motor no encontró frases riesgosas para reescribir en tu prompt.</p>}
+                                </div>
+                            )}
+
+                            <div className="asg-tool-group">
+                                <h4 className="asg-tool-title">{isReadOnly ? "Capas de protección aplicadas" : "2. Capas de protección"}</h4>
+                                <p className="asg-tool-hint">Cláusulas que se agregan al final de tu prompt. Empieza por las recomendadas para ti.</p>
+                                {Object.keys(bloquesPorDimension).map(dim => {
+                                    const enRiesgo = formData.riesgoPrevio && formData.riesgoPrevio[dim] <= 3;
+                                    return (
+                                        <div key={dim} className="asg-capa-dim">
+                                            <div className="asg-capa-dim-head">
+                                                <span>{nombreDimension[dim]}</span>
+                                                {enRiesgo && <em>Recomendado para ti</em>}
+                                            </div>
+                                            <div className="asegurar-upgrade-blocks-container">
+                                                {bloquesPorDimension[dim].map(b => {
+                                                    const activo = formData.bloquesActivados.includes(b.id);
+                                                    const redundante = !activo && bloqueYaCubierto(b.id, formData.promptBase);
+                                                    return (
+                                                        <button key={b.id} type="button"
+                                                            className={`asegurar-upgrade-block-item ${activo ? "active" : ""}`}
+                                                            onClick={() => toggleBloque(b.id)}
+                                                            disabled={isReadOnly || redundante}
+                                                            style={{ opacity: (isReadOnly && !activo) || redundante ? 0.55 : 1 }}
+                                                            title={redundante ? "Tu prompt ya cubre esta protección" : ""}>
+                                                            <span className={`asg-capa-check ${activo ? "on" : ""}`}>{activo || redundante ? "✓" : "+"}</span>
+                                                            <div className="asegurar-upgrade-block-info">
+                                                                <span className="asegurar-upgrade-block-label">
+                                                                    {b.label}
+                                                                    {redundante && <span className="asg-ya">ya cubierto</span>}
+                                                                </span>
+                                                                <small className="asegurar-upgrade-block-preview" style={{ color: "#64748b" }}>
+                                                                    {redundante ? "Tu prompt ya incluye esta salvaguarda." : b.porque}
+                                                                </small>
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <aside className="asg-preview" ref={previewRef}>
+                            <div className="asg-preview-inner">
+                                <div className="asg-preview-score">
+                                    <div>
+                                        <small>Antes</small>
+                                        <strong style={{ color: colorNivel(riesgoAntes) }}>{riesgoAntes.toFixed(1)}</strong>
+                                    </div>
+                                    <span className="asg-preview-arrow">→</span>
+                                    <div>
+                                        <small>Ahora</small>
+                                        <strong key={riesgoDespues} className="asg-pop" style={{ color: colorNivel(riesgoDespues) }}>{riesgoDespues.toFixed(1)}</strong>
+                                    </div>
+                                    <em>de 5 en seguridad</em>
+                                </div>
+
+                                <div className="asg-preview-dims">
+                                    {["agencia", "cognitiva", "etica", "privacidad"].map(dim => {
+                                        const v = formData.riesgoFinal?.[dim] || 0;
+                                        const antes = formData.riesgoPrevio?.[dim] || 0;
+                                        return (
+                                            <div key={dim} className="asg-mini-dim">
+                                                <span>{nombreDimension[dim]}</span>
+                                                <div className="asg-mini-track"><i style={{ width: `${(v / 5) * 100}%`, background: colorNivel(v) }} /></div>
+                                                <b style={{ color: colorNivel(v) }}>{v}{v > antes && <sup>+{v - antes}</sup>}</b>
+                                            </div>
                                         );
                                     })}
                                 </div>
-                            </div>
-                        );
-                    })}
 
-                    <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '10px', padding: '12px 16px', fontSize: '0.83rem', color: '#475569', marginTop: '8px' }}>
-                        {formData.bloquesActivados.length === 0
-                            ? "Aún no has activado ninguna capa. Activa al menos las recomendadas para tu diagnóstico."
-                            : `Has activado ${formData.bloquesActivados.length} ${formData.bloquesActivados.length === 1 ? 'capa' : 'capas'}. Revisa el prompt mejorado en el Paso 1.`}
+                                <div className="asg-preview-label">
+                                    <span>Tu prompt mejorado</span>
+                                    <em>{fragmentosAnadidos.length} {fragmentosAnadidos.length === 1 ? "protección añadida" : "protecciones añadidas"}</em>
+                                </div>
+                                <div className="asg-preview-text">
+                                    {bloquesPreview.length
+                                        ? bloquesPreview.map((b, i) => (
+                                            <p key={`${i}-${b.texto.slice(0, 24)}`} className={b.nuevo ? "nuevo" : ""}>{b.texto}</p>
+                                        ))
+                                        : <p className="asg-empty">Escribe tu prompt en el Paso 1 para empezar.</p>}
+                                </div>
+                            </div>
+                        </aside>
                     </div>
+
+                    {workbenchVisible && (
+                        <button type="button" className="asg-float-score"
+                            onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                            Seguridad {riesgoAntes.toFixed(1)} → <strong>{riesgoDespues.toFixed(1)}</strong>
+                            <span>Ver prompt</span>
+                        </button>
+                    )}
                 </section>
 
                 {/* ───────── PASO 5: POR QUÉ ESTOS RIESGOS IMPORTAN ───────── */}
                 {!isReadOnly && dimensionesEnRiesgo.length > 0 && (
                     <section className="asegurar-upgrade-section">
-                        <div className="asegurar-upgrade-badge">Paso 5</div>
+                        <div className="asegurar-upgrade-badge">Paso 4</div>
                         <h3 className="asegurar-upgrade-title">Por qué estos riesgos importan</h3>
                         <p className="asegurar-upgrade-subtitle">
                             Entender el daño detrás de cada riesgo es lo que convierte el blindaje en aprendizaje. Despliega cada tarjeta.
@@ -814,7 +865,7 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
 
                 {/* ───────── PASO 6: VISTA POR ETAPAS + IMPACTO ───────── */}
                 <section className="asegurar-upgrade-section">
-                    <div className="asegurar-upgrade-badge">Paso 6</div>
+                    <div className="asegurar-upgrade-badge">Paso 5</div>
                     <h3 className="asegurar-upgrade-title">Cómo se arma tu prompt, por etapas</h3>
                     <p className="asegurar-upgrade-subtitle">
                         En vez de un bloque gigante, mira cada capa por separado: tu base R.E.C.T.O.R., lo que añadieron las
@@ -916,7 +967,7 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
 
                 {/* ───────── PASO 7: REFLEXIÓN ───────── */}
                 <section className="asegurar-upgrade-section">
-                    <div className="asegurar-upgrade-badge">Paso 7</div>
+                    <div className="asegurar-upgrade-badge">Paso 6</div>
                     <h3 className="asegurar-upgrade-title">Análisis de tu evolución pedagógica</h3>
                     <div className="asegurar-upgrade-form-group">
                         <div className="asegurar-upgrade-input">
@@ -940,7 +991,7 @@ const TallerMejoraAsegurar = ({ userData, apiFetch, onNavigate, datosIniciales }
 
                 {/* ───────── PASO 8: DECLARACIÓN + PACTO DE DATOS ───────── */}
                 <section className="asegurar-upgrade-section gold-card">
-                    <div className="asegurar-upgrade-badge">Paso 8</div>
+                    <div className="asegurar-upgrade-badge">Paso 7</div>
                     <h3 className="asegurar-upgrade-title">Declaración de estándar profesional docente</h3>
                     <p>{isReadOnly ? "Compromisos adquiridos:" : "Selecciona los principios éticos que regirán esta práctica académica:"}</p>
                     <div className="asegurar-upgrade-checklist">
