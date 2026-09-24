@@ -5,7 +5,17 @@ import "../Styles/ejecutarReto.css";
 // ═══════════ CONFIGURACIÓN DEL RECORRIDO DOSIFICADO ═══════════
 const TIPOS_SIN_RESPUESTA = ["SECUENCIA_DEEPEN", "ANALISIS_INCLUSIVO_CREATE", "DASHBOARD_DIRECTIVO_R3"];
 // Tipos "protagonistas": ocupan una estación completa para ellos solos
-const TIPOS_PROTAGONISTAS = ["SECUENCIA_DEEPEN", "MATRIZ_UNESCO", "ANALISIS_INCLUSIVO_CREATE", "DASHBOARD_DIRECTIVO_R3", "SELECT_CON_TOOLTIP"];
+// Solo los ejercicios interactivos grandes tienen estación propia
+const TIPOS_PROTAGONISTAS = ["SECUENCIA_DEEPEN", "MATRIZ_UNESCO", "ANALISIS_INCLUSIVO_CREATE", "DASHBOARD_DIRECTIVO_R3"];
+
+// Minutos aproximados por tipo de pregunta (para "unos X min")
+const TIEMPO_POR_TIPO = { ABIERTA: 0.5, MULTIPLE: 0.7, SELECT: 0.7, SELECT_CON_TOOLTIP: 1.5, CHECKBOX: 1, PARRAFO: 3, SLIDER: 0.5, ORDEN: 1.5, SECUENCIA_DEEPEN: 4, MATRIZ_UNESCO: 5, ANALISIS_INCLUSIVO_CREATE: 2, DASHBOARD_DIRECTIVO_R3: 2 };
+
+const FASES_RECORRIDO = [
+    { id: "descubre", label: "Descubre", flex: 1 },
+    { id: "disena", label: "Diseña", flex: 3 },
+    { id: "cierra", label: "Cierra", flex: 0.8 },
+];
 const CAMPOS_SECUENCIA = ["inicioIA", "inicioDocente", "inicioEstudiante", "desarrolloIA", "desarrolloDocente", "desarrolloEstudiante", "cierreSinIA", "cierreReflexion", "cierreIA"];
 const SECUENCIA_VACIA = CAMPOS_SECUENCIA.reduce((acc, c) => ({ ...acc, [c]: null }), {});
 
@@ -16,33 +26,65 @@ const REGLAS_RAMIFICACION = [
     { si: "riesgos_identificados", contiene: ["no identifico", "ninguno"], ocultar: "requiere_riesgo" },
 ];
 
-const ICONOS_ESTACION = ["🌱", "🧩", "⚙️", "🔍", "🛡️", "💡", "📈", "🌍", "✨"];
 const MICROCOPY = [
-    "Empecemos por tu punto de partida.",
-    "Cada respuesta es una decisión pedagógica, no un trámite.",
-    "Aquí la IA se pone al servicio de tus estudiantes.",
-    "Tu criterio profesional es el protagonista.",
-    "Estás construyendo evidencia real de tu práctica.",
-    "Mira todo lo que ya has avanzado 👏",
+    "Empecemos por tu punto de partida",
+    "Cada respuesta es una decisión pedagógica",
+    "Aquí la IA se pone al servicio de tus estudiantes",
+    "Tu criterio profesional es el protagonista",
+    "Estás construyendo evidencia real de tu práctica",
+    "Mira todo lo que ya has avanzado",
 ];
+
+// ── Iconos de línea (reemplazan los emojis) ──
+const TRAZOS = {
+    guardar: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></>,
+    atras: <><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></>,
+    adelante: <><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></>,
+    check: <path d="M20 6L9 17l-5-5" />,
+    mas: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
+    docente: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
+    estudiantes: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
+    ia: <><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></>,
+    balanza: <><path d="M12 3v18M7 21h10M4 7h16" /><path d="M7 7l-3 7a3 3 0 0 0 6 0z" /><path d="M17 7l-3 7a3 3 0 0 0 6 0z" /></>,
+    bombillo: <><path d="M9 18h6M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" /></>,
+    mundo: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+    inicio: <><path d="M12 2v6M4.9 10.9l1.4 1.4M2 18h2M20 18h2M17.7 12.3l1.4-1.4M22 22H2M16 18a4 4 0 0 0-8 0" /></>,
+    actividad: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+    cierre: <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><path d="M4 22v-7" /></>,
+    candado: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+    ojo: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>,
+    alerta: <><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></>,
+    power: <><path d="M18.4 6.6a9 9 0 1 1-12.8 0" /><path d="M12 2v10" /></>,
+    lupa: <><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></>,
+    reloj: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
+    destello: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />,
+    lapiz: <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />,
+};
+
+const Icono = ({ nombre, size = 18, className = "" }) => (
+    <svg className={`atlas-icon ${className}`} width={size} height={size} viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {TRAZOS[nombre]}
+    </svg>
+);
 
 const MOMENTOS_SECUENCIA = [
     {
-        titulo: "INICIO · Preparar y abrir la clase", icono: "🌅", preguntas: [
+        titulo: "INICIO · Preparar y abrir la clase", icono: "inicio", preguntas: [
             { campo: "inicioIA", label: "¿Usaste IA para preparar o abrir la clase?", ayuda: "Ej: crear ejemplos, imágenes o una pregunta detonante." },
             { campo: "inicioDocente", label: "¿Tú guías la apertura de la clase?", ayuda: "Presentas el propósito y activas saberes previos." },
             { campo: "inicioEstudiante", label: "¿Tus estudiantes piensan primero por su cuenta?", ayuda: "Antes de ver cualquier respuesta de la IA." },
         ]
     },
     {
-        titulo: "DESARROLLO · La actividad central", icono: "⚙️", preguntas: [
+        titulo: "DESARROLLO · La actividad central", icono: "actividad", preguntas: [
             { campo: "desarrolloIA", label: "¿Se usa IA durante la actividad?", ayuda: "La usas tú en vivo o la usan tus estudiantes." },
             { campo: "desarrolloDocente", label: "¿Acompañas y retroalimentas mientras trabajan?", ayuda: "Circulas, preguntas, validas lo que produce la IA." },
             { campo: "desarrolloEstudiante", label: "¿Tus estudiantes producen con sus propias ideas?", ayuda: "Escriben, resuelven, argumentan o crean ellos mismos." },
         ]
     },
     {
-        titulo: "CIERRE · Demostrar y reflexionar", icono: "🏁", preguntas: [
+        titulo: "CIERRE · Demostrar y reflexionar", icono: "cierre", preguntas: [
             { campo: "cierreSinIA", label: "¿Demuestran lo aprendido sin ayuda de la IA?", ayuda: "Ej: explican en voz alta, resuelven un ejercicio, exponen." },
             { campo: "cierreReflexion", label: "¿Reflexionan sobre cómo aprendieron?", ayuda: "Ej: ¿qué me aportó la IA?, ¿qué hice yo?" },
             { campo: "cierreIA", label: "¿Usas IA en el cierre?", ayuda: "Ej: para retroalimentar o sintetizar." },
@@ -317,33 +359,95 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
         }
     });
 
-    // Pasos: Contexto → Misión → (Preparación) → Estaciones → Cierre
+    // Pasos: Descubre (contexto, misión, preparación) → Diseña (estaciones) → Cierra
     const pasos = [];
     const pasoDePregunta = {};
     if (reto) {
-        pasos.push({ id: 'contexto', titulo: 'Contexto', icono: '🧭' });
-        pasos.push({ id: 'mision', titulo: 'Tu misión', icono: '🎯' });
-        if (reto.lectura_previa?.activa) pasos.push({ id: 'preparacion', titulo: 'Antes de empezar', icono: '📋' });
-        let grupo = [];
-        let numEstacion = 0;
-        const cerrarGrupo = () => {
-            if (!grupo.length) return;
-            numEstacion++;
-            const subtitulo = (preguntas[grupo[0]].texto_pregunta || "").split(/[:\n]/)[0].trim();
-            pasos.push({ id: `estacion_${numEstacion}`, titulo: `Estación ${numEstacion}`, numEstacion, subtitulo, icono: ICONOS_ESTACION[(numEstacion - 1) % ICONOS_ESTACION.length], indices: grupo });
-            grupo.forEach(i => { pasoDePregunta[i] = pasos.length - 1; });
-            grupo = [];
-        };
+        pasos.push({ id: 'contexto', titulo: 'Contexto', fase: 'descubre' });
+        pasos.push({ id: 'mision', titulo: 'Tu misión', fase: 'descubre' });
+        if (reto.lectura_previa?.activa) pasos.push({ id: 'preparacion', titulo: 'Antes de empezar', fase: 'descubre' });
+
+        // 1) Tramos: corridas de preguntas normales separadas por ejercicios grandes
+        const tramos = [];
+        let corrida = [];
         preguntas.forEach((p, idx) => {
-            if (TIPOS_PROTAGONISTAS.includes(p.tipo_respuesta)) { cerrarGrupo(); grupo = [idx]; cerrarGrupo(); }
-            else { grupo.push(idx); if (grupo.length === 3) cerrarGrupo(); }
+            if (TIPOS_PROTAGONISTAS.includes(p.tipo_respuesta)) {
+                if (corrida.length) tramos.push({ tipo: 'normal', indices: corrida });
+                corrida = [];
+                tramos.push({ tipo: 'protagonista', indices: [idx] });
+            } else corrida.push(idx);
         });
-        cerrarGrupo();
-        pasos.push({ id: 'cierre', titulo: 'Cierre', icono: '🏁' });
+        if (corrida.length) tramos.push({ tipo: 'normal', indices: corrida });
+
+        // 2) Agrupar sin dejar estaciones de una sola pregunta
+        const grupos = [];
+        tramos.forEach((t, k) => {
+            if (t.tipo === 'protagonista') { grupos.push([...t.indices]); return; }
+            if (t.indices.length === 1) {
+                if (tramos[k - 1]?.tipo === 'protagonista') { grupos[grupos.length - 1].push(...t.indices); return; }
+                if (tramos[k + 1]?.tipo === 'protagonista') { tramos[k + 1].indices = [...t.indices, ...tramos[k + 1].indices]; return; }
+            }
+            // Reparto balanceado: 11 → 3+3+3+2, 4 → 2+2, 13 → 3+3+3+2+2
+            const n = t.indices.length;
+            const numGrupos = Math.ceil(n / 3);
+            const base = Math.floor(n / numGrupos);
+            let resto = n % numGrupos;
+            let cursor = 0;
+            for (let g = 0; g < numGrupos; g++) {
+                const tam = base + (resto > 0 ? 1 : 0);
+                resto--;
+                grupos.push(t.indices.slice(cursor, cursor + tam));
+                cursor += tam;
+            }
+        });
+
+        grupos.forEach((indices, g) => {
+            pasos.push({ id: `estacion_${g + 1}`, titulo: `Estación ${g + 1}`, numEstacion: g + 1, indices, fase: 'disena' });
+            indices.forEach(i => { pasoDePregunta[i] = pasos.length - 1; });
+        });
+        pasos.push({ id: 'cierre', titulo: 'Cierre', fase: 'cierra' });
     }
     const totalEstaciones = pasos.filter(p => p.indices).length;
     const pasoInfo = pasos[pasoActual] || {};
     const pasoId = pasoInfo.id;
+
+    // Cabecera de la estación actual
+    const indicesVisiblesPaso = (pasoInfo.indices || []).filter(i => !ocultas.has(i));
+    const preguntasVisiblesPaso = indicesVisiblesPaso.length;
+    const minutosEstacion = Math.max(1, Math.round(indicesVisiblesPaso.reduce((acc, i) => acc + (TIEMPO_POR_TIPO[preguntas[i].tipo_respuesta] ?? 1), 0)));
+    const protagonistaPaso = indicesVisiblesPaso.find(i => TIPOS_PROTAGONISTAS.includes(preguntas[i].tipo_respuesta));
+    const tituloEstacion = !pasoInfo.indices ? ""
+        : protagonistaPaso !== undefined ? preguntas[protagonistaPaso].texto_pregunta
+            : pasoInfo.numEstacion === totalEstaciones ? "Último tramo: ya casi completas tu misión"
+                : MICROCOPY[(pasoInfo.numEstacion - 1) % MICROCOPY.length];
+
+    const siguientePaso = pasos[pasoActual + 1];
+    const textoSiguiente = pasoId === 'contexto' ? "Ver mi misión"
+        : pasoId === 'mision' ? (reto?.lectura_previa?.activa ? "Ver recomendaciones" : "Empezar")
+            : pasoId === 'preparacion' ? "Empezar"
+                : siguientePaso?.id === 'cierre' ? "Ir al cierre"
+                    : "Siguiente estación";
+
+    // Estado de cada tramo de la barra de progreso
+    const estadoFase = (faseId) => {
+        const idxs = pasos.map((p, i) => (p.fase === faseId ? i : -1)).filter(i => i >= 0);
+        if (!idxs.length) return { primerPaso: -1 };
+        const activa = pasoInfo.fase === faseId;
+        let pct = 0;
+        let detalle = "";
+        if (faseId === 'descubre') {
+            pct = Math.round((idxs.filter(i => visitados.has(i)).length / idxs.length) * 100);
+            if (activa) detalle = pasoInfo.titulo;
+        } else if (faseId === 'disena') {
+            pct = pctProgreso;
+            if (activa) detalle = `Estación ${pasoInfo.numEstacion} de ${totalEstaciones}`;
+        } else {
+            pct = statusActual === 'COMPLETADO' ? 100 : activa ? 50 : 0;
+            if (activa) detalle = "Autoevaluación";
+        }
+        const primerPaso = faseId === 'disena' && primerPasoPendiente >= 0 ? primerPasoPendiente : idxs[0];
+        return { pct, activa, detalle, primerPaso };
+    };
 
     const preguntaCompleta = (idx) => {
         const t = preguntas[idx]?.tipo_respuesta;
@@ -386,17 +490,18 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     const renderCampoOtro = (idx) => {
         const v = respuestas[idx];
         const arr = Array.isArray(v) ? v : [v];
-        if (!arr.some(x => x && cleanOptionText(x).toLowerCase().startsWith("otro"))) return null;
+        if (!arr.some(x => typeof x === "string" && cleanOptionText(x).toLowerCase().startsWith("otro"))) return null;
         return (
-            <div className="input-group-inline" style={{ animation: 'fadeIn 0.3s ease' }}>
+            <label className="atlas-otro-field">
+                <span><Icono nombre="lapiz" size={15} /> ¿Cuál? Escríbelo aquí</span>
                 <input
                     type="text"
-                    className="inline-input-premium"
-                    placeholder="Cuéntanos cuál o cómo la usas..."
+                    autoFocus
                     value={respuestas[`${idx}_otro`] || ""}
                     onChange={(e) => handleInputChange(`${idx}_otro`, e.target.value)}
+                    placeholder="Por ejemplo, una herramienta que usa tu colegio"
                 />
-            </div>
+            </label>
         );
     };
 
@@ -404,16 +509,16 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
     const generarAlertasMonitoreo = () => {
         const alertas = [];
         const sec = calcularPatronUNESCO(secuenciaDeepen);
-        if (sec.completo) sec.faltantes.slice(0, 2).forEach(t => alertas.push({ icono: '🎬', texto: t }));
+        if (sec.completo) sec.faltantes.slice(0, 2).forEach(t => alertas.push({ icono: 'actividad', texto: t }));
         const esfuerzo = cleanOptionText(valorPorClave("esfuerzo_cognitivo") || "").toLowerCase();
-        if (esfuerzo.startsWith("se reduce")) alertas.push({ icono: '🧠', texto: "Observar qué parte del pensamiento está haciendo la IA por mis estudiantes y devolverles ese paso." });
-        if (esfuerzo.startsWith("no sabe")) alertas.push({ icono: '👀', texto: "Observar a 2 o 3 estudiantes y comparar su esfuerzo con una clase sin IA." });
+        if (esfuerzo.startsWith("se reduce")) alertas.push({ icono: 'bombillo', texto: "Observar qué parte del pensamiento está haciendo la IA por mis estudiantes y devolverles ese paso." });
+        if (esfuerzo.startsWith("no sabe")) alertas.push({ icono: 'ojo', texto: "Observar a 2 o 3 estudiantes y comparar su esfuerzo con una clase sin IA." });
         const retiro = cleanOptionText(valorPorClave("prueba_retiro") || "").toLowerCase();
-        if (retiro.startsWith("disminuye") || retiro.startsWith("desaparece")) alertas.push({ icono: '🔌', texto: "Verificar si mis estudiantes logran el objetivo sin la IA y, si no, ajustar el andamiaje." });
-        if (retiro.startsWith("no lo he")) alertas.push({ icono: '🔌', texto: "Probar una actividad corta sin IA para confirmar que el aprendizaje se sostiene." });
+        if (retiro.startsWith("disminuye") || retiro.startsWith("desaparece")) alertas.push({ icono: 'power', texto: "Verificar si mis estudiantes logran el objetivo sin la IA y, si no, ajustar el andamiaje." });
+        if (retiro.startsWith("no lo he")) alertas.push({ icono: 'power', texto: "Probar una actividad corta sin IA para confirmar que el aprendizaje se sostiene." });
         const riesgos = valorPorClave("riesgos_identificados");
         (Array.isArray(riesgos) ? riesgos : []).filter(r => !esOpcionExclusiva(r)).forEach(r =>
-            alertas.push({ icono: '⚠️', texto: `Vigilar señales de ${cleanOptionText(r).toLowerCase()} en el trabajo de mis estudiantes.` })
+            alertas.push({ icono: 'alerta', texto: `Vigilar señales de ${cleanOptionText(r).toLowerCase()} en el trabajo de mis estudiantes.` })
         );
         return alertas;
     };
@@ -527,7 +632,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
             if (statusFinal === 'COMPLETADO') {
                 setDirty(false);
                 await Swal.fire({
-                    title: "¡Misión enviada! ✨",
+                    title: "Misión enviada",
                     text: "Tu evidencia quedó registrada. Cada decisión que tomaste hoy protege el aprendizaje de tus estudiantes.",
                     icon: "success",
                     iconColor: "#c5a059",
@@ -629,53 +734,63 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
         <div className="atlas-unique-page-wrapper">
             <main className="atlas-unique-main-content">
 
-                {/* CABECERA FIJA + BARRA DE PROGRESO */}
-                <div className="atlas-unique-header-container atlas-sticky-header">
-                    <header className="reto-header-inline">
+                {/* CABECERA + RECORRIDO (no fija) */}
+                <div className="atlas-unique-header-container atlas-header-card">
+                    <header className="atlas-header-row">
                         <div className="header-left">
-                            <button className="btn-back-minimal" onClick={handleVolver}>⬅ Volver</button>
+                            <button className="btn-back-minimal" onClick={handleVolver}>
+                                <Icono nombre="atras" size={16} /> Volver
+                            </button>
                             <div className="badge-reto-id">Misión {reto.numero_reto ?? reto.numero_orden ?? ""}</div>
                         </div>
                         <div className="atlas-unique-title-box">
                             <h2>{reto.nombre_reto || reto.nombre}</h2>
-                            <div className="atlas-autosave-hint">
-                                {dirty ? "● Cambios sin guardar" : ultimoGuardado ? `✓ Guardado a las ${ultimoGuardado}` : ""}
+                            <div className={`atlas-save-state ${dirty ? 'pendiente' : ultimoGuardado ? 'ok' : ''}`}>
+                                {dirty ? "Cambios sin guardar" : ultimoGuardado ? `Guardado a las ${ultimoGuardado}` : "Tu avance se guarda automáticamente"}
                             </div>
                         </div>
-                        <button className="btn-save-draft-premium" onClick={() => saveReto('BORRADOR')} disabled={isSaving}>
-                            {isSaving ? "..." : "💾 Guardar"}
+                        <button className="btn-save-draft-premium atlas-btn-icon" onClick={() => saveReto('BORRADOR')} disabled={isSaving}>
+                            <Icono nombre="guardar" size={17} /> {isSaving ? "Guardando…" : "Guardar"}
                         </button>
                     </header>
 
-                    <div className="atlas-journey-bar">
-                        <div className="atlas-journey-track">
-                            <div className="atlas-journey-fill" style={{ width: `${pctProgreso}%` }} />
-                        </div>
-                        <div className="atlas-journey-meta">
-                            <span>{pasoInfo.icono} {pasoInfo.titulo}{pasoInfo.indices ? ` de ${totalEstaciones}` : ""}</span>
-                            <span>{respondidasProgreso}/{indicesProgreso.length} respuestas · {pctProgreso}%</span>
-                        </div>
-                        <div className="atlas-journey-steps">
-                            {pasos.map((paso, i) => (
+                    <nav className="atlas-journey" aria-label="Progreso de la misión">
+                        {FASES_RECORRIDO.map((f, n) => {
+                            const e = estadoFase(f.id);
+                            if (e.primerPaso < 0) return null;
+                            return (
                                 <button
-                                    key={paso.id}
+                                    key={f.id}
                                     type="button"
-                                    title={paso.subtitulo ? `${paso.titulo}: ${paso.subtitulo}` : paso.titulo}
-                                    className={`atlas-step-dot ${i === pasoActual ? 'actual' : ''} ${pasoCompleto(i) ? 'hecho' : ''}`}
-                                    onClick={() => irAPaso(i)}
+                                    className={`atlas-phase ${e.activa ? 'is-active' : ''} ${e.pct >= 100 ? 'is-done' : ''}`}
+                                    style={{ flexGrow: f.flex }}
+                                    onClick={() => irAPaso(e.primerPaso)}
                                 >
-                                    {pasoCompleto(i) && i !== pasoActual ? '✓' : paso.icono}
+                                    <span className="atlas-phase-track">
+                                        <span className="atlas-phase-fill" style={{ width: `${e.pct}%` }} />
+                                    </span>
+                                    <span className="atlas-phase-label">
+                                        <span className="atlas-phase-index">
+                                            {e.pct >= 100 ? <Icono nombre="check" size={11} /> : n + 1}
+                                        </span>
+                                        {f.label}
+                                        {e.activa && e.detalle && <em>{e.detalle}</em>}
+                                    </span>
                                 </button>
-                            ))}
+                            );
+                        })}
+                        <div className="atlas-journey-pct">
+                            <strong>{pctProgreso}%</strong>
+                            <span>{respondidasProgreso} de {indicesProgreso.length} respuestas</span>
                         </div>
-                    </div>
+                    </nav>
                 </div>
 
                 {/* SECCIÓN NARRATIVA DOSIFICADA — un paso a la vez */}
                 {['contexto', 'mision', 'preparacion'].includes(pasoId) && (
                     <div className="atlas-unique-section-narrative atlas-step-anim" key={pasoId}>
                         <div className="atlas-step-intro">
-                            <span className="atlas-step-kicker">{pasoInfo.icono} Paso {pasoActual + 1} de {pasos.length} · {pasoInfo.titulo}</span>
+
                             <h3>
                                 {pasoId === 'contexto' && "Antes de diseñar, entendamos el porqué"}
                                 {pasoId === 'mision' && "Este es tu desafío"}
@@ -722,13 +837,13 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                             {pasoId === 'mision' && (
                                 <>
                                     <div className="atlas-mission-hero">
-                                        <div className="atlas-orbit">
+                                        <div className="atlas-orbit" aria-hidden="true">
                                             <span className="atlas-orbit-core">
-                                                {reto.nivel_unesco === "ACQUIRE" ? "⚖️" : reto.nivel_unesco === "DEEPEN" ? "🧠" : "🌍"}
+                                                <Icono nombre={reto.nivel_unesco === "ACQUIRE" ? "balanza" : reto.nivel_unesco === "DEEPEN" ? "bombillo" : "mundo"} size={40} />
                                             </span>
-                                            <span className="atlas-orbit-sat s1">🧑‍🏫</span>
-                                            <span className="atlas-orbit-sat s2">🧑‍🎓</span>
-                                            <span className="atlas-orbit-sat s3">🤖</span>
+                                            <span className="atlas-orbit-sat s1"><Icono nombre="docente" size={20} /></span>
+                                            <span className="atlas-orbit-sat s2"><Icono nombre="estudiantes" size={20} /></span>
+                                            <span className="atlas-orbit-sat s3"><Icono nombre="ia" size={20} /></span>
                                         </div>
                                         <div className="atlas-mission-hero-text">
                                             <span className="reto-label">Nivel UNESCO · {reto.nivel_unesco || "—"}</span>
@@ -762,10 +877,10 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                     {(reto.lectura_previa.tiempo || reto.lectura_previa.proposito) && (
                                         <div className="notice-grid">
                                             {reto.lectura_previa.tiempo && (
-                                                <div className="notice-item"><strong>⏳ Tiempo</strong><span>{reto.lectura_previa.tiempo}</span></div>
+                                                <div className="notice-item"><strong><Icono nombre="reloj" size={15} /> Tiempo</strong><span>{reto.lectura_previa.tiempo}</span></div>
                                             )}
                                             {reto.lectura_previa.proposito && (
-                                                <div className="notice-item"><strong>💡 Propósito</strong><span>{reto.lectura_previa.proposito}</span></div>
+                                                <div className="notice-item"><strong><Icono nombre="bombillo" size={15} /> Propósito</strong><span>{reto.lectura_previa.proposito}</span></div>
                                             )}
                                         </div>
                                     )}
@@ -786,17 +901,23 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                 {/* FORMULARIO DINÁMICO — cada pregunta es un form-card normal (blanco), igual que el original */}
                 <div className="atlas-unique-form-wrapper">
                     {pasoInfo.indices && (
-                        <div className="atlas-station-header atlas-step-anim" key={pasoId}>
-                            <span className="atlas-step-kicker">{pasoInfo.icono} {pasoInfo.titulo} de {totalEstaciones}</span>
-                            <h3>{pasoInfo.subtitulo}</h3>
-                            <p>{pasoInfo.numEstacion === totalEstaciones
-                                ? "Último tramo: ya casi completas tu misión."
-                                : MICROCOPY[(pasoInfo.numEstacion - 1) % MICROCOPY.length]}</p>
+                        <div className="atlas-station-head atlas-step-anim" key={pasoId}>
+                            <div className="atlas-station-num" aria-label={`Estación ${pasoInfo.numEstacion} de ${totalEstaciones}`}>
+                                <span>{String(pasoInfo.numEstacion).padStart(2, '0')}</span>
+                                <small>de {String(totalEstaciones).padStart(2, '0')}</small>
+                            </div>
+                            <div className="atlas-station-text">
+                                <h3>{tituloEstacion}</h3>
+                                {preguntasVisiblesPaso > 0 && (
+                                    <p>{preguntasVisiblesPaso === 1 ? "1 pregunta" : `${preguntasVisiblesPaso} preguntas`}, unos {minutosEstacion} min</p>
+                                )}
+                            </div>
                         </div>
                     )}
-                    {pasoInfo.indices && pasoInfo.indices.every(i => ocultas.has(i)) && (
+                    {pasoInfo.indices && preguntasVisiblesPaso === 0 && (
                         <section className="form-card atlas-empty-station">
-                            ✨ Esta estación no aplica según tus respuestas anteriores. ¡Sigue adelante!
+                            <Icono nombre="destello" size={20} />
+                            Según tus respuestas anteriores, esta estación no aplica. Continúa con la siguiente.
                         </section>
                     )}
                     {preguntas.length === 0 ? (
@@ -845,6 +966,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                                 <span className="label-text">{cleanOptionText(opt)}</span>
                                             </label>
                                         ))}
+                                        {renderCampoOtro(idx)}
                                     </div>
                                 )}
 
@@ -889,7 +1011,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                     const texto = respuestas[idx] || "";
                                     return (
                                         <div className="atlas-monitor-box">
-                                            <strong>🔎 Según tus respuestas, te sugerimos observar:</strong>
+                                            <strong><Icono nombre="lupa" size={16} /> Según tus respuestas, te sugerimos observar</strong>
                                             {alertas.length === 0 ? (
                                                 <p>¡Tu diseño se ve equilibrado! Cuéntanos qué quieres seguir cuidando para mantenerlo así.</p>
                                             ) : (
@@ -904,7 +1026,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                                                 className={`atlas-monitor-chip ${agregada ? 'agregada' : ''}`}
                                                                 onClick={() => handleInputChange(idx, `${texto.trim()}${texto.trim() ? "\n" : ""}• ${a.texto}`)}
                                                             >
-                                                                <span>{a.icono}</span> {a.texto} <em>{agregada ? "✓" : "+"}</em>
+                                                                <Icono nombre={a.icono} size={16} /> <span>{a.texto}</span> <em><Icono nombre={agregada ? "check" : "mas"} size={14} /></em>
                                                             </button>
                                                         );
                                                     })}
@@ -948,7 +1070,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                         <div className="atlas-seq-wrapper">
                                             {MOMENTOS_SECUENCIA.map(m => (
                                                 <div key={m.titulo} className="atlas-seq-moment">
-                                                    <h5>{m.icono} {m.titulo}</h5>
+                                                    <h5><Icono nombre={m.icono} size={17} /> {m.titulo}</h5>
                                                     <div className="atlas-seq-grid">
                                                         {m.preguntas.map(q => (
                                                             <div key={q.campo} className={`atlas-seq-item ${secuenciaDeepen[q.campo] ? 'respondida' : ''}`}>
@@ -972,7 +1094,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
 
                                             {!patron.completo ? (
                                                 <div className="atlas-seq-pending">
-                                                    🔒 Responde {patron.faltanPorResponder === 1 ? "la pregunta restante" : `las ${patron.faltanPorResponder} preguntas restantes`} para revelar el diagnóstico de tu práctica.
+                                                    <Icono nombre="candado" size={16} /> Responde {patron.faltanPorResponder === 1 ? "la pregunta restante" : `las ${patron.faltanPorResponder} preguntas restantes`} para revelar el diagnóstico de tu práctica.
                                                 </div>
                                             ) : (
                                                 <div className="atlas-seq-result" style={{ borderColor: patron.color, background: `${patron.color}10` }}>
@@ -1048,7 +1170,7 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                                             padding: '15px', background: '#fef2f2',
                                                             border: '1px solid #fee2e2', borderRadius: '12px', color: '#991b1b'
                                                         }}>
-                                                            <strong>⚠️ Alerta pedagógica:</strong> {tooltip.alerta}
+                                                            <strong>Alerta pedagógica:</strong> {tooltip.alerta}
                                                         </div>
                                                     )}
 
@@ -1108,35 +1230,35 @@ export const EjecutarReto = ({ userData, apiFetch, retoId, onNavigate }) => {
                                     if (esNivelAlto && numGarantias >= 4 && tieneComprobacion && identificaRiesgoSistemico) {
                                         patron = 1;
                                         color = "#16a34a";
-                                        titulo = "🟢 Diseño Inclusivo Estructural";
+                                        titulo = "Diseño Inclusivo Estructural";
                                         mensaje = "Tu estrategia evidencia un diseño inclusivo mediado por IA con impacto estructural en equidad. Se mantiene un objetivo cognitivo de alta complejidad, se amplían oportunidades sin reducción de estándares y se activan garantías claras de rigor.\n\nAdemás, identificas riesgos sistémicos y defines mecanismos para comprobar impacto, lo cual está alineado con:\n• UNESCO AI Competency Framework for Teachers (CREATE, 2024)\n• Principios de Diseño Universal para el Aprendizaje (DUA)\n• Enfoque de equidad estructural (no segmentación)\n\nTu estrategia es potencialmente transferible a otros contextos.";
                                     }
 
                                     else if (esNivelAlto && numGarantias >= 4 && tieneComprobacion && !identificaRiesgoSistemico) {
                                         patron = 2;
                                         color = "#2563eb";
-                                        titulo = "🔵 Inclusión Avanzada con Oportunidad de Mejora";
+                                        titulo = "Inclusión Avanzada con Oportunidad de Mejora";
                                         mensaje = "Tu diseño mantiene rigor cognitivo y evidencia mecanismos claros de equidad y evaluación común. Para consolidarse plenamente en nivel CREATE, sería recomendable fortalecer la identificación de riesgos sistémicos (sesgo algorítmico, perfilamiento, dependencia diferencial), tal como sugieren:\n• UNESCO 2024 (dimensión ética avanzada)\n• Recomendación UNESCO 2021 sobre IA y derechos humanos\n\nLa innovación inclusiva requiere anticipar posibles efectos estructurales.";
                                     }
 
                                     else if ((esNivelAlto || esNivelMedio) && (numGarantias === 2 || numGarantias === 3) && tieneComprobacion) {
                                         patron = 3;
                                         color = "#eab308";
-                                        titulo = "🟡 Inclusión Operativa en Desarrollo";
+                                        titulo = "Inclusión Operativa en Desarrollo";
                                         mensaje = "Tu estrategia amplía oportunidades y mantiene cierta coherencia evaluativa. Sin embargo, las garantías estructurales aún no son suficientes para asegurar que la equidad sea sostenida y replicable.\n\nEl marco CREATE invita a pasar de ajustes puntuales a diseño estructural.\n\nSugerencia:\nFortalecer las garantías explícitas de estándar común y supervisión humana.";
                                     }
 
                                     else if (esNivelBajo && numGarantias <= 3) {
                                         patron = 4;
                                         color = "#f97316";
-                                        titulo = "🟠 Estrategia con Riesgo de Reducción Cognitiva";
+                                        titulo = "Estrategia con Riesgo de Reducción Cognitiva";
                                         mensaje = "Se observa intención inclusiva, pero el nivel de pensamiento trabajado podría no sostener la exigencia académica común.\n\nEl Diseño Universal para el Aprendizaje no implica simplificación del objetivo cognitivo, sino diversificación del acceso al mismo estándar.\n\nSegún UNESCO CREATE, la equidad no consiste en bajar la complejidad, sino en ampliar oportunidades para alcanzarla.\n\nRecomendación:\nRevisar el nivel cognitivo y explicitar cómo se mantiene la complejidad.";
                                     }
 
                                     else if (numGarantias >= 2 && !tieneComprobacion) {
                                         patron = 5;
                                         color = "#6366f1";
-                                        titulo = "🔵 Inclusión Declarativa";
+                                        titulo = "Inclusión Declarativa";
                                         mensaje = "Tu estrategia incorpora principios de equidad y dignidad. Sin embargo, no se ha definido cómo comprobarás que la estrategia amplió oportunidades sin reducir estándares.\n\nEn el nivel CREATE, el diseño debe ser verificable y transferible.\n\nSugerencia:\nIncorporar evidencia comparativa, defensa común o evaluación con criterio compartido.";
                                     }
 
@@ -1498,19 +1620,15 @@ En este nivel, la IA se integra como parte de una arquitectura pedagógica consc
                 {pasoId !== 'cierre' && (
                     <div className="atlas-step-nav">
                         <button className="atlas-nav-btn ghost" disabled={pasoActual === 0} onClick={() => irAPaso(pasoActual - 1)}>
-                            ← Anterior
+                            <Icono nombre="atras" size={18} /> Anterior
                         </button>
                         {pasoActual === 0 && statusActual && primerPasoPendiente > 0 && (
                             <button className="atlas-nav-btn ghost" onClick={() => irAPaso(primerPasoPendiente)}>
-                                ↪ Continuar donde quedé
+                                Continuar donde quedé
                             </button>
                         )}
                         <button className="atlas-nav-btn" onClick={() => irAPaso(pasoActual + 1)}>
-                            {pasoId === 'contexto' ? "Descubrir mi misión →"
-                                : pasoId === 'mision' ? (reto.lectura_previa?.activa ? "Ver recomendaciones →" : "¡Comenzar! →")
-                                    : pasoId === 'preparacion' ? "¡Comenzar! →"
-                                        : pasos[pasoActual + 1]?.id === 'cierre' ? "Ir al cierre 🏁"
-                                            : pasoCompleto(pasoActual) ? "¡Estación completa! Siguiente →" : "Siguiente →"}
+                            {textoSiguiente} <Icono nombre="adelante" size={18} />
                         </button>
                     </div>
                 )}
@@ -1524,13 +1642,13 @@ En este nivel, la IA se integra como parte de una arquitectura pedagógica consc
                                 <div className="atlas-pending-list">
                                     {pendientesGlobales.map(i => (
                                         <button key={i} type="button" onClick={() => irAPaso(pasoDePregunta[i])}>
-                                            Pregunta {numeroVisible[i]} →
+                                            Pregunta {numeroVisible[i]}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         ) : (
-                            <div className="atlas-pending-box completo">🎉 ¡Respondiste todo! Solo falta tu autoevaluación.</div>
+                            <div className="atlas-pending-box completo"><Icono nombre="check" size={18} /> Respondiste todas las preguntas. Solo falta tu autoevaluación.</div>
                         )}
 
                         <section className="autoevaluacion-final-section">
