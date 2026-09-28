@@ -2163,7 +2163,7 @@ transform: scale(1.05);
 }
 
 .hero-section.hero-original-dark .hero-logo {
-    max-width: 420px;
+    max-width: 250px;
     margin: 5px auto 12px;
 }
 
@@ -2188,6 +2188,8 @@ transform: scale(1.05);
     font-size: 1.1rem;
     letter-spacing: 0.3px;
     margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+    opacity: 1;
 }
 
 .hero-section.hero-original-dark .hero-tagline {
@@ -2418,7 +2420,7 @@ transform: scale(1.05);
     }
 
     .hero-section.hero-original-dark .hero-logo {
-        max-width: 80%;
+        max-width: 60%;
     }
 
     .hero-system-name {
