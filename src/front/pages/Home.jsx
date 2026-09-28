@@ -380,104 +380,54 @@ export const Home = ({ onLoginSuccess }) => {
                 </div>
             </section>
 
-            <section className="atlas-audience-section" id="quienes">
-                <div className="container">
-                    <div className="audience-wrapper">
-                        <div className="audience-header">
-                            <span className="diff-tag">Perfiles</span>
-                            <h2 className="audience-main-title">Diseñado para comunidades educativas</h2>
-                            <div className="audience-tags-cloud">
-                                <span className="tag-item">Directivos Escolares</span>
-                                <span className="tag-item">Rectores Universitarios</span>
-                                <span className="tag-item">Equipos de Calidad</span>
-                                <span className="tag-item">Consultores</span>
-                                <span className="tag-item">Docentes Innovadores</span>
-                            </div>
-                        </div>
-                        <div className="audience-grid-layout">
-                            <div className="audience-card">
-                                <div className="audience-icon-wrapper">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div className="audience-info">
-                                    <h4>Instituciones que inician</h4>
-                                    <p>Colegios y universidades dando sus primeros pasos con IA y buscando orientación clara.</p>
-                                </div>
-                            </div>
-                            <div className="audience-card">
-                                <div className="audience-icon-wrapper">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div className="audience-info">
-                                    <h4>Centros Educativos escalando</h4>
-                                    <p>Instituciones que buscan escalar prácticas responsables a nivel organizacional con estándares globales.</p>
-                                </div>
-                            </div>
-                            <div className="audience-card">
-                                <div className="audience-icon-wrapper">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.989-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div className="audience-info">
-                                    <h4>Equipos de innovación</h4>
-                                    <p>Equipos que necesitan orden, visión estratégica y gobernanza para sus iniciativas tecnológicas con IA.</p>
-                                </div>
-                            </div>
-                            <div className="audience-card">
-                                <div className="audience-icon-wrapper">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                                <div className="audience-info">
-                                    <h4>Educadores estratégicos</h4>
-                                    <p>Directivos y docentes que prefieren la estrategia antes que las herramientas, y la visión antes que las tendencias.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <section className="atlas-cert-section" id="certificacion">
                 <div className="container">
                     <div className="cert-grid-layout">
                         <div className="cert-intro">
-                            <span className="diff-tag">Certificaciones para:</span>
-                            <h2 className="cert-title">Docentes, directivos e instituciones</h2>
-                            <p className="cert-lead">Reconocemos el nivel de madurez alcanzado en la adopción responsable de la IA bajo estándares institucionales.</p>
-                            <div className="cert-badge-note">
-                                <strong>Nota:</strong> Evalúa procesos evidenciables, no herramientas de IA.
-                            </div>
+                            <span className="diff-tag">Certificación</span>
+                            <h2 className="cert-title">Credencial verificable en LinkedIn</h2>
+                            <p className="cert-lead">
+                                Cada certificación incluye un ID único y un enlace público de verificación. Puedes agregarla a tu perfil de LinkedIn en un clic, en la sección "Licencias y certificaciones".
+                            </p>
                             <div className="cert-linkedin-note">
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="cert-linkedin-icon" aria-hidden="true">
                                     <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.13 2.06 2.06 0 010 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
                                 </svg>
                                 <div>
-                                    <strong>Credencial verificable en LinkedIn</strong>
-                                    <p>Cada certificación incluye un ID único y un enlace público de verificación. Puedes agregarla a tu perfil de LinkedIn en un clic, en la sección "Licencias y certificaciones".</p>
+                                    <strong>Verificación pública</strong>
+                                    <p>Cualquier institución o reclutador puede confirmar la validez de la credencial con su ID, sin necesidad de registrarse.</p>
                                 </div>
                             </div>
                         </div>
                         <div className="cert-cards-container">
                             {[
-                                { lvl: '1', name: 'Foundation', desc: 'Bases para la adopción responsable.', points: ['Diagnóstico inicial', 'Sensibilización', 'Plan de acción institucional'] },
-                                { lvl: '2', name: 'Pro', desc: 'Integración en procesos académicos.', points: ['Enfoque pedagógico', 'Gobernanza IA', 'Principios éticos'] },
-                                { lvl: '3', name: 'Advanced', desc: 'Consolidación y sostenibilidad.', points: ['Planeación estratégica', 'Mejora continua', 'Gestión de riesgos'] }
-                            ].map((cert, i) => (
-                                <div className={`cert-card-tier tier-${cert.lvl}`} key={i}>
+                                {
+                                    paso: '1',
+                                    name: 'Completa tu proceso',
+                                    desc: 'Avanza por las fases del modelo ATLAS documentando tu evidencia.',
+                                    points: ['Evidencia en las cinco fases', 'Seguimiento en la plataforma']
+                                },
+                                {
+                                    paso: '2',
+                                    name: 'Recibe tu credencial',
+                                    desc: 'Se emite automáticamente al completar el proceso.',
+                                    points: ['ID único', 'Enlace público de verificación']
+                                },
+                                {
+                                    paso: '3',
+                                    name: 'Compártela',
+                                    desc: 'Agrégala a tu perfil profesional en un clic.',
+                                    points: ['Directo a LinkedIn', 'Licencias y certificaciones']
+                                }
+                            ].map((item, i) => (
+                                <div className={`cert-card-tier tier-${item.paso}`} key={i}>
                                     <div className="cert-tier-header">
-                                        <span className="lvl-tag">Nivel {cert.lvl}</span>
-                                        <h3>{cert.name}</h3>
+                                        <span className="lvl-tag">Paso {item.paso}</span>
+                                        <h3>{item.name}</h3>
                                     </div>
-                                    <p className="cert-tier-desc">{cert.desc}</p>
+                                    <p className="cert-tier-desc">{item.desc}</p>
                                     <ul className="cert-points-list">
-                                        {cert.points.map((point, j) => (
+                                        {item.points.map((point, j) => (
                                             <li key={j}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                                     <polyline points="20 6 9 17 4 12"></polyline>
