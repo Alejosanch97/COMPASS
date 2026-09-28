@@ -104,12 +104,15 @@
 
 .brand-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
 }
 
 .institute-logo {
-    width: 200px;
-    margin-bottom: 0px;
+    display: block;
+    width: 170px;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto 16px;
 }
 
 .brand-header h2 {
