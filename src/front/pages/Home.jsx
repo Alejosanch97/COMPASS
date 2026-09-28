@@ -185,7 +185,7 @@ export const Home = ({ onLoginSuccess }) => {
 
                 <div className="hero-content">
                     <p className="hero-overline">Alineado con los principales marcos internacionales de IA en educación</p>
-                    <img src={"./logo3.png"} alt="COMPASS Logo" className="hero-logo" />
+                    <img src={"./logover.png"} alt="COMPASS Logo" className="hero-logo" />
                     <p className="hero-system-name">
                         Sistema de Gobernanza para la Inteligencia Artificial Responsable en Educación
                     </p>
