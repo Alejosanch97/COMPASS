@@ -373,7 +373,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
             {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
             <aside className={`atlas-sidebar ${isMobileMenuOpen ? "open" : ""}`}>
                 <div className="sidebar-brand" onClick={() => switchTab("overview")} style={{ cursor: "pointer" }}>
-                    <img src="./logo3.png" alt="Logo ATLAS" className="sidebar-logo-main" />
+                    <img src="./logover.png" alt="Logo ATLAS" className="sidebar-logo-main" />
                 </div>
 
                 <div className="sidebar-user-top">

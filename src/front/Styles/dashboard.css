@@ -49,14 +49,19 @@
 }
 
 .sidebar-logo-main {
-    max-width: 200px; /* Reducimos el ancho para que la altura baje automáticamente */
+    display: block;
+    width: auto;
     height: auto;
-    opacity: 0.9;
+    max-width: 150px;
+    max-height: 85px; /* Controla el alto: el logo nuevo es vertical */
+    object-fit: contain;
+    opacity: 0.95;
     filter: drop-shadow(0 0 5px rgba(197, 160, 89, 0.1));
+    transition: transform 0.3s ease;
 }
 
 .sidebar-logo-main:hover {
-    transform: scale(1.02);
+    transform: scale(1.03);
 }
 
 .sidebar-user-top {
