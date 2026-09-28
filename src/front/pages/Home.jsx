@@ -385,17 +385,17 @@ export const Home = ({ onLoginSuccess }) => {
                     <div className="cert-grid-layout">
                         <div className="cert-intro">
                             <span className="diff-tag">Certificación</span>
-                            <h2 className="cert-title">Credencial verificable en LinkedIn</h2>
+                            <h2 className="cert-title">Tu evidencia se convierte en una credencial</h2>
                             <p className="cert-lead">
-                                Cada certificación incluye un ID único y un enlace público de verificación. Puedes agregarla a tu perfil de LinkedIn en un clic, en la sección "Licencias y certificaciones".
+                                Quienes recorren el modelo ATLAS obtienen una credencial que respalda las capacidades que han demostrado en el uso responsable de la IA. Cada credencial tiene un ID único y un enlace público de verificación, y puedes agregarla a tu perfil de LinkedIn en un clic.
                             </p>
                             <div className="cert-linkedin-note">
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="cert-linkedin-icon" aria-hidden="true">
                                     <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.13 2.06 2.06 0 010 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
                                 </svg>
                                 <div>
-                                    <strong>Verificación pública</strong>
-                                    <p>Cualquier institución o reclutador puede confirmar la validez de la credencial con su ID, sin necesidad de registrarse.</p>
+                                    <strong>Verificable por cualquiera</strong>
+                                    <p>Instituciones, directivos o reclutadores pueden confirmar la validez de tu credencial con su ID, sin necesidad de registrarse.</p>
                                 </div>
                             </div>
                         </div>
@@ -403,20 +403,20 @@ export const Home = ({ onLoginSuccess }) => {
                             {[
                                 {
                                     paso: '1',
-                                    name: 'Completa tu proceso',
-                                    desc: 'Avanza por las fases del modelo ATLAS documentando tu evidencia.',
-                                    points: ['Evidencia en las cinco fases', 'Seguimiento en la plataforma']
+                                    name: 'Demuestra tu práctica',
+                                    desc: 'Avanzas por las fases del modelo ATLAS registrando evidencia real de cómo integras la IA.',
+                                    points: ['Evidencia en las cinco fases', 'Seguimiento de tu progreso']
                                 },
                                 {
                                     paso: '2',
-                                    name: 'Recibe tu credencial',
-                                    desc: 'Se emite automáticamente al completar el proceso.',
+                                    name: 'Obtén tu credencial',
+                                    desc: 'Al completar el proceso, COMPASS emite tu credencial automáticamente.',
                                     points: ['ID único', 'Enlace público de verificación']
                                 },
                                 {
                                     paso: '3',
-                                    name: 'Compártela',
-                                    desc: 'Agrégala a tu perfil profesional en un clic.',
+                                    name: 'Hazla visible',
+                                    desc: 'Compártela en tu perfil profesional y respalda tu experiencia en IA responsable.',
                                     points: ['Directo a LinkedIn', 'Licencias y certificaciones']
                                 }
                             ].map((item, i) => (

@@ -1074,8 +1074,6 @@ transform: scale(1.05);
     padding: 120px 0;
     background-color: #ffffff !important;
     position: relative !important;
-    height: 100vh;
-    overflow: hidden; 
 }
 
 /* 2. El Grid: Forzamos alineación al inicio para permitir el desplazamiento */
@@ -1090,13 +1088,12 @@ transform: scale(1.05);
        evita que la columna izquierda se estire artificialmente */
     align-items: start !important; 
     position: relative;
-    height: 100%;
 }
 
 /* --- COLUMNA IZQUIERDA (ESPACIO DE CONTENCIÓN) --- */
 .stk-left-column {
     position: relative;
-    height: 100%; /* Permite que el contenido flote dentro de toda la altura del grid */
+    align-self: stretch; /* La columna mide lo mismo que las tarjetas: el recorrido del sticky */
     overflow: visible !important;
 }
 
@@ -1104,7 +1101,7 @@ transform: scale(1.05);
 .stk-sticky-box {
     position: -webkit-sticky !important;
     position: sticky !important;
-    top: 100px !important; /* Ajusta este valor si tienes un header fijo */
+    top: 120px !important; /* Deja espacio bajo el navbar fijo (70px) */
     z-index: 10;
     padding-bottom: 20px;
 }
@@ -1162,15 +1159,7 @@ transform: scale(1.05);
     flex-direction: column;
     gap: 40px; 
     position: relative;
-    overflow-y: auto;          /* 👈 AQUÍ VIVE EL SCROLL */
-    height: 100%;
-    padding-right: 10px;
-    scrollbar-width: none;        /* Firefox */
-    -ms-overflow-style: none;     /* IE */
-}
-
-.stk-right-scroll-area::-webkit-scrollbar {
-    display: none;                /* Chrome/Safari */
+    padding-right: 20px; /* Espacio para el desplazamiento del hover */
 }
 
 /* Tarjeta de Paso Atlas */
