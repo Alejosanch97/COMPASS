@@ -11,6 +11,7 @@ import html2canvas from "html2canvas";
 import "../Styles/miCertificado.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "";
+const FASES = ["AUDITAR", "TRANSFORMAR", "LIDERAR", "ASEGURAR", "SOSTENER"];
 
 export const MiCertificado = () => {
     const [info, setInfo] = useState(null);
@@ -29,7 +30,9 @@ export const MiCertificado = () => {
 
     const descargarImagen = async () => {
         if (!certRef.current) return;
-        const canvas = await html2canvas(certRef.current, { scale: 3, backgroundColor: null });
+        const canvas = await html2canvas(certRef.current, {
+            scale: 3, backgroundColor: "#ffffff", useCORS: true,
+        });
         const link = document.createElement("a");
         link.download = `Certificado-${info.id_credencial}.png`;
         link.href = canvas.toDataURL("image/png");
@@ -81,38 +84,60 @@ export const MiCertificado = () => {
 
     return (
         <div className="cert-container">
-            {/* ---- Tarjeta que se exporta a imagen ---- */}
-            <div className="cert-diploma" ref={certRef}>
-                <div className="cert-topbar" />
-                <div className="cert-brand">COMPASS</div>
-                <p className="cert-eyebrow">CERTIFICADO DE FINALIZACIÓN</p>
-                <h1 className="cert-nombre">{info.nombre_completo}</h1>
-                <p className="cert-texto">ha completado exitosamente el programa</p>
-                <h2 className="cert-programa">{info.programa}</h2>
+            {/* ---- Certificado azul que se exporta a imagen ---- */}
+            <div className="cv-diploma" ref={certRef}>
+                <svg className="cv-corners" viewBox="0 0 920 560" preserveAspectRatio="none">
+                    <polygon points="0,0 172,0 0,172" fill="#c5a059" />
+                    <polygon points="0,0 150,0 0,150" fill="#16233f" />
+                    <polygon points="920,560 748,560 920,388" fill="#c5a059" />
+                    <polygon points="920,560 770,560 920,410" fill="#16233f" />
+                </svg>
 
-                <div className="cert-fases">
-                    {(info.fases_completadas || []).map((f) => (
-                        <span key={f} className="cert-chip">{f}</span>
+                <div className="cv-logo-plate">
+                    <span className="cv-brand">COMPASS</span>
+                </div>
+                <div className="cv-brand-sub">— IA RESPONSABLE —</div>
+
+                <h1 className="cv-title">Certificado de participación</h1>
+                <p className="cv-subtitle">PILOTO COMPASS IA RESPONSABLE</p>
+
+                <div className="cv-otorgado"><span>OTORGADO A</span></div>
+                <h2 className="cv-name">{info.nombre_completo}</h2>
+
+                <p className="cv-body">
+                    Por su compromiso y participación activa en el <strong>Piloto COMPASS IA Responsable</strong>,
+                    contribuyendo al desarrollo de una implementación ética, sostenible y centrada en las
+                    personas en instituciones educativas.
+                </p>
+
+                <div className="cv-fases">
+                    {FASES.map((f, i) => (
+                        <React.Fragment key={f}>
+                            <span className="cv-fase">{f}</span>
+                            {i < FASES.length - 1 && <span className="cv-dot">·</span>}
+                        </React.Fragment>
                     ))}
                 </div>
 
-                <div className="cert-meta">
-                    <div>
-                        <span className="cert-meta-label">Huella COMPASS</span>
-                        <span className="cert-meta-val">{Math.round(info.huella_final)}/100</span>
+                <div className="cv-signrow">
+                    <div className="cv-sign">
+                        <span className="cv-sign-val">{fecha}</span>
+                        <span className="cv-sign-lbl">CERTIFICADO EMITIDO EL DÍA</span>
                     </div>
-                    <div>
-                        <span className="cert-meta-label">Fecha</span>
-                        <span className="cert-meta-val">{fecha}</span>
+
+                    <div className="cv-seal">
+                        <img src="/lagover2.png" alt="Sello COMPASS" className="cv-seal-img" />
+                    </div>
+
+                    <div className="cv-sign">
+                        <span className="cv-sign-val cv-signature">Felipe Cárdenas</span>
+                        <span className="cv-sign-lbl">EQUIPO COMPASS</span>
                     </div>
                 </div>
 
-                <div className="cert-footer">
-                    <span className="cert-seal">✓</span>
-                    <div className="cert-footer-txt">
-                        <span>Credencial verificable</span>
-                        <span className="cert-id">{info.id_credencial}</span>
-                    </div>
+                <div className="cv-meta-line">
+                    Huella COMPASS: <strong>{Math.round(info.huella_final)}/100</strong>
+                    &nbsp;·&nbsp; Credencial verificable: <strong>{info.id_credencial}</strong>
                 </div>
             </div>
 
