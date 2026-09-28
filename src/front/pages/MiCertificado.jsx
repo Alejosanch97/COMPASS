@@ -37,6 +37,7 @@ export const MiCertificado = () => {
     };
 
     const [copiada, setCopiada] = useState("");
+    const [abierto, setAbierto] = useState(false);
     const copiar = (txt) => {
         navigator.clipboard.writeText(txt);
         setCopiada(txt);
@@ -68,9 +69,15 @@ export const MiCertificado = () => {
 
     const fecha = info?.fecha_emision
         ? new Date(info.fecha_emision).toLocaleDateString("es-CO", {
-              year: "numeric", month: "long", day: "numeric",
-          })
+            year: "numeric", month: "long", day: "numeric",
+        })
         : "";
+
+    const top = info?.aptitudes_top || [];
+    const aptitudesOrdenadas = [
+        ...top,
+        ...(info?.aptitudes || []).filter((s) => !top.includes(s)),
+    ];
 
     return (
         <div className="cert-container">
@@ -130,34 +137,49 @@ export const MiCertificado = () => {
                 >
                     🔗 Ver página de verificación
                 </a>
-            </div>
-
-            <div className="cert-skills">
-                <h4>Aptitudes para tu certificación en LinkedIn</h4>
-                <p>
-                    Haz clic en una aptitud para copiarla y pégala en el campo
-                    <strong> Aptitudes</strong> del formulario de LinkedIn. Las marcadas con ★
-                    son las 5 recomendadas para asociar a esta certificación.
-                </p>
-                <div className="cert-skills-list">
-                    {(info.aptitudes || []).map((s) => (
-                        <button
-                            key={s}
-                            className={`cert-skill ${(info.aptitudes_top || []).includes(s) ? "top" : ""}`}
-                            onClick={() => copiar(s)}
-                        >
-                            {(info.aptitudes_top || []).includes(s) ? "★ " : ""}{s}
-                            {copiada === s ? " ✓" : ""}
-                        </button>
-                    ))}
-                </div>
                 <button
-                    className="cert-btn cert-btn-verify"
-                    onClick={() => copiar((info.aptitudes || []).join(", "))}
+                    className="cert-btn cert-btn-skills"
+                    onClick={() => setAbierto(true)}
                 >
-                    📋 Copiar todas
+                    🎯 Mis aptitudes
                 </button>
             </div>
+
+            {abierto && (
+                <div className="cert-modal-fondo" onClick={() => setAbierto(false)}>
+                    <div className="cert-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="cert-modal-x" onClick={() => setAbierto(false)}>✕</button>
+                        <div className="cert-topbar" />
+                        <p className="cert-eyebrow">Aptitudes para LinkedIn</p>
+                        <h3 className="cert-modal-titulo">Tus aptitudes COMPASS</h3>
+                        <p className="cert-modal-sub">
+                            Copia una, pégala en el campo <strong>Aptitudes</strong> de LinkedIn,
+                            elige la sugerencia y repite con la siguiente.
+                        </p>
+
+                        <ul className="cert-modal-lista">
+                            {aptitudesOrdenadas.map((s) => (
+                                <li key={s} className="cert-apt-fila">
+                                    <span className="cert-apt-nombre">
+                                        {top.includes(s) && <span className="cert-apt-star">★</span>}
+                                        {s}
+                                    </span>
+                                    <button
+                                        className={`cert-apt-copiar ${copiada === s ? "ok" : ""}`}
+                                        onClick={() => copiar(s)}
+                                    >
+                                        {copiada === s ? "✓ Copiado" : "Copiar"}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <p className="cert-modal-nota">
+                            ★ = las 5 recomendadas para asociar a esta certificación.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <p className="cert-hint">
                 Consejo: el botón <strong>Agregar a LinkedIn</strong> lleva el certificado
