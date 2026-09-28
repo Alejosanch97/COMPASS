@@ -113,3 +113,69 @@
     text-align: center; font-size: 12px; color: #94a3b8;
     margin-top: 16px; line-height: 1.5;
 }
+
+
+/* ---- Aptitudes para LinkedIn — misma paleta ATLAS ---- */
+.cert-skills {
+    max-width: 640px;
+    margin: 24px auto 0;
+    background: #fff;
+    border: 1px solid #ece1c6;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    text-align: center;
+}
+.cert-skills h4 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.cert-skills p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+}
+.cert-skills p strong { color: #1e293b; }
+
+.cert-skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 16px 0 18px;
+}
+
+/* Chip base: mismo look que .cert-chip pero clicable */
+.cert-skill {
+    background: #f7f1e3;
+    color: #a07d2f;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    cursor: pointer;
+    transition: transform .1s ease, box-shadow .2s ease, background .2s ease;
+}
+.cert-skill:hover {
+    background: #f1e6c8;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.25);
+}
+.cert-skill:active { transform: translateY(1px); }
+
+/* Las 5 recomendadas (★): dorado sólido, como el sello */
+.cert-skill.top {
+    background: #c5a059;
+    color: #0f172a;
+    border-color: #b08a34;
+    font-weight: 700;
+}
+.cert-skill.top:hover {
+    background: #d9b96a;
+    box-shadow: 0 4px 12px rgba(176, 138, 52, 0.35);
+}

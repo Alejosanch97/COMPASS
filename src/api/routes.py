@@ -3365,6 +3365,29 @@ def emitir_credencial_si_corresponde(usuario_id):
     return nueva
 
 
+APTITUDES_BASE = [
+    "Inteligencia artificial en educación",
+    "Ética de la inteligencia artificial",
+    "Gobernanza de la IA",
+    "IA responsable",
+]
+
+APTITUDES_POR_FASE = {
+    "AUDITAR": ["Diagnóstico de madurez institucional", "Análisis de datos educativos"],
+    "TRANSFORMAR": ["Diseño instruccional con IA", "Diseño inclusivo (DUA)", "Innovación educativa"],
+    "LIDERAR": ["Ingeniería de prompts", "Pensamiento crítico", "Toma de decisiones éticas"],
+    "ASEGURAR": ["Gestión de riesgos", "Protección de datos personales", "Supervisión humana de la IA"],
+    "SOSTENER": ["Mejora continua", "Evaluación de impacto", "Planificación estratégica"],
+}
+
+
+def _aptitudes_de_credencial(fases):
+    out = list(APTITUDES_BASE)
+    for f in FASES_ATLAS:
+        if f in [x.upper() for x in fases]:
+            out += APTITUDES_POR_FASE.get(f, [])
+    return out
+
 # ──────────────────────────────────────────────────────────────────────
 # A) Consultar / emitir MI credencial (requiere login)
 # ──────────────────────────────────────────────────────────────────────
@@ -3417,6 +3440,8 @@ def mi_credencial():
     data["tiene_credencial"] = True
     data["cert_url"] = cert_url
     data["linkedin_url"] = linkedin_url
+    data["aptitudes"] = _aptitudes_de_credencial(cred.fases_completadas or [])
+    data["aptitudes_top"] = APTITUDES_BASE[:3] + ["Ingeniería de prompts", "Gestión de riesgos"]
     return jsonify(data), 200
 
 

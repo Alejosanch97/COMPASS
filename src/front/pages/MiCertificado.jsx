@@ -36,6 +36,13 @@ export const MiCertificado = () => {
         link.click();
     };
 
+    const [copiada, setCopiada] = useState("");
+    const copiar = (txt) => {
+        navigator.clipboard.writeText(txt);
+        setCopiada(txt);
+        setTimeout(() => setCopiada(""), 1500);
+    };
+
     if (cargando) return <p className="cert-loading">Cargando…</p>;
 
     // Aún no alcanza el umbral de huella (80)
@@ -123,6 +130,33 @@ export const MiCertificado = () => {
                 >
                     🔗 Ver página de verificación
                 </a>
+            </div>
+
+            <div className="cert-skills">
+                <h4>Aptitudes para tu certificación en LinkedIn</h4>
+                <p>
+                    Haz clic en una aptitud para copiarla y pégala en el campo
+                    <strong> Aptitudes</strong> del formulario de LinkedIn. Las marcadas con ★
+                    son las 5 recomendadas para asociar a esta certificación.
+                </p>
+                <div className="cert-skills-list">
+                    {(info.aptitudes || []).map((s) => (
+                        <button
+                            key={s}
+                            className={`cert-skill ${(info.aptitudes_top || []).includes(s) ? "top" : ""}`}
+                            onClick={() => copiar(s)}
+                        >
+                            {(info.aptitudes_top || []).includes(s) ? "★ " : ""}{s}
+                            {copiada === s ? " ✓" : ""}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    className="cert-btn cert-btn-verify"
+                    onClick={() => copiar((info.aptitudes || []).join(", "))}
+                >
+                    📋 Copiar todas
+                </button>
             </div>
 
             <p className="cert-hint">
