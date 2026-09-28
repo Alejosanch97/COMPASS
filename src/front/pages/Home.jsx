@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
-import "../Styles/home.css"; 
+import "../Styles/home.css";
 import { useNavigate } from "react-router-dom";
+import { ModalPoliticas } from "./ModalPoliticas";
+import { CORREO_DATOS } from "./politicas";
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 export const Home = ({ onLoginSuccess }) => {
-    const [view, setView] = useState("landing"); 
+    const [view, setView] = useState("landing");
     const [credentials, setCredentials] = useState({ user_key: '', pass: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [activeFaq, setActiveFaq] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [verPoliticas, setVerPoliticas] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -68,30 +71,15 @@ export const Home = ({ onLoginSuccess }) => {
     };
 
     const faqData = [
-        {
-            q: "¿COMPASS es una plataforma o software?",
-            a: "No. COMPASS es un marco estratégico, no una herramienta tecnológica. Proporciona un proceso estructurado para guiar la adopción responsable de la IA, sin depender de software específico."
-        },
-        {
-            q: "¿Se puede adaptar a mi institución?",
-            a: "Sí. COMPASS está diseñado para adaptarse a diferentes contextos: colegios, universidades, instituciones públicas o privadas, de distintos tamaños y niveles de madurez tecnológica."
-        },
-        {
-            q: "¿Necesitamos expertos en IA?",
-            a: "No. COMPASS no requiere expertise técnico previo. El marco está pensado para líderes educativos y equipos pedagógicos, proporcionando orientación accesible y práctica."
-        },
-        {
-            q: "¿Reemplaza políticas existentes?",
-            a: "No necesariamente. COMPASS puede integrarse con políticas y procesos existentes, fortaleciéndolos con un enfoque específico para la adopción responsable de la IA."
-        },
-        {
-            q: "¿Cuánto dura un proceso COMPASS?",
-            a: "COMPASS está diseñado para desarrollarse a lo largo de ciclos institucionales, generalmente alineados con el año académico. Un primer ciclo de implementación suele abarcar entre 9 y 12 meses, lo que permite diagnosticar, formar, integrar lineamientos y acompañar la adopción de la inteligencia artificial de manera coherente y sostenible."
-        },
-        {
-            q: "¿COMPASS apoya los procesos de acreditación y calidad institucional?",
-            a: "Sí. COMPASS contribuye a los procesos de calidad y acreditación al ofrecer un marco estructurado para la adopción responsable de la IA, alineado con la gobernanza institucional, la formación docente y la mejora continua."
-        }
+        { q: "¿COMPASS es una plataforma o software?", a: "COMPASS es un sistema de gobernanza para la inteligencia artificial responsable en educación. La plataforma digital es uno de sus componentes, pero su propósito principal es ayudar a las instituciones a implementar, medir y sostener prácticas responsables de IA mediante el modelo ATLAS." },
+        { q: "¿En qué se diferencia COMPASS de los marcos internacionales como UNESCO, OCDE o el AI Act?", a: "Los marcos internacionales establecen principios, recomendaciones y orientaciones sobre el uso responsable de la IA. COMPASS ayuda a las instituciones a convertir esas orientaciones en procesos, capacidades, evidencias y acciones concretas mediante el modelo ATLAS." },
+        { q: "¿Se puede adaptar a mi institución?", a: "Sí. COMPASS ha sido diseñado para adaptarse a distintos contextos educativos, niveles de enseñanza y grados de madurez institucional. El sistema permite construir una ruta de implementación alineada con las necesidades, capacidades y objetivos de cada institución." },
+        { q: "¿Necesitamos expertos en IA para implementarlo?", a: "No. COMPASS está diseñado para acompañar a instituciones que se encuentran en diferentes etapas de adopción. Su enfoque se centra en desarrollar capacidades institucionales progresivamente, sin requerir conocimientos técnicos avanzados en inteligencia artificial." },
+        { q: "¿Reemplaza políticas o lineamientos existentes?", a: "No. COMPASS complementa y fortalece las políticas, procesos y sistemas de calidad ya existentes. Su función es ayudar a traducir principios y orientaciones sobre IA en prácticas institucionales coherentes y sostenibles." },
+        { q: "¿Cuánto dura un proceso COMPASS?", a: "La duración depende del contexto y de los objetivos institucionales. A través del modelo ATLAS, las instituciones avanzan progresivamente por fases de diagnóstico, transformación, liderazgo, aseguramiento y sostenibilidad, construyendo capacidades a su propio ritmo." },
+        { q: "¿COMPASS evalúa únicamente a los docentes?", a: "No. COMPASS integra una ruta docente y una ruta directiva para obtener una visión completa de la madurez institucional. Esto permite conectar las decisiones de gobernanza con las prácticas reales de enseñanza y aprendizaje." },
+        { q: "¿Por qué es importante evaluar tanto a docentes como a directivos?", a: "La gobernanza efectiva de la IA requiere una responsabilidad compartida. Mientras los directivos definen criterios, políticas y mecanismos de supervisión, los docentes materializan esas decisiones en la práctica educativa. COMPASS permite comprender ambas perspectivas para fortalecer la capacidad institucional de manera integral." },
+        { q: "¿COMPASS apoya los procesos de acreditación y calidad institucional?", a: "Sí. COMPASS genera evidencia, documentación y mecanismos de seguimiento que pueden contribuir a procesos de calidad, mejora continua, transformación digital, innovación educativa y fortalecimiento institucional." }
     ];
 
     if (view === "login") {
@@ -177,7 +165,7 @@ export const Home = ({ onLoginSuccess }) => {
                     </div>
                     <div className="nav-links-centered">
                         <a href="#porque">¿Por qué COMPASS?</a>
-                        <a href="#que-es">El Marco</a>
+                        <a href="#que-es">Modelo ATLAS</a>
                         <a href="#quienes">¿Para quién?</a>
                         <a href="#certificacion">Certificación</a>
                     </div>
@@ -196,27 +184,22 @@ export const Home = ({ onLoginSuccess }) => {
                 <div className="hero-overlay-dark"></div>
 
                 <div className="hero-content">
-                    <p className="hero-overline">Marco de gobernanza para el uso responsable de la IA en educación</p>
-                    <img
-                        src={"./logo3.png"}
-                        alt="ATLAS Logo"
-                        className="hero-logo"
-                    />
+                    <p className="hero-overline">Alineado con los principales marcos internacionales de IA en educación</p>
+                    <img src={"./logo3.png"} alt="COMPASS Logo" className="hero-logo" />
+                    <p className="hero-system-name">
+                        Sistema de Gobernanza para la Inteligencia Artificial Responsable en Educación
+                    </p>
                     <div className="hero-description-block">
                         <p className="hero-subtitle">
-                            Un marco estructurado que orienta a las instituciones en la integración responsable, ética y sostenible de la inteligencia artificial.
+                            COMPASS ayuda a las instituciones educativas a traducir principios, recomendaciones y estándares internacionales sobre inteligencia artificial en acciones concretas, medibles y sostenibles.
                         </p>
                         <p className="hero-tagline">
-                            Acompañamos a instituciones educativas y equipos directivos en la adopción de la IA con claridad, ética y visión de largo plazo.
+                            A través del modelo ATLAS, las instituciones pueden diagnosticar, implementar, fortalecer y asegurar prácticas responsables de IA alineadas con sus objetivos pedagógicos, éticos y estratégicos.
                         </p>
-                    </div>
-                    <div className="hero-actions-layout">
-                        <button className="btn-primary-large" onClick={() => document.getElementById('porque').scrollIntoView({ behavior: 'smooth' })}>
-                            Explorar COMPASS
-                        </button>
-                        <button className="btn-secondary-large" onClick={() => document.getElementById('que-es').scrollIntoView({ behavior: 'smooth' })}>
-                            Conocer el marco
-                        </button>
+                        <p className="hero-secondary">
+                            De la orientación internacional a la práctica institucional.<br />
+                            De la adopción de herramientas a la gobernanza basada en evidencia.
+                        </p>
                     </div>
                 </div>
 
@@ -230,25 +213,21 @@ export const Home = ({ onLoginSuccess }) => {
                 <div className="container">
                     <div className="section-header-content">
                         <p className="section-tag-gold">¿Por qué COMPASS?</p>
-                        <h2 className="section-title-large">La educación necesita un marco que asegure la innovación</h2>
+                        <h2 className="section-title-large">La educación necesita transformar principios en capacidad institucional</h2>
                         <div className="section-intro-group">
                             <div className="intro-full-width">
-                                <p>
-                                    Sin criterios institucionales claros, el uso de la inteligencia artificial pierde coherencia y aumenta riesgos institucionales.
-                                </p>
+                                <p>La inteligencia artificial avanza más rápido que la capacidad de muchas instituciones para integrarla de forma coherente, segura y alineada con sus objetivos educativos.</p>
+                                <p>Los principales marcos internacionales ofrecen principios y orientaciones valiosas. Sin embargo, las instituciones necesitan sistemas que les permitan convertir esas orientaciones en decisiones, procesos, evidencias y capacidades sostenibles.</p>
+                                <p><strong>COMPASS responde a ese desafío.</strong></p>
                             </div>
                             <div className="intro-columns-equidistant">
                                 <div className="column-item">
-                                    <p>
-                                        COMPASS articula la adopción de la IA con los sistemas de calidad,
-                                        fortaleciendo la gobernanza, la ética y la sostenibilidad institucional.
-                                    </p>
+                                    <h4 className="intro-col-title">De la orientación a la acción</h4>
+                                    <p>COMPASS traduce referentes internacionales como la <strong>UNESCO, la OCDE y la Unión Europea</strong> en un sistema práctico de gobernanza para instituciones educativas.</p>
                                 </div>
                                 <div className="column-item">
-                                    <p className="intro-text-compliance-refined">
-                                        Se fundamenta en los principios internacionales de la <strong>UNESCO, la OCDE y la Unión Europea</strong>,
-                                        traduciendo lineamientos globales en un modelo operativo real.
-                                    </p>
+                                    <h4 className="intro-col-title">Implementación basada en evidencia</h4>
+                                    <p className="intro-text-compliance-refined">A través del modelo ATLAS, las instituciones pueden diagnosticar su situación actual, fortalecer capacidades, gestionar riesgos y construir una estrategia sostenible para la adopción responsable de la IA.</p>
                                 </div>
                             </div>
                         </div>
@@ -262,8 +241,8 @@ export const Home = ({ onLoginSuccess }) => {
                                 </svg>
                             </div>
                             <div className="feature-card-content">
-                                <h3>Cambio acelerado</h3>
-                                <p>La IA transforma la educación más rápido de lo que las instituciones pueden responder.</p>
+                                <h3>Capacidad institucional</h3>
+                                <p>Las instituciones necesitan desarrollar capacidades para integrar la IA de forma pedagógica, ética y sostenible.</p>
                             </div>
                             <div className="card-corner-accent"></div>
                         </div>
@@ -276,8 +255,8 @@ export const Home = ({ onLoginSuccess }) => {
                                 </svg>
                             </div>
                             <div className="feature-card-content">
-                                <h3>Uso fragmentado</h3>
-                                <p>Decisiones dispersas sin lineamientos claros ni estrategia institucional.</p>
+                                <h3>Gobernanza basada en evidencia</h3>
+                                <p>Las decisiones sobre IA requieren criterios claros, responsabilidades definidas y mecanismos de seguimiento.</p>
                             </div>
                             <div className="card-corner-accent"></div>
                         </div>
@@ -289,8 +268,8 @@ export const Home = ({ onLoginSuccess }) => {
                                 </svg>
                             </div>
                             <div className="feature-card-content">
-                                <h3>Incertidumbre docente</h3>
-                                <p>Profesores y directivos sienten presión sin orientación clara.</p>
+                                <h3>Supervisión humana</h3>
+                                <p>La IA debe fortalecer el juicio profesional, no reemplazar la responsabilidad de docentes y directivos.</p>
                             </div>
                             <div className="card-corner-accent"></div>
                         </div>
@@ -302,8 +281,8 @@ export const Home = ({ onLoginSuccess }) => {
                                 </svg>
                             </div>
                             <div className="feature-card-content">
-                                <h3>Riesgos crecientes</h3>
-                                <p>Amenazas éticas, pedagógicas y legales sin protocolos definidos.</p>
+                                <h3>Gestión de riesgos</h3>
+                                <p>La innovación requiere mecanismos para abordar riesgos relacionados con datos, sesgos, transparencia y uso responsable.</p>
                             </div>
                             <div className="card-corner-accent"></div>
                         </div>
@@ -317,21 +296,27 @@ export const Home = ({ onLoginSuccess }) => {
                     <div className="diff-flex-layout">
                         <div className="diff-text-content">
                             <span className="diff-tag">Propósito</span>
-                            <h2 className="diff-main-title">COMPASS surge para aportar coherencia, responsabilidad y propósito</h2>
+                            <h2 className="diff-main-title">COMPASS surge para transformar principios en capacidad institucional</h2>
                             <div className="diff-accent-line"></div>
                             <p className="diff-description">
-                                COMPASS no es una plataforma tecnológica, es un modelo de gobernanza institucional diseñado para asegurar que la adopción de la IA responda a criterios pedagógicos, éticos y estratégicos consistentes con estándares internacionales.</p>
+                                COMPASS es un sistema de gobernanza para la inteligencia artificial responsable en educación. Ayuda a las instituciones a convertir orientaciones internacionales en decisiones, procesos, evidencias y capacidades sostenibles.
+                            </p>
+                            <p className="diff-description">
+                                A través del modelo ATLAS, las instituciones pueden diagnosticar, implementar, fortalecer y asegurar prácticas de IA alineadas con objetivos pedagógicos, éticos y estratégicos.
+                            </p>
                         </div>
                         <div className="diff-highlight-card">
                             <div className="diff-card-inner">
                                 <h3>¿Qué hace diferente a COMPASS?</h3>
-                                <p className="diff-card-subtitle">De lo reactivo a lo estratégico</p>
-                                <p className="diff-card-text">Pasamos de la improvisación a una estrategia institucional clara y compartida fundamentada en los lineamientos internacionales que han establecido principios claros en materia de:</p>
+                                <p className="diff-card-subtitle">De los principios a la implementación</p>
+                                <p className="diff-card-text">Los marcos internacionales ofrecen orientación sobre cómo debería utilizarse la inteligencia artificial. COMPASS ayuda a las instituciones a llevar esos principios a la práctica mediante procesos, herramientas y evidencia institucional.</p>
+                                <p className="diff-card-text"><strong>Fundamentado en referentes internacionales como:</strong></p>
                                 <div className="diff-pills-container">
-                                    <div className="diff-pill">Etica <span>↔</span> Responsabilidad</div>
+                                    <div className="diff-pill">Ética <span>↔</span> Responsabilidad</div>
                                     <div className="diff-pill">Transparencia <span>↔</span> Explicabilidad</div>
                                     <div className="diff-pill">Protección de datos <span>↔</span> Rendición de cuentas</div>
-                                    <div className="diff-pill">Sostenibilidad <span>↔</span> Supervisión humana</div>
+                                    <div className="diff-pill">Equidad <span>↔</span> Supervisión humana</div>
+                                    <div className="diff-pill">Gestión de riesgos <span>↔</span> Mejora continua</div>
                                 </div>
                             </div>
                         </div>
@@ -339,12 +324,12 @@ export const Home = ({ onLoginSuccess }) => {
 
                     <div className="diff-pillars-grid">
                         {[
-                            { t: "Marco estratégico", d: "Proceso de transformación institucional." },
-                            { t: "Centrado en personas", d: "Empodera y acompaña a los docentes." },
-                            { t: "Visión institucional", d: "Decisiones colectivas estratégicas." },
-                            { t: "Base pedagógica", d: "Fundamentado en ética y gobernanza." },
-                            { t: "Contextual", d: "Diseñado para realidades diversas." },
-                            { t: "Calidad", d: "Alineación con procesos de acreditación." }
+                            { t: "Diagnóstico", d: "Identifica el nivel de madurez institucional y docente frente al uso responsable de la IA." },
+                            { t: "Gobernanza", d: "Fortalece políticas, roles, responsabilidades y mecanismos de supervisión." },
+                            { t: "Desarrollo de capacidades", d: "Impulsa el crecimiento progresivo de docentes y líderes educativos." },
+                            { t: "Gestión de riesgos", d: "Integra criterios para abordar riesgos éticos, pedagógicos y relacionados con datos." },
+                            { t: "Evidencia", d: "Genera información para la toma de decisiones basada en datos y mejora continua." },
+                            { t: "Sostenibilidad", d: "Construye capacidades institucionales que trascienden proyectos o herramientas específicas." }
                         ].map((pillar, idx) => (
                             <div className="diff-pillar-card" key={idx}>
                                 <h4>{pillar.t}</h4>
@@ -360,24 +345,24 @@ export const Home = ({ onLoginSuccess }) => {
                 <div className="stk-main-grid">
                     <aside className="stk-left-column">
                         <div className="stk-sticky-box">
-                            <span className="stk-tag">El Modelo</span>
-                            <h2 className="stk-title">Un marco estructurado y adaptable</h2>
+                            <span className="stk-tag">El modelo ATLAS</span>
+                            <h2 className="stk-title">El motor de implementación de COMPASS</h2>
                             <div className="stk-gold-line"></div>
                             <p className="stk-text-main">
-                                El marco COMPASS de IA responsable se basa en el modelo ATLAS. Este se organiza en cinco fases interdependientes que conforman un ciclo continuo de madurez institucional.
+                                ATLAS es el modelo operativo que guía la implementación de COMPASS dentro de las instituciones educativas. Organiza el proceso de adopción, gobernanza, aseguramiento y mejora continua de la inteligencia artificial mediante cinco fases progresivas e interconectadas.
                             </p>
                             <div className="stk-badge-info">
-                                Estas fases no constituyen servicios independientes, sino dimensiones articuladas de un mismo sistema de gobernanza.
+                                Cada fase genera evidencia, capacidades y decisiones que fortalecen progresivamente la gobernanza institucional de la IA.
                             </div>
                         </div>
                     </aside>
                     <div className="stk-right-scroll-area">
                         {[
-                            { l: 'A', t: 'Auditar', d: 'Evaluación estructurada del estado actual, prácticas existentes y riesgos asociados al uso de la IA, en coherencia con estándares internacionales.' },
-                            { l: 'T', t: 'Transformar', d: 'Rediseño intencional de prácticas pedagógicas y procesos académicos para integrar la IA de manera alineada con el proyecto educativo institucional.' },
-                            { l: 'L', t: 'Liderar', d: 'Fortalecimiento del liderazgo académico y definición de responsabilidades institucionales para la toma de decisiones informadas y éticamente fundamentadas.' },
-                            { l: 'A', t: 'Asegurar', d: 'Establecimiento de criterios, estándares y mecanismos de evaluación que permitan verificar impacto, calidad y cumplimiento de principios éticos.' },
-                            { l: 'S', t: 'Sostener', d: 'Integración del modelo como práctica institucional permanente mediante monitoreo, evidencia y mejora continua.' }
+                            { l: 'A', t: 'Auditar', d: 'Comprender la realidad institucional mediante diagnósticos, evidencia y análisis de madurez.' },
+                            { l: 'T', t: 'Transformar', d: 'Convertir los hallazgos en capacidades, prácticas y acciones de mejora alineadas con los objetivos educativos.' },
+                            { l: 'L', t: 'Liderar', d: 'Fortalecer el liderazgo institucional para orientar decisiones responsables sobre el uso de la IA.' },
+                            { l: 'A', t: 'Asegurar', d: 'Establecer mecanismos de supervisión, gestión de riesgos y aseguramiento de calidad.' },
+                            { l: 'S', t: 'Sostener', d: 'Consolidar capacidades institucionales mediante seguimiento, evidencia y mejora continua.' }
                         ].map((step, i) => (
                             <div className="stk-step-card" key={i}>
                                 <div className="stk-letter-box">
@@ -459,60 +444,6 @@ export const Home = ({ onLoginSuccess }) => {
                 </div>
             </section>
 
-            <section className="atlas-routes-section" id="rutas">
-                <div className="container">
-                    <div className="routes-header">
-                        <span className="diff-tag">Instrumentos Operativos</span>
-                        <h2 className="routes-main-title">Rutas de navegación institucional</h2>
-                        <div className="routes-intro-box">
-                            <p>
-                                Las rutas no son cursos independientes, sino <strong>recorridos estructurados</strong> que permiten
-                                implementar el modelo ATLAS según el rol institucional.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="routes-grid">
-                        <div className="route-card">
-                            <div className="route-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                </svg>
-                            </div>
-                            <h3>Ruta Docente</h3>
-                            <p>Orientada a la integración pedagógica de la IA con criterios institucionales claros y aplicables al aula.</p>
-                            <div className="route-footer-line"></div>
-                        </div>
-                        <div className="route-card">
-                            <div className="route-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                </svg>
-                            </div>
-                            <h3>Ruta Directiva</h3>
-                            <p>Orientada a liderazgo, gobernanza, toma de decisiones estratégica y diseño de políticas internas.</p>
-                            <div className="route-footer-line"></div>
-                        </div>
-                    </div>
-                    <div className="maturity-levels-footer">
-                        <div className="maturity-info">
-                            <h4>Niveles progresivos de madurez en IA</h4>
-                            <div className="levels-pills">
-                                <span>Foundation</span>
-                                <span className="arrow-sep">→</span>
-                                <span>Pro</span>
-                                <span className="arrow-sep">→</span>
-                                <span>Advanced</span>
-                            </div>
-                        </div>
-                        <p className="maturity-disclaimer">
-                            El avance se fundamenta en <strong>evidencia verificable</strong> y cumplimiento de criterios,
-                            no en la simple asistencia a sesiones formativas.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
             <section className="atlas-cert-section" id="certificacion">
                 <div className="container">
                     <div className="cert-grid-layout">
@@ -522,6 +453,15 @@ export const Home = ({ onLoginSuccess }) => {
                             <p className="cert-lead">Reconocemos el nivel de madurez alcanzado en la adopción responsable de la IA bajo estándares institucionales.</p>
                             <div className="cert-badge-note">
                                 <strong>Nota:</strong> Evalúa procesos evidenciables, no herramientas de IA.
+                            </div>
+                            <div className="cert-linkedin-note">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="cert-linkedin-icon" aria-hidden="true">
+                                    <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 110-4.13 2.06 2.06 0 010 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
+                                </svg>
+                                <div>
+                                    <strong>Credencial verificable en LinkedIn</strong>
+                                    <p>Cada certificación incluye un ID único y un enlace público de verificación. Puedes agregarla a tu perfil de LinkedIn en un clic, en la sección "Licencias y certificaciones".</p>
+                                </div>
                             </div>
                         </div>
                         <div className="cert-cards-container">
@@ -647,6 +587,16 @@ export const Home = ({ onLoginSuccess }) => {
                                 <div className="input-group">
                                     <textarea placeholder="¿En qué fase de adopción de IA se encuentran?" rows="4"></textarea>
                                 </div>
+                                <label className="contact-consent">
+                                    <input type="checkbox" required />
+                                    <span>
+                                        He leído y acepto la{" "}
+                                        <button type="button" className="link-inline" onClick={() => setVerPoliticas(true)}>
+                                            Política de Privacidad
+                                        </button>{" "}
+                                        y autorizo el tratamiento de mis datos personales para los fines descritos.
+                                    </span>
+                                </label>
                                 <button type="submit" className="btn-form-submit">
                                     Solicitar Consultoría Inicial
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="btn-icon">
@@ -659,6 +609,23 @@ export const Home = ({ onLoginSuccess }) => {
                     </div>
                 </div>
             </section>
+
+            <footer className="atlas-legal-footer">
+                <div className="container legal-footer-inner">
+                    <p>
+                        © {new Date().getFullYear()} COMPASS IA Responsable ·{" "}
+                        <a href="https://www.compassgovernance.org/" target="_blank" rel="noreferrer">compassgovernance.org</a>
+                    </p>
+                    <div className="legal-links">
+                        <button type="button" onClick={() => setVerPoliticas(true)}>Privacidad y tratamiento de datos</button>
+                        <a href={`mailto:${CORREO_DATOS}?subject=${encodeURIComponent("Solicitud de eliminación de datos")}`}>
+                            Solicitar eliminación de datos
+                        </a>
+                    </div>
+                </div>
+            </footer>
+
+            <ModalPoliticas abierta={verPoliticas} onClose={() => setVerPoliticas(false)} />
         </div>
     );
 };

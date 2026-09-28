@@ -22,6 +22,8 @@ import ModuloSostener from "./ModuloSostener";
 import ModuloSostenerDirectivo from "./ModuloSostenerDirectivo";
 
 import "../Styles/dashboard.css";
+import { ModalAceptarPoliticas } from "./ModalPoliticas";
+import { POLITICAS_VERSION } from "./politicas";
 
 // ─── URL del backend ──────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
@@ -73,6 +75,7 @@ export const Dashboard = ({ onLogout }) => {
     const [fasesEstado, setFasesEstado] = useState([]);
 
     const [modoResponder, setModoResponder] = useState(null); // 'auditar2' | null
+    const [debeAceptarPoliticas, setDebeAceptarPoliticas] = useState(false);
 
     const handleNavigateFase = (tab, fase) => {
         if (fase) setFaseRespondiendo(fase);
@@ -121,6 +124,7 @@ export const Dashboard = ({ onLogout }) => {
 
         const user = JSON.parse(saved);
         setUserData(user);
+        setDebeAceptarPoliticas(!user.acepto_politicas || user.version_politicas !== POLITICAS_VERSION);
         loadDashboardData(user);
     }, [navigate]);
 
@@ -172,6 +176,17 @@ export const Dashboard = ({ onLogout }) => {
         navigate("/", { replace: true });
     };
 
+    // ── Aceptación de políticas ───────────────────────────────────────────────
+    const handleAceptarPoliticas = async () => {
+        const actualizado = await apiFetch("/api/auth/aceptar-politicas", {
+            method: "POST",
+            body: JSON.stringify({ version: POLITICAS_VERSION }),
+        });
+        localStorage.setItem("userATLAS", JSON.stringify(actualizado));
+        setUserData(actualizado);
+        setDebeAceptarPoliticas(false);
+    };
+
     // ── Toggle menú ───────────────────────────────────────────────────────────
     const toggleMenu = (name) => setOpenMenu(prev => prev === name ? null : name);
     const switchTab = (tab) => {
@@ -212,7 +227,7 @@ export const Dashboard = ({ onLogout }) => {
                     "Diseña experiencia de aprendizaje con IA responsable (ASEGURAR).",
                     "Comparte evidencias pedagógicas reales (SOSTENER)."
                 ],
-                extraNote: "Tu compass está alineado con marcos internacionales de uso responsable de IA en educación y evalúa evidencia en las cinco fases del Marco ATLAS."
+                extraNote: "Tu compass está alineado con marcos internacionales de uso responsable de IA en educación y evalúa evidencia en las cinco fases del modelo ATLAS."
             },
             {
                 range: "40–59%",
@@ -233,7 +248,7 @@ export const Dashboard = ({ onLogout }) => {
             {
                 range: "60–74%",
                 title: "Práctica consciente",
-                subtitle: "Nivel basado en evidencia pedagógica validada en el Marco ATLAS.",
+                subtitle: "Nivel basado en evidencia pedagógica validada en el modelo ATLAS.",
                 body: `Tu COMPASS de IA muestra que has desarrollado una práctica intencional y documentada en el uso pedagógico de la inteligencia artificial. 
             La IA en tu aula ya no es intuitiva ni ocasional. Has demostrado planeaciones con propósito, criterios explícitos y evidencias de evaluación mediadas con supervisión docente. 
             En esta etapa, la clave es coherencia y profundidad.`,
@@ -267,7 +282,7 @@ export const Dashboard = ({ onLogout }) => {
                 title: "Capacidad ATLAS demostrada",
                 subtitle: "Elegible para proceso de certificación ATLAS.",
                 body: `Tu COMPASS de IA indica que has alcanzado un nivel de integración pedagógica avanzada y coherente. 
-            Has demostrado evidencia sólida en las cinco fases: AUDITAR, TRANSFORMAR, LEDERAR, ASEGURAR y SOSTENER. 
+            Has demostrado evidencia sólida en las cinco fases: AUDITAR, TRANSFORMAR, LIDERAR, ASEGURAR y SOSTENER. 
             La inteligencia artificial en tu práctica está mediada por criterio profesional, alineada con estándares de calidad y documentada.`,
                 /*
 footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de validación de coherencia e impacto.",
@@ -338,13 +353,16 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                 return { title: "Fase: Asegurar", subtitle: "Gobernanza y Sostenibilidad de la IA" };
                 const faseTxt = filterPhase === "A" ? "AUDITAR" : filterPhase === "T" ? "TRANSFORMAR" : "LIDERAR";
                 return { title: `Fase ${faseTxt}`, subtitle: `Instrumentos de la Etapa ${filterPhase}` };
-            default: return { title: "Bienvenido al Marco COMPASS", subtitle: "Modelo de Madurez y Gobernanza en IA Educativa" };
+            default: return { title: "Bienvenido a COMPASS", subtitle: "Sistema de Gobernanza para la IA Responsable · Modelo ATLAS" };
         }
     };
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className={`atlas-dashboard-layout ${isMobileMenuOpen ? "mobile-nav-open" : ""}`}>
+            {debeAceptarPoliticas && (
+                <ModalAceptarPoliticas onAceptar={handleAceptarPoliticas} onRechazar={handleLogout} />
+            )}
 
             {/* Toggle móvil */}
             <button className="mobile-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -413,7 +431,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                         )}
                     </div>
 
-                    <div className="nav-section">MARCO ATLAS</div>
+                    <div className="nav-section">MODELO ATLAS</div>
 
                     {/* AUDITAR */}
                     <div className="atlas-nav-group">
@@ -518,7 +536,7 @@ footer: "Eres elegible para solicitar la Auditoría ATLAS en aula, un proceso de
                 <header className="main-header">
                     <div className="header-title-group">
                         <h1>
-                            {activeTab === "overview" && "Bienvenido al Marco COMPASS"}
+                            {activeTab === "overview" && "Bienvenido a COMPASS"}
                             {activeTab === "fase_auditar" && "Fase: Auditar"}
                             {activeTab === "fase_transformar" && "Fase: Transformar"}
                             {activeTab === "fase_liderar" && "Fase: Liderar"}

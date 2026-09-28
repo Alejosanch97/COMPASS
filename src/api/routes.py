@@ -82,6 +82,29 @@ def me():
     return jsonify(u.serialize()), 200
 
 
+@api.route('/auth/aceptar-politicas', methods=['POST'])
+@jwt_required()
+def aceptar_politicas():
+    """Registra que el usuario aceptó la versión vigente de las políticas."""
+    u = get_usuario_actual()
+    if not u:
+        return jsonify({"error": "No encontrado"}), 404
+
+    data = request.get_json() or {}
+    version = (data.get("version") or "").strip()
+    if not version:
+        return jsonify({"error": "version requerida"}), 400
+
+    ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "").split(",")[0].strip()
+
+    u.acepto_politicas = True
+    u.version_politicas = version[:20]
+    u.fecha_aceptacion_politicas = datetime.now(timezone.utc)
+    u.ip_aceptacion_politicas = ip[:64]
+    db.session.commit()
+    return jsonify(u.serialize()), 200
+
+
 # ══════════════════════════════════════════════════════════════════════
 # EMPRESAS
 # ══════════════════════════════════════════════════════════════════════
@@ -3367,11 +3390,11 @@ def mi_credencial():
         }), 200
 
     # Construimos el enlace de LinkedIn ya listo para usar
-    base = os.getenv("PUBLIC_URL", "https://tusitio.com").rstrip("/")
+    base = os.getenv("PUBLIC_URL", "https://www.compassgovernance.org").rstrip("/")
     cert_url = f"{base}/verify/{cred.id_credencial}"
 
     fecha = cred.fecha_emision or datetime.now(timezone.utc)
-    programa = cred.programa or "ATLAS Framework 2026 - Adopción Ética de IA"
+    programa = cred.programa or "COMPASS · Sistema de Gobernanza para la IA Responsable en Educación (Modelo ATLAS)"
     params = {
         "startTask": "CERTIFICATION_NAME",
         "name": programa,
@@ -3385,7 +3408,7 @@ def mi_credencial():
     if org_id:
         params["organizationId"] = org_id
     else:
-        params["organizationName"] = os.getenv("LINKEDIN_ORG_NAME", "COMPASS")
+        params["organizationName"] = os.getenv("LINKEDIN_ORG_NAME", "COMPASS IA Responsable")
 
     query = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
     linkedin_url = f"https://www.linkedin.com/profile/add?{query}"

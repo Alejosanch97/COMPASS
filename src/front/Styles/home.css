@@ -591,7 +591,7 @@ transform: scale(1.05);
     padding: 20px 0;
 }
 
-* Decoración lateral para que no parezca solo una pared de texto */
+/* Decoración lateral para que no parezca solo una pared de texto */
 .hero-description-block::before {
     content: '';
     position: absolute;
@@ -2138,4 +2138,322 @@ transform: scale(1.05);
 
     .contact-mini-card { flex-direction: column; text-align: center; }
     .cert-card-tier { padding: 20px; }
+}
+
+
+
+
+
+/* ==========================================================================
+   COMPASS 2026 — HERO, SECCIONES ACTUALIZADAS Y CAPA LEGAL
+   ========================================================================== */
+
+/* --- HERO: con más contenido deja de ser absolute para no desbordarse --- */
+.hero-section.hero-original-dark {
+    height: auto;
+    min-height: 100vh;
+    padding: 130px 0 120px;
+}
+
+.hero-section.hero-original-dark .hero-content {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+}
+
+.hero-section.hero-original-dark .hero-logo {
+    max-width: 420px;
+    margin: 5px auto 12px;
+}
+
+/* Nombre del sistema bajo el logo */
+.hero-system-name {
+    font-size: clamp(1.05rem, 2vw, 1.4rem);
+    font-weight: 300;
+    letter-spacing: 1px;
+    line-height: 1.4;
+    color: var(--atlas-white);
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.hero-section.hero-original-dark .hero-description-block {
+    margin: 25px auto 30px;
+    padding: 0;
+    gap: 14px;
+}
+
+.hero-section.hero-original-dark .hero-subtitle {
+    font-size: 1.1rem;
+    letter-spacing: 0.3px;
+    margin: 0;
+}
+
+.hero-section.hero-original-dark .hero-tagline {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* "De la orientación internacional a la práctica institucional..." */
+.hero-secondary {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 2;
+    color: var(--atlas-gold);
+}
+
+/* --- ¿POR QUÉ COMPASS?: títulos de las dos columnas --- */
+.intro-full-width p + p {
+    margin-top: 18px;
+}
+
+.intro-full-width p strong {
+    color: var(--atlas-blue);
+    font-weight: 700;
+}
+
+.intro-col-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--atlas-blue);
+    margin: 0 0 12px;
+    text-align: left;
+}
+
+/* Alinea el título derecho con el párrafo que tiene borde dorado (20px padding + 3px borde) */
+.column-item:last-child .intro-col-title {
+    padding-left: 23px;
+}
+
+/* --- PROPÓSITO: dos párrafos + card con texto nuevo --- */
+.diff-description + .diff-description {
+    margin-top: 18px;
+}
+
+.diff-card-inner h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--atlas-white);
+    margin: 0;
+}
+
+.diff-card-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 18px;
+}
+
+.diff-card-text strong {
+    color: var(--atlas-gold);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.diff-pillar-card p {
+    line-height: 1.6;
+}
+
+/* --- MODELO ATLAS: la nota ahora es una frase larga, en mayúsculas pesaba demasiado --- */
+.stk-badge-info {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* --- CERTIFICACIÓN: badge verificable de LinkedIn (sobre fondo oscuro) --- */
+.cert-linkedin-note {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    margin-top: 20px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(197, 160, 89, 0.3);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.cert-linkedin-note:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--atlas-gold);
+}
+
+.cert-linkedin-icon {
+    width: 40px;
+    height: 40px;
+    padding: 9px;
+    box-sizing: border-box;
+    background: #0a66c2;
+    color: #ffffff;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cert-linkedin-note strong {
+    display: block;
+    color: var(--atlas-gold);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+}
+
+.cert-linkedin-note p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* --- CONTACTO: checkbox de autorización --- */
+.contact-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 5px 0 20px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Anula el estilo de input de texto que .atlas-premium-form aplica a todos los inputs */
+.atlas-premium-form .contact-consent input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin: 2px 0 0;
+    flex-shrink: 0;
+    accent-color: var(--atlas-gold);
+    cursor: pointer;
+}
+
+.link-inline {
+    background: none;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: var(--atlas-gold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.link-inline:hover {
+    border-bottom-color: var(--atlas-gold);
+}
+
+/* --- FOOTER LEGAL --- */
+.atlas-legal-footer {
+    background: #06111d;
+    border-top: 1px solid rgba(197, 160, 89, 0.2);
+    padding: 30px 0;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+}
+
+.legal-footer-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 40px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legal-footer-inner p {
+    margin: 0;
+}
+
+.legal-links {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.atlas-legal-footer a,
+.legal-links button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.legal-links a,
+.legal-links button {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.atlas-legal-footer a:hover,
+.legal-links button:hover {
+    color: var(--atlas-gold);
+}
+
+/* --- RESPONSIVE DE LO NUEVO --- */
+@media (max-width: 768px) {
+    .hero-section.hero-original-dark {
+        padding: 110px 0 100px;
+    }
+
+    .hero-section.hero-original-dark .hero-logo {
+        max-width: 80%;
+    }
+
+    .hero-system-name {
+        font-size: 1rem;
+        padding: 0 10px;
+    }
+
+    .hero-section.hero-original-dark .hero-subtitle {
+        font-size: 0.95rem;
+        width: 100%;
+    }
+
+    .hero-secondary {
+        font-size: 0.68rem;
+        letter-spacing: 1px;
+    }
+
+    .diff-card-inner h3 {
+        font-size: 1.3rem;
+    }
+
+    .legal-footer-inner {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 20px;
+    }
+
+    .legal-links {
+        justify-content: center;
+        gap: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cert-linkedin-note {
+        flex-direction: column;
+    }
 }

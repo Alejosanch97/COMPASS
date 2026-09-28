@@ -1,0 +1,331 @@
+/* =========================================
+   MODAL POLÍTICAS COMPASS (Landing + Dashboard)
+   ========================================= */
+
+.pol-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 7000;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    animation: polFadeIn 0.3s ease-out;
+}
+
+.pol-modal {
+    background: #ffffff;
+    width: 100%;
+    max-width: 780px;
+    max-height: 90vh;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: polSlideUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* --- ENCABEZADO (mismo lenguaje que el panel visual del login) --- */
+.pol-header {
+    position: relative;
+    background: linear-gradient(135deg, #102a43 0%, #243b53 100%);
+    padding: 30px 35px 26px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    border-bottom: 4px solid #c5a059;
+}
+
+.pol-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgba(197, 160, 89, 0.18) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.pol-header > * {
+    position: relative;
+    z-index: 1;
+}
+
+.pol-tag {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c5a059;
+}
+
+.pol-header h2 {
+    margin: 6px 0 0;
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.pol-close {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pol-close:hover {
+    background: #c5a059;
+    border-color: #c5a059;
+    color: #0f172a;
+    transform: rotate(90deg);
+}
+
+/* --- CUERPO CON SCROLL --- */
+.pol-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 35px 25px;
+}
+
+.pol-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pol-body::-webkit-scrollbar-thumb {
+    background: rgba(197, 160, 89, 0.4);
+    border-radius: 10px;
+}
+
+.pol-seccion {
+    padding: 22px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.pol-seccion:last-child {
+    border-bottom: none;
+}
+
+.pol-seccion h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.pol-seccion h3::before {
+    content: "";
+    width: 4px;
+    height: 20px;
+    background: #c5a059;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.pol-seccion p {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #475569;
+}
+
+.pol-lista {
+    list-style: none;
+    margin: 4px 0 14px;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+}
+
+.pol-lista li {
+    position: relative;
+    padding: 6px 0 6px 24px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #334155;
+}
+
+.pol-lista li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #c5a059;
+    font-weight: 900;
+}
+
+/* --- PIE CON ACEPTACIÓN (solo dashboard) --- */
+.pol-footer {
+    padding: 22px 35px 28px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pol-check {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pol-check:hover {
+    border-color: #c5a059;
+    background: #fffcf5;
+}
+
+.pol-check:has(input:checked) {
+    border-color: #c5a059;
+    background: #fffbeb;
+}
+
+.pol-check input {
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    flex-shrink: 0;
+    accent-color: #c5a059;
+    cursor: pointer;
+}
+
+.pol-error {
+    margin: 14px 0 0;
+    padding: 12px;
+    background: #ffe3e3;
+    color: #ab0909;
+    border: 1px solid #ffbcbc;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.pol-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+/* Igual a .btn-atlas-grad del login */
+.pol-btn-pri {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #102a43 0%, #243b53 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(16, 42, 67, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pol-btn-pri:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(16, 42, 67, 0.3);
+}
+
+.pol-btn-pri:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Mismo lenguaje que .btn-logout-minimal */
+.pol-btn-sec {
+    padding: 14px 22px;
+    background: rgba(225, 29, 72, 0.06);
+    border: 1px solid rgba(225, 29, 72, 0.2);
+    color: #be123c;
+    border-radius: 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pol-btn-sec:hover:not(:disabled) {
+    background: rgba(225, 29, 72, 0.12);
+}
+
+.pol-btn-sec:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- ANIMACIONES (nombres propios para no chocar con fadeIn de dashboard.css) --- */
+@keyframes polFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes polSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- MÓVIL: pantalla completa --- */
+@media (max-width: 600px) {
+    .pol-overlay {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .pol-modal {
+        max-height: none;
+        height: 100vh;
+        height: 100dvh;
+        border-radius: 0;
+    }
+
+    .pol-header {
+        padding: 24px 20px 20px;
+    }
+
+    .pol-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .pol-body {
+        padding: 5px 20px 20px;
+    }
+
+    .pol-footer {
+        padding: 18px 20px 22px;
+    }
+
+    .pol-acciones {
+        flex-direction: column-reverse;
+    }
+
+    .pol-btn-pri,
+    .pol-btn-sec {
+        width: 100%;
+    }
+}

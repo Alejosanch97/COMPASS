@@ -4,7 +4,7 @@ El db se define aqui directamente, igual que el boilerplate original.
 app.py importa db desde aqui: from api.models import db  (sin cambios)
 """
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, Integer, Float, Text, DateTime, ForeignKey, JSON
+from sqlalchemy import String, Boolean, Integer, Float, Text, DateTime, ForeignKey, JSON, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, timezone
 
@@ -60,6 +60,12 @@ class Usuario(db.Model):
     fecha_ultimo_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     empresa_id: Mapped[int] = mapped_column(ForeignKey("empresas.id"), nullable=True)
 
+    # ── Aceptación de políticas de privacidad / tratamiento de datos ──
+    acepto_politicas: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    fecha_aceptacion_politicas: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    version_politicas: Mapped[str] = mapped_column(String(20), nullable=True)
+    ip_aceptacion_politicas: Mapped[str] = mapped_column(String(64), nullable=True)
+
     empresa = relationship("Empresa", back_populates="usuarios")
     respuestas = relationship("RespuestaFormulario", back_populates="usuario", cascade="all, delete-orphan")
     progreso_fases = relationship("ProgresoFase", back_populates="usuario", cascade="all, delete-orphan")
@@ -87,6 +93,9 @@ class Usuario(db.Model):
             "empresa_nombre": self.empresa.nombre if self.empresa else None,
             "fecha_creacion": self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             "fecha_ultimo_login": self.fecha_ultimo_login.isoformat() if self.fecha_ultimo_login else None,
+            "acepto_politicas": bool(self.acepto_politicas),
+            "version_politicas": self.version_politicas,
+            "fecha_aceptacion_politicas": self.fecha_aceptacion_politicas.isoformat() if self.fecha_aceptacion_politicas else None,
         }
 
 
@@ -837,7 +846,7 @@ class Credencial(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     id_credencial: Mapped[str] = mapped_column(String(60), unique=True, nullable=False)  # ej: COMPASS-8F4C99A1
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
-    programa: Mapped[str] = mapped_column(String(300), default="ATLAS Framework 2026 - Adopción Ética de IA")
+    programa: Mapped[str] = mapped_column(String(300), default="COMPASS · Sistema de Gobernanza para la IA Responsable en Educación (Modelo ATLAS)")
     fases_completadas: Mapped[dict] = mapped_column(JSON, nullable=True)   # ["AUDITAR","TRANSFORMAR",...]
     huella_final: Mapped[float] = mapped_column(Float, default=0.0)
     fecha_emision: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
