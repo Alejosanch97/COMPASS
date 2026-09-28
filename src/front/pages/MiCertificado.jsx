@@ -126,7 +126,7 @@ export const MiCertificado = () => {
                     </div>
 
                     <div className="cv-seal">
-                        <img src="/lagover2.png" alt="Sello COMPASS" className="cv-seal-img" />
+                        <img src="/logover2.png" alt="Sello COMPASS" className="cv-seal-img" />
                     </div>
 
                     <div className="cv-sign">
