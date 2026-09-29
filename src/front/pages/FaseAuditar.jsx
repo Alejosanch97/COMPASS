@@ -731,7 +731,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                 <div className="status-indicator-box">
                                     {progreso?.capa_1_sentido === 'COMPLETADO' ? (
                                         formsCompletos ? <span className="status-tag success">✅ Completo</span> :
-                                            <button className="btn-go-diagnostic" onClick={() => onNavigate('responder_fase', 'AUDITAR')}>Ir a Bitácora</button>
+                                            <button className="btn-go-diagnostic" onClick={() => onNavigate('responder_fase', 'AUDITAR')}>Iniciar diagnóstico</button>
                                     ) : <span className="status-tag locked">🔒 Bloqueado</span>}
                                 </div>
                             </>

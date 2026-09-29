@@ -110,53 +110,110 @@ const MapaDimensiones = ({ dimensiones }) => (
     </div>
 );
 
-// ── 3. Matriz de posición 2×2 ────────────────────────────────────────
+// ── 3. Matriz de posición 2×2 (rediseñada) ───────────────────────────
+const nivelEje = (v) => (v >= 60 ? "Alto" : v >= 35 ? "Medio" : "Bajo");
+
 const MatrizPosicion = ({ matriz }) => {
     if (!matriz) return null;
-    const W = 440, H = 330, ML = 34, MT = 10, MB = 34, MR = 10;
+    const W = 520, H = 390, ML = 44, MT = 14, MB = 46, MR = 14;
     const iw = W - ML - MR, ih = H - MT - MB;
-    const clamp = (v) => Math.max(3, Math.min(97, v));
+    const clamp = (v) => Math.max(7, Math.min(93, v));
     const px = ML + (clamp(matriz.x) / 100) * iw;
     const py = MT + (1 - clamp(matriz.y) / 100) * ih;
     const cx = ML + 0.6 * iw;
     const cy = MT + 0.4 * ih;
+    const metaX = (cx + ML + iw) / 2;
+    const metaY = (MT + cy) / 2;
+    const yaEnMeta = matriz.clave === "alto_alto";
+
     const cuadros = [
-        { k: "bajo_alto", x: ML, y: MT, w: cx - ML, h: cy - MT, fill: "#eff6ff" },
-        { k: "alto_alto", x: cx, y: MT, w: ML + iw - cx, h: cy - MT, fill: "#f0fdf4" },
-        { k: "bajo_bajo", x: ML, y: cy, w: cx - ML, h: MT + ih - cy, fill: "#fff1f2" },
-        { k: "alto_bajo", x: cx, y: cy, w: ML + iw - cx, h: MT + ih - cy, fill: "#fff7ed" },
+        { k: "bajo_alto", x: ML, y: MT, w: cx - ML, h: cy - MT, fill: "#eff6ff", ax: ML + 14, an: "start", ty: MT + 24 },
+        { k: "alto_alto", x: cx, y: MT, w: ML + iw - cx, h: cy - MT, fill: "#ecfdf5", ax: ML + iw - 14, an: "end", ty: MT + 24 },
+        { k: "bajo_bajo", x: ML, y: cy, w: cx - ML, h: MT + ih - cy, fill: "#fff1f2", ax: ML + 14, an: "start", ty: MT + ih - 16 },
+        { k: "alto_bajo", x: cx, y: cy, w: ML + iw - cx, h: MT + ih - cy, fill: "#fff7ed", ax: ML + iw - 14, an: "end", ty: MT + ih - 16 },
     ];
+
+    const dx = metaX - px, dy = metaY - py;
+    const len = Math.hypot(dx, dy);
+    const mostrarFlecha = !yaEnMeta && len > 60;
+    const ux = dx / (len || 1), uy = dy / (len || 1);
+
+    const lx = Math.max(ML + 56, Math.min(ML + iw - 56, px));
+    const ly = py < MT + 50 ? py + 34 : py - 34;
+
     return (
         <div className="ia-card ia-block ia-matriz">
             <div className="ia-matriz-grafico">
                 <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Tu cuadrante: ${matriz.cuadrante}`}>
+                    <defs>
+                        <marker id="ia-flecha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                            <path d="M0 0L10 5L0 10z" fill="#c5a059" />
+                        </marker>
+                    </defs>
+
                     {cuadros.map((c) => (
                         <g key={c.k}>
                             <rect x={c.x} y={c.y} width={c.w} height={c.h} fill={c.fill}
                                 stroke={c.k === matriz.clave ? "#c5a059" : "#e2e8f0"}
-                                strokeWidth={c.k === matriz.clave ? 2 : 1} rx="6" />
-                            <text x={c.x + 10} y={c.y + 20} fontSize="11.5" fontWeight="700"
-                                fill={c.k === matriz.clave ? "#0f172a" : "#64748b"}>
+                                strokeWidth={c.k === matriz.clave ? 2.5 : 1} rx="10" />
+                            <text x={c.ax} y={c.ty} textAnchor={c.an} fontSize="12" fontWeight="800"
+                                fill={c.k === matriz.clave ? "#0f172a" : "#94a3b8"}>
                                 {matriz.nombres?.[c.k]}
                             </text>
                         </g>
                     ))}
-                    <circle cx={px} cy={py} r="15" fill="#c5a059" opacity="0.18" />
-                    <circle cx={px} cy={py} r="7" fill="#c5a059" stroke="#fff" strokeWidth="2" />
-                    <text x={px} y={py - 20} textAnchor="middle" fontSize="11" fontWeight="800" fill="#0f172a">Tú</text>
-                    <text x={ML + iw / 2} y={H - 10} textAnchor="middle" fontSize="11" fill="#475569">
-                        {matriz.eje_x} →
-                    </text>
-                    <text x={12} y={MT + ih / 2} textAnchor="middle" fontSize="11" fill="#475569"
-                        transform={`rotate(-90 12 ${MT + ih / 2})`}>
-                        {matriz.eje_y} →
-                    </text>
+
+                    {[0.25, 0.5, 0.75].map((t) => (
+                        <g key={t} opacity="0.7">
+                            <line x1={ML + t * iw} y1={MT} x2={ML + t * iw} y2={MT + ih} stroke="#fff" />
+                            <line x1={ML} y1={MT + t * ih} x2={ML + iw} y2={MT + t * ih} stroke="#fff" />
+                        </g>
+                    ))}
+
+                    {!yaEnMeta && (
+                        <g>
+                            <circle cx={metaX} cy={metaY} r="18" fill="none" stroke="#c5a059" strokeWidth="1.5" strokeDasharray="4 4" />
+                            <text x={metaX} y={metaY + 4} textAnchor="middle" fontSize="10" fontWeight="800" fill="#a17d33">META</text>
+                        </g>
+                    )}
+                    {mostrarFlecha && (
+                        <line x1={px + ux * 18} y1={py + uy * 18} x2={metaX - ux * 22} y2={metaY - uy * 22}
+                            stroke="#c5a059" strokeWidth="2" strokeDasharray="6 5" markerEnd="url(#ia-flecha)" />
+                    )}
+
+                    <circle cx={px} cy={py} r="16" fill="#c5a059" opacity="0.2">
+                        <animate attributeName="r" values="12;22;12" dur="2.6s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.3;0.05;0.3" dur="2.6s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx={px} cy={py} r="8" fill="#c5a059" stroke="#fff" strokeWidth="3" />
+                    <g>
+                        <rect x={lx - 52} y={ly - 13} width="104" height="24" rx="12" fill="#0f172a" />
+                        <text x={lx} y={ly + 3} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff">Tú estás aquí</text>
+                    </g>
+
+                    <line x1={ML} y1={MT + ih + 8} x2={ML + iw} y2={MT + ih + 8} stroke="#cbd5e1" />
+                    <text x={ML} y={H - 20} fontSize="10.5" fill="#94a3b8" fontWeight="700">Bajo</text>
+                    <text x={ML + iw} y={H - 20} textAnchor="end" fontSize="10.5" fill="#94a3b8" fontWeight="700">Alto</text>
+                    <text x={ML + iw / 2} y={H - 6} textAnchor="middle" fontSize="12" fontWeight="800" fill="#334155">{matriz.eje_x} →</text>
+
+                    <text x={ML - 8} y={MT + 12} textAnchor="end" fontSize="10.5" fill="#94a3b8" fontWeight="700">Alto</text>
+                    <text x={ML - 8} y={MT + ih} textAnchor="end" fontSize="10.5" fill="#94a3b8" fontWeight="700">Bajo</text>
+                    <text x={11} y={MT + ih / 2} textAnchor="middle" fontSize="12" fontWeight="800" fill="#334155"
+                        transform={`rotate(-90 11 ${MT + ih / 2})`}>{matriz.eje_y} →</text>
                 </svg>
             </div>
+
             <div className="ia-matriz-texto">
                 <small>Tu cuadrante</small>
                 <h5>{matriz.cuadrante}</h5>
                 <p>{matriz.descripcion}</p>
+                <div className="ia-ejes">
+                    <div><small>{matriz.eje_x}</small><b className={`n-${nivelEje(matriz.x).toLowerCase()}`}>{nivelEje(matriz.x)}</b></div>
+                    <div><small>{matriz.eje_y}</small><b className={`n-${nivelEje(matriz.y).toLowerCase()}`}>{nivelEje(matriz.y)}</b></div>
+                </div>
+                {!yaEnMeta && matriz.nombres?.alto_alto && (
+                    <p className="ia-meta-txt">Hacia dónde avanzar: <strong>{matriz.nombres.alto_alto}</strong></p>
+                )}
             </div>
         </div>
     );
@@ -338,90 +395,106 @@ const Brecha = ({ brecha }) => {
     );
 };
 
-// ── 10. Ruta en Transformar ──────────────────────────────────────────
-const Ruta = ({ ruta, fuera, onNavigate }) => (
-    <>
-        {ruta.length === 0 ? (
-            <div className="ia-card ia-block ia-vacio">
-                <p>Tu institución aún no tiene misiones de Transformar asignadas para tu rol. Cuando las tenga, aquí verás cuál trabaja cada dimensión.</p>
-            </div>
-        ) : (
-            <ol className="ia-ruta">
-                {ruta.map((r, i) => (
-                    <li key={r.id} className={`ia-ruta-paso ia-block${r.prioridad ? " is-prioridad" : ""}${r.completado ? " is-hecho" : ""}`}>
-                        <span className="ia-ruta-marca">{r.completado ? "✓" : i + 1}</span>
-                        <div className="ia-ruta-card">
-                            <div className="ia-ruta-top">
-                                <span className="ia-nivel-unesco">{NOMBRE_UNESCO[r.nivel_unesco] || r.nivel_unesco}</span>
-                                {r.prioridad && !r.completado && <span className="ia-badge-prio">Prioridad para ti</span>}
-                                {r.completado && <span className="ia-badge-ok">Completada</span>}
-                            </div>
-                            <h5>{r.nombre}</h5>
-                            <p>{r.por_que}</p>
-                            {r.dimensiones.length > 0 && (
-                                <div className="ia-ruta-dims">
-                                    <small>Fortalece</small>
-                                    {r.dimensiones.map((d) => (
-                                        <span key={d.nombre} className="ia-ruta-dim">
-                                            {d.nombre} <Chip nivel={d.nivel} />
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </li>
-                ))}
-            </ol>
-        )}
-        {fuera?.length > 0 && (
-            <div className="ia-fuera ia-block">
-                {fuera.map((f) => (
-                    <p key={f.dimension}>
-                        <strong>{f.dimension}</strong> <Chip nivel={f.nivel} /> {f.donde}
-                    </p>
-                ))}
-            </div>
-        )}
-        {onNavigate && ruta.length > 0 && (
-            <div className="ia-ruta-accion cmp-no-print">
-                <button type="button" className="ia-btn" onClick={() => onNavigate("fase_transformar")}>
-                    Ir a Transformar
-                </button>
-            </div>
-        )}
-    </>
-);
+// ── 10. Tus 3 retos en Transformar ───────────────────────────────────
+const VALORES_TRANSFORMAR = [
+    { t: "Del diagnóstico a la acción", d: "Cada reto parte de una dimensión donde hoy tienes más espacio para crecer." },
+    { t: "Evidencia de tu práctica", d: "Lo que hagas queda documentado y respalda tu avance real." },
+    { t: "Un escalón más en la escala", d: "Al completarlos, tu próximo diagnóstico puede reflejar un nivel más alto." },
+];
 
-// ── 11. Estándares con trazabilidad ──────────────────────────────────
-const Estandares = ({ estandares }) => (
-    <div className="ia-card ia-block">
-        <div className="ia-tabla-wrap">
-            <table className="ia-tabla">
-                <thead>
-                    <tr>
-                        <th>Marco de referencia</th>
-                        <th>Componente</th>
-                        <th>Se refleja en</th>
-                        <th>Lectura</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {estandares.map((e) => (
-                        <tr key={`${e.marco}-${e.componente}`}>
-                            <td>{e.marco}</td>
-                            <td>{e.componente}</td>
-                            <td>{e.dimensiones.join(" y ")}</td>
-                            <td><Chip nivel={e.nivel} /></td>
-                        </tr>
+const RetosTransformar = ({ ruta, esDirectivo, onNavigate }) => {
+    if (!ruta.length) {
+        return (
+            <div className="ia-card ia-block ia-vacio">
+                <p>Tu institución aún no tiene retos de Transformar asignados para tu rol. Cuando los tenga, aquí verás los tres que más impacto tendrán en tu punto de partida.</p>
+            </div>
+        );
+    }
+    const retos = [...ruta].sort((a, b) => Number(!!b.prioridad) - Number(!!a.prioridad)).slice(0, 3);
+
+    return (
+        <div className="ia-transf">
+            <div className="ia-transf-banner ia-block">
+                <div className="ia-transf-intro">
+                    <span className="ia-transf-kicker">Siguiente fase · Transformar</span>
+                    <h5>{esDirectivo
+                        ? "Transformar convierte este diagnóstico en decisiones institucionales."
+                        : "Transformar convierte este diagnóstico en práctica de aula."}</h5>
+                    <p>Este informe es tu punto de partida. Estos son los {retos.length} retos donde tu trabajo tendrá más efecto.</p>
+                </div>
+                <ul className="ia-transf-valores">
+                    {VALORES_TRANSFORMAR.map((v) => (
+                        <li key={v.t}><strong>{v.t}</strong><span>{v.d}</span></li>
                     ))}
-                </tbody>
-            </table>
+                </ul>
+            </div>
+
+            <div className="ia-retos-grid">
+                {retos.map((r, i) => (
+                    <article key={r.id} className={`ia-reto ia-block${r.prioridad ? " is-prioridad" : ""}`}>
+                        <div className="ia-reto-top">
+                            <span className="ia-reto-num">{i + 1}</span>
+                            <span className="ia-nivel-unesco">{NOMBRE_UNESCO[r.nivel_unesco] || r.nivel_unesco}</span>
+                            {r.prioridad && !r.completado && <span className="ia-badge-prio">Prioridad</span>}
+                            {r.completado && <span className="ia-badge-ok">Completado</span>}
+                        </div>
+                        <h5>{r.nombre}</h5>
+                        <p>{r.por_que}</p>
+                        {r.dimensiones.length > 0 && (
+                            <div className="ia-reto-dims">
+                                <small>Fortalece</small>
+                                {r.dimensiones.map((d) => (
+                                    <span key={d.nombre} className="ia-ruta-dim">{d.nombre} <Chip nivel={d.nivel} /></span>
+                                ))}
+                            </div>
+                        )}
+                    </article>
+                ))}
+            </div>
+
+            {onNavigate && (
+                <div className="ia-ruta-accion cmp-no-print">
+                    <button type="button" className="ia-btn" onClick={() => onNavigate("fase_transformar")}>
+                        Comenzar mis retos en Transformar →
+                    </button>
+                </div>
+            )}
         </div>
-        <p className="ia-mini">
-            Lectura orientativa calculada a partir de las dimensiones de tu diagnóstico. No es una certificación de cumplimiento normativo.
-        </p>
-    </div>
-);
+    );
+};
+
+// ── 11. Estándares con trazabilidad (tarjetas por marco) ─────────────
+const Estandares = ({ estandares }) => {
+    const grupos = estandares.reduce((acc, e) => {
+        (acc[e.marco] = acc[e.marco] || []).push(e);
+        return acc;
+    }, {});
+    return (
+        <div className="ia-card ia-block">
+            <div className="ia-est-grid">
+                {Object.entries(grupos).map(([marco, lista]) => (
+                    <article key={marco} className="ia-est">
+                        <h5 className="ia-est-marco">{marco}</h5>
+                        <ul>
+                            {lista.map((e) => (
+                                <li key={`${e.marco}-${e.componente}`}>
+                                    <div>
+                                        <strong>{e.componente}</strong>
+                                        <small>{e.dimensiones.join(" y ")}</small>
+                                    </div>
+                                    <Chip nivel={e.nivel} />
+                                </li>
+                            ))}
+                        </ul>
+                    </article>
+                ))}
+            </div>
+            <p className="ia-mini">
+                Lectura orientativa calculada a partir de las dimensiones de tu diagnóstico. No es una certificación de cumplimiento normativo.
+            </p>
+        </div>
+    );
+};
 
 // ══════════════════════════════════════════════════════════════════
 // Componente principal
@@ -430,8 +503,12 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
     if (!informe || !informe.disponible) return null;
     const {
         perfil, contexto = [], uso, matriz, items = [], proximos_pasos = [], voz = [],
-        riesgos, evidencias, brecha, ruta_transformar = [], fuera_de_transformar = [], estandares = [],
+        riesgos, evidencias, ruta_transformar = [], estandares = [],
     } = informe;
+
+    const hayDims = perfil?.dimensiones?.length > 0;
+    const hayMapaResp = items.some((i) => i.clase === "graduada");
+    const hayRiesgos = !esDirectivo && riesgos && (riesgos.prioridad.length > 0 || riesgos.vistos.length > 0);
 
     return (
         <div className="ia-informe">
@@ -442,26 +519,29 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
                 </section>
             )}
 
-            {perfil?.dimensiones?.length > 0 && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Tu mapa de madurez por dimensión"
-                        texto="Cada dimensión se ubica en uno de los cinco niveles de la escala COMPASS."
-                    />
-                    <MapaDimensiones dimensiones={perfil.dimensiones} />
-                </section>
-            )}
-
-            {matriz && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo={esDirectivo ? "Estructura y control de la gobernanza" : "Uso y criterio: dónde estás hoy"}
-                        texto={esDirectivo
-                            ? "Cruza qué tan formalizada está la gobernanza con qué tan controlados están los riesgos y los datos."
-                            : "Cruza cuánto integras la IA en tu aula con el criterio ético y crítico con el que la usas. Las preguntas que no aplican no te restan en el eje de criterio."}
-                    />
-                    <MatrizPosicion matriz={matriz} />
-                </section>
+            {(hayDims || matriz) && (
+                <div className="ia-duo">
+                    {hayDims && (
+                        <section className="ia-seccion">
+                            <Encabezado
+                                titulo="Tu mapa de madurez"
+                                texto="Cada dimensión se ubica en uno de los cinco niveles de la escala COMPASS."
+                            />
+                            <MapaDimensiones dimensiones={perfil.dimensiones} />
+                        </section>
+                    )}
+                    {matriz && (
+                        <section className="ia-seccion">
+                            <Encabezado
+                                titulo={esDirectivo ? "Estructura y control de la gobernanza" : "Uso y criterio: dónde estás hoy"}
+                                texto={esDirectivo
+                                    ? "Cruza qué tan formalizada está la gobernanza con qué tan controlados están los riesgos y los datos."
+                                    : "Cruza cuánto integras la IA en tu aula con el criterio ético y crítico con el que la usas."}
+                            />
+                            <MatrizPosicion matriz={matriz} />
+                        </section>
+                    )}
+                </div>
             )}
 
             {esDirectivo && evidencias?.length > 0 && (
@@ -474,24 +554,24 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
                 </section>
             )}
 
-            {esDirectivo && brecha && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Tu lectura frente a la de tus docentes"
-                        texto="Comparamos tus respuestas con las de los docentes en preguntas equivalentes. Solo se muestran datos agregados."
-                    />
-                    <Brecha brecha={brecha} />
-                </section>
-            )}
-
-            {items.some((i) => i.clase === "graduada") && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Mapa de tus respuestas"
-                        texto="Cada casilla es una pregunta del diagnóstico, coloreada según el nivel que refleja tu respuesta."
-                    />
-                    <MapaRespuestas items={items} dimensiones={perfil?.dimensiones || []} />
-                </section>
+            {(hayMapaResp || hayRiesgos) && (
+                <div className="ia-duo">
+                    {hayMapaResp && (
+                        <section className="ia-seccion">
+                            <Encabezado
+                                titulo="Mapa de tus respuestas"
+                                texto="Cada casilla es una pregunta, coloreada según el nivel que refleja tu respuesta."
+                            />
+                            <MapaRespuestas items={items} dimensiones={perfil?.dimensiones || []} />
+                        </section>
+                    )}
+                    {hayRiesgos && (
+                        <section className="ia-seccion">
+                            <Encabezado titulo="Tu mapa de riesgos" />
+                            <Riesgos riesgos={riesgos} />
+                        </section>
+                    )}
+                </div>
             )}
 
             {proximos_pasos.length > 0 && (
@@ -511,24 +591,20 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
                 </section>
             )}
 
-            {!esDirectivo && riesgos && (riesgos.prioridad.length > 0 || riesgos.vistos.length > 0) && (
-                <section className="ia-seccion">
-                    <Encabezado titulo="Tu mapa de riesgos" />
-                    <Riesgos riesgos={riesgos} />
-                </section>
-            )}
-
             <section className="ia-seccion">
                 <Encabezado
-                    titulo="Tu ruta en Transformar"
-                    texto="Así se conectan tus resultados con las misiones de la siguiente fase."
+                    titulo="Tus 3 retos en Transformar"
+                    texto="Lo que harás con este diagnóstico en la siguiente fase."
                 />
-                <Ruta ruta={ruta_transformar} fuera={fuera_de_transformar} onNavigate={onNavigate} />
+                <RetosTransformar ruta={ruta_transformar} esDirectivo={esDirectivo} onNavigate={onNavigate} />
             </section>
 
             {estandares.length > 0 && (
                 <section className="ia-seccion">
-                    <Encabezado titulo="Alineación con marcos de referencia" />
+                    <Encabezado
+                        titulo="Alineación con marcos de referencia"
+                        texto="Cómo se conectan tus dimensiones con los estándares internacionales."
+                    />
                     <Estandares estandares={estandares} />
                 </section>
             )}
