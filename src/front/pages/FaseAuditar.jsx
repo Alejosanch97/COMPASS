@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 
 import "../Styles/faseAuditar.css";
+import "../Styles/informeAuditar.css";
 import Swal from "sweetalert2";
+import { InformeAuditar, ListaRespuestasAuditar } from "./InformeAuditar";
 
 // ── Recursos de marca ──
 const LOGO_COMPASS = "/logo3.png"; // está en /public → se sirve desde la raíz
@@ -142,6 +144,7 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
 
     const [modalRespuestas, setModalRespuestas] = useState(null);
     const [perfilDimensiones, setPerfilDimensiones] = useState(null);
+    const [informe, setInforme] = useState(null);
 
     const infografiaRef = React.useRef(null);
 
@@ -152,13 +155,15 @@ export const FaseAuditar = ({ userData, apiFetch, onNavigate }) => {
     const fetchInitialData = async () => {
         if (!progreso) setLoading(true);
         try {
-            const [progresoData, formsData, respuestasData, perfilData] = await Promise.all([
+            const [progresoData, formsData, respuestasData, perfilData, informeData] = await Promise.all([
                 apiFetch("/api/progreso-fases").catch(() => []),
                 apiFetch("/api/mi-empresa/formularios?fase=AUDITAR").catch(() => []),
                 apiFetch("/api/mis-respuestas").catch(() => []),
                 apiFetch("/api/auditar/mi-perfil-dimensiones").catch(() => null),
+                apiFetch("/api/auditar/mi-informe").catch(() => null),
             ]);
             setPerfilDimensiones(perfilData);
+            setInforme(informeData);
 
             const registroFase = Array.isArray(progresoData)
                 ? progresoData.find(item => item.fase === "AUDITAR")
@@ -418,7 +423,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
     const sinFormulariosAsignados = formulariosFase.length === 0;
 
     useEffect(() => {
-        if (isProcessComplete && !loading) {
+        if (isProcessComplete && !loading && !sessionStorage.getItem("compass_auditar_aviso")) {
+            sessionStorage.setItem("compass_auditar_aviso", "1");
             Swal.fire({
                 title: `Nivel: ${madurezGlobal.nombre}`,
                 text: userData.rol === "DIRECTIVO"
@@ -549,6 +555,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 ".cmp-next-step p",
                 ".cmp-footer-text",
                 ".cmp-brand-footer",
+                ".ia-block",
             ].join(", ")).forEach(el => el.classList.add("pdf-block"));
 
             sandbox = document.createElement("div");
@@ -851,7 +858,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                             <h5>Fortalezas</h5>
                                             {perfilDimensiones.fortalezas.length > 0
                                                 ? perfilDimensiones.fortalezas.map(f => <p key={f} style={{ display: "flex", alignItems: "center", gap: "6px" }}><IconCheck /> {f}</p>)
-                                                : <p className="cmp-muted">Sigue trabajando para consolidar fortalezas.</p>}
+                                                : <p className="cmp-muted">{perfilDimensiones.fortaleza_relativa ? `Tu dimensión más avanzada hoy es ${perfilDimensiones.fortaleza_relativa}.` : "Sigue trabajando para consolidar fortalezas."}</p>}
                                         </div>
                                     </div>
 
@@ -861,7 +868,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                                             <h5>Oportunidades de crecimiento</h5>
                                             {perfilDimensiones.oportunidades.length > 0
                                                 ? perfilDimensiones.oportunidades.map(o => <p key={o}>• {o}</p>)
-                                                : <p className="cmp-muted">¡Sin dimensiones críticas!</p>}
+                                                : <p className="cmp-muted">{perfilDimensiones.foco ? `Sin dimensiones críticas. Tu foco para seguir creciendo: ${perfilDimensiones.foco}.` : "Sin dimensiones críticas."}</p>}
                                         </div>
                                     </div>
 
@@ -878,27 +885,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             </section>
                         )}
 
-                        {/* ESTÁNDARES */}
-                        <section className="cmp-standards">
-                            <h4 className="cmp-block-title">Alineación con estándares internacionales</h4>
-                            <div className="cmp-standards-grid">
-                                {[
-                                    { n: "UNESCO", d: "Recomendación sobre la Ética de la IA", e: nivelEstandar(0) },
-                                    { n: "OCDE", d: "Principios de IA en educación", e: nivelEstandar(0) },
-                                    { n: "AI Act (UE)", d: "Marco regulatorio de IA", e: nivelEstandar(1) },
-                                ].map(s => (
-                                    <div key={s.n} className="cmp-standard-card">
-                                        <div className="cmp-standard-info">
-                                            <strong>{s.n}</strong>
-                                            <span>{s.d}</span>
-                                        </div>
-                                        <span className="cmp-standard-estado" style={{ background: `${s.e.c}18`, color: s.e.c }}>
-                                            {s.e.t}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                        {/* INFORME AMPLIADO COMPASS */}
+                        <InformeAuditar informe={informe} esDirectivo={esDirectivo} onNavigate={onNavigate} />
 
                         {/* PRÓXIMO PASO ESTRATÉGICO (solo directivo) */}
                         {esDirectivo && (
@@ -975,28 +963,10 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                             >×</button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                            {respuestasUsuario
-                                .filter(r => r.formulario_id === modalRespuestas.id)
-                                .map((r, i) => (
-                                    <div key={i} style={{
-                                        padding: '14px 18px', background: '#f8fafc',
-                                        borderRadius: '12px', border: '1px solid #e2e8f0'
-                                    }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px' }}>
-                                            Pregunta {i + 1}
-                                        </div>
-                                        <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: '600', marginBottom: '4px' }}>
-                                            {r.pregunta_texto || `Pregunta ${i + 1}`}
-                                        </div>
-                                        <div style={{ fontSize: '0.9rem', color: '#475569' }}>
-                                            → {r.valor_respondido}
-                                        </div>
-                                        <div style={{ fontSize: '0.75rem', color: '#c5a059', fontWeight: '700', marginTop: '4px' }}>
-                                            {r.puntos_ganados} pts
-                                        </div>
-                                    </div>
-                                ))
-                            }
+                            <ListaRespuestasAuditar
+                                respuestas={respuestasUsuario.filter(r => r.formulario_id === modalRespuestas.id)}
+                                informe={informe}
+                            />
                         </div>
                     </div>
                 </div>

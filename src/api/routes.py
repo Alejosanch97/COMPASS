@@ -19,6 +19,8 @@ from api.models import (
     SostenerDocente, SostenerInstitucional, AuditarDos, Credencial, DilemaLiderar
 )
 import uuid
+import re
+import unicodedata
 
 api = Blueprint('api', __name__)
 
@@ -452,6 +454,11 @@ def eliminar_formulario(fid):
         return jsonify({"error": "Solo ADMIN"}), 403
 
     f = Formulario.query.get_or_404(fid)
+    if RespuestaFormulario.query.filter_by(formulario_id=fid).first():
+        return jsonify({
+            "error": "Este formulario ya tiene respuestas y no se puede eliminar. "
+                     "Desactívalo o desasígnalo de la empresa."
+        }), 409
     db.session.delete(f)
     db.session.commit()
     return jsonify({"message": "Eliminado"}), 200
@@ -631,6 +638,12 @@ def actualizar_formulario_completo(fid):
     f = Formulario.query.get_or_404(fid)
     data = request.get_json()
 
+    if RespuestaFormulario.query.filter_by(formulario_id=fid).first():
+        return jsonify({
+            "error": "Este formulario ya tiene respuestas. Para cambiar preguntas, "
+                     "crea una nueva versión (v2) y asígnala; así no se pierden los informes."
+        }), 409
+
     if not data.get("titulo") or not data.get("preguntas"):
         return jsonify({"error": "titulo y preguntas son requeridos"}), 400
 
@@ -793,23 +806,29 @@ DIMENSIONES_AUDITAR = {
 }
 
 
+# Escala ÚNICA COMPASS: mismos cortes y nombres que el frontend (FaseAuditar)
+ESCALA_COMPASS = [
+    (90, "Transformación"),
+    (75, "Liderazgo"),
+    (60, "Consolidación"),
+    (40, "Integración"),
+    (0, "Exploración"),
+]
+NIVELES_FORTALEZA = ("Liderazgo", "Transformación")
+NIVELES_OPORTUNIDAD = ("Exploración", "Integración")
+
+
 def _nivel_por_porcentaje(pct):
-    """Traduce un % de logro (0-100) a un nivel cualitativo de madurez."""
-    if pct >= 80:
-        return "Avanzado"
-    if pct >= 55:
-        return "Intermedio"
-    if pct >= 30:
-        return "Básico"
-    return "Inicial"
+    """Traduce un % interno (0-100) al nivel cualitativo de la escala única COMPASS."""
+    pct = float(pct or 0)
+    for corte, nombre in ESCALA_COMPASS:
+        if pct >= corte:
+            return nombre
+    return "Exploración"
 
 
-def calcular_perfil_dimensiones(usuario_id):
-    """
-    Agrupa las respuestas AUDITAR del docente por dimensión (usando
-    orden_pregunta), calcula el % de logro y el nivel cualitativo.
-    Devuelve dimensiones + fortalezas (Avanzado) + oportunidades (Básico/Inicial).
-    """
+def _calcular_perfil(usuario_id, mapa_dimensiones):
+    """Perfil por dimensiones con la escala única. Sirve para docente y directivo."""
     filas = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
         PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
     ).join(
@@ -819,7 +838,6 @@ def calcular_perfil_dimensiones(usuario_id):
         Formulario.fase_atlas == "AUDITAR"
     ).all()
 
-    # Suma puntos por orden de pregunta
     puntos_por_orden = {}
     for resp, preg in filas:
         if preg.orden_pregunta is None:
@@ -829,7 +847,7 @@ def calcular_perfil_dimensiones(usuario_id):
             float(resp.puntos_ganados or 0)
 
     dimensiones = []
-    for nombre, cfg in DIMENSIONES_AUDITAR.items():
+    for nombre, cfg in mapa_dimensiones.items():
         obtenido = sum(puntos_por_orden.get(o, 0) for o in cfg["ordenes"])
         maximo = cfg["max"]
         pct = round((obtenido / maximo) * 100, 1) if maximo else 0
@@ -841,16 +859,25 @@ def calcular_perfil_dimensiones(usuario_id):
             "nivel": _nivel_por_porcentaje(pct),
         })
 
-    fortalezas = [d["dimension"]
-                  for d in dimensiones if d["nivel"] == "Avanzado"]
-    oportunidades = [d["dimension"]
-                     for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
+    fortalezas = [d["dimension"] for d in dimensiones if d["nivel"] in NIVELES_FORTALEZA]
+    oportunidades = [d["dimension"] for d in dimensiones if d["nivel"] in NIVELES_OPORTUNIDAD]
+    ordenadas = sorted(dimensiones, key=lambda d: d["porcentaje"])
 
     return {
         "dimensiones": dimensiones,
         "fortalezas": fortalezas,
         "oportunidades": oportunidades,
+        "foco": ordenadas[0]["dimension"] if ordenadas else None,
+        "fortaleza_relativa": ordenadas[-1]["dimension"] if ordenadas else None,
     }
+
+
+def calcular_perfil_dimensiones(usuario_id):
+    """Perfil del DOCENTE (5 dimensiones)."""
+    return _calcular_perfil(usuario_id, DIMENSIONES_AUDITAR)
+
+
+# ── Dimensiones del formulario DIRECTIVO (mapean por orden_pregunta) ──
 
 
 # ── Dimensiones del formulario DIRECTIVO (mapean por orden_pregunta) ──
@@ -863,49 +890,8 @@ DIMENSIONES_AUDITAR_DIRECTIVO = {
 
 
 def calcular_perfil_dimensiones_directivo(usuario_id):
-    """Igual que calcular_perfil_dimensiones pero con las 4 dimensiones
-    del formulario DIRECTIVO (Gobernanza, Riesgos, Datos, Visión)."""
-    filas = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
-        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
-    ).join(
-        Formulario, RespuestaFormulario.formulario_id == Formulario.id
-    ).filter(
-        RespuestaFormulario.usuario_id == usuario_id,
-        Formulario.fase_atlas == "AUDITAR"
-    ).all()
-
-    puntos_por_orden = {}
-    for resp, preg in filas:
-        if preg.orden_pregunta is None:
-            continue
-        puntos_por_orden[preg.orden_pregunta] = \
-            puntos_por_orden.get(preg.orden_pregunta, 0) + \
-            float(resp.puntos_ganados or 0)
-
-    dimensiones = []
-    for nombre, cfg in DIMENSIONES_AUDITAR_DIRECTIVO.items():
-        obtenido = sum(puntos_por_orden.get(o, 0) for o in cfg["ordenes"])
-        maximo = cfg["max"]
-        pct = round((obtenido / maximo) * 100, 1) if maximo else 0
-        dimensiones.append({
-            "dimension": nombre,
-            "obtenido": round(obtenido, 1),
-            "maximo": maximo,
-            "porcentaje": pct,
-            "nivel": _nivel_por_porcentaje(pct),
-        })
-
-    fortalezas = [d["dimension"]
-                  for d in dimensiones if d["nivel"] == "Avanzado"]
-    oportunidades = [d["dimension"]
-                     for d in dimensiones if d["nivel"] in ("Básico", "Inicial")]
-
-    return {
-        "dimensiones": dimensiones,
-        "fortalezas": fortalezas,
-        "oportunidades": oportunidades,
-    }
-
+    """Perfil del DIRECTIVO (4 dimensiones), misma escala única."""
+    return _calcular_perfil(usuario_id, DIMENSIONES_AUDITAR_DIRECTIVO)
 
 # ── ASIGNAR / DESASIGNAR formularios y retos existentes ─────────────────
 
@@ -1358,6 +1344,520 @@ def auditar_mi_perfil_dimensiones():
     if u.rol == "DIRECTIVO":
         return jsonify(calcular_perfil_dimensiones_directivo(u.id)), 200
     return jsonify(calcular_perfil_dimensiones(u.id)), 200
+
+
+# ══════════════════════════════════════════════════════════════════════
+# AUDITAR v2 — INFORME ENRIQUECIDO (/api/auditar/mi-informe)
+# ══════════════════════════════════════════════════════════════════════
+
+_RE_PUNTOS = re.compile(r"\((-?\d+(?:[.,]\d+)?)\)\s*$")
+_RE_PARENTESIS_FINAL = re.compile(r"\s*\([^)]+\)$")
+_RE_ETIQUETA = re.compile(r"^([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9 \-—–:]{2,}?)\.\s+", re.S)
+
+_PREFIJOS_NO_APLICA = ("no aplica",)
+_PREFIJOS_NO_USO = ("no uso ia", "no se usa ia", "no utilizamos")
+
+MIN_DOCENTES_BRECHA = 3
+
+
+def _norm(texto):
+    t = unicodedata.normalize("NFD", str(texto or "").lower())
+    return "".join(c for c in t if unicodedata.category(c) != "Mn").strip()
+
+
+def _limpiar_opcion(texto):
+    return _RE_PARENTESIS_FINAL.sub("", str(texto or "")).strip()
+
+
+def _puntos_opcion(texto):
+    m = _RE_PUNTOS.search(str(texto or "").strip())
+    return float(m.group(1).replace(",", ".")) if m else None
+
+
+def _texto_sin_etiqueta(texto):
+    return _RE_ETIQUETA.sub("", str(texto or ""), count=1).strip()
+
+
+def _es_no_aplica(texto):
+    return _norm(texto).startswith(_PREFIJOS_NO_APLICA)
+
+
+def _es_no_uso(texto):
+    return _norm(texto).startswith(_PREFIJOS_NO_USO)
+
+
+def _opciones_de(preg):
+    ops = preg.opciones_seleccion if isinstance(preg.opciones_seleccion, list) else []
+    return [{
+        "texto": _limpiar_opcion(o),
+        "puntos": _puntos_opcion(o),
+        "no_aplica": _es_no_aplica(o),
+    } for o in ops]
+
+
+CONFIG_INFORME_AUDITAR = {
+    "DOCENTE": {
+        "dimensiones": DIMENSIONES_AUDITAR,
+        "contexto": {1: "Nivel educativo", 2: "Áreas de enseñanza", 3: "Experiencia docente"},
+        "abiertas": {
+            23: {"titulo": "Tu práctica, en tus palabras",
+                 "puente": "Esta experiencia real es tu mejor punto de partida para la misión de rediseño de práctica de aula (Profundizar) en Transformar."},
+            24: {"titulo": "El dilema ético que identificas",
+                 "puente": "Llevarás este dilema a la matriz ética UNESCO de tu primera misión en Transformar para analizarlo con criterios claros."},
+            25: {"titulo": "Lo que necesitas de tu institución",
+                 "puente": "Esta necesidad alimenta la conversación de gobernanza que se trabaja en las fases Liderar y Asegurar."},
+        },
+        "riesgos_orden": 22,
+        "riesgos_vistos": 13,
+        "eje_x": {"nombre": "Integración de la IA en tu aula", "dimensiones": ["Integración pedagógica"]},
+        "eje_y": {"nombre": "Criterio ético y crítico", "dimensiones": ["Pensamiento crítico", "Gestión de riesgos y datos"]},
+        "cuadrantes": {
+            "bajo_bajo": ("Exploración inicial", "Aún usas poco la IA y estás construyendo los criterios para hacerlo bien. Es un buen momento para empezar con intención, no por moda."),
+            "alto_bajo": ("Uso intuitivo", "Ya integras la IA en tu práctica, pero tus criterios de verificación, datos y riesgos todavía no acompañan ese uso. Es el cuadrante que más conviene atender."),
+            "bajo_alto": ("Criterio en espera", "Tienes criterio ético y crítico, pero la IA aún no entra con intención en tu diseño de clases. Tu siguiente paso es llevar ese criterio al aula."),
+            "alto_alto": ("Integración responsable", "Integras la IA con intención y la acompañas de verificación, cuidado de datos y supervisión humana. Tu reto es sostenerlo y compartirlo."),
+        },
+    },
+    "DIRECTIVO": {
+        "dimensiones": DIMENSIONES_AUDITAR_DIRECTIVO,
+        "contexto": {1: "Cargo", 2: "Uso actual de IA en la institución"},
+        "abiertas": {
+            20: {"titulo": "El vacío que reconoces",
+                 "puente": "Este vacío será el punto de partida de tu diagnóstico y de tu plan de acción en la fase Asegurar."},
+            21: {"titulo": "Tu primer paso de gobernanza",
+                 "puente": "En Asegurar lo convertirás en una acción con responsable, cronograma e indicador de éxito."},
+        },
+        "riesgos_orden": None,
+        "riesgos_vistos": None,
+        "eje_x": {"nombre": "Control de riesgos y datos", "dimensiones": ["Gestión de riesgos", "Datos y cumplimiento"]},
+        "eje_y": {"nombre": "Estructura de gobernanza", "dimensiones": ["Gobernanza y política", "Visión estratégica"]},
+        "cuadrantes": {
+            "bajo_bajo": ("Gobernanza por construir", "La institución aún no cuenta con estructura ni controles formales. El riesgo principal es institucional: decisiones individuales y exposición jurídica."),
+            "alto_bajo": ("Control sin marco", "Existen prácticas de control de riesgos y datos, pero no una política ni roles que las sostengan. Si cambian las personas, se pierden."),
+            "bajo_alto": ("Marco sin control", "Hay intención y lineamientos, pero faltan controles verificables sobre riesgos y datos. La política existe en el papel más que en la práctica."),
+            "alto_alto": ("Gobernanza integrada", "Estructura y control avanzan juntos. El reto es la mejora continua y la evidencia de impacto."),
+        },
+    },
+}
+
+EVIDENCIAS_DIRECTIVO = {
+    3: "Política institucional de IA",
+    4: "Supervisión humana obligatoria",
+    5: "Responsable o comité de IA",
+    6: "Plan de formación docente",
+    7: "Comunicación a la comunidad",
+    10: "Protocolo de incidentes",
+    12: "Revisión de términos y datos",
+    13: "Consentimiento informado",
+    14: "Política de datos de menores",
+    16: "Inventario de herramientas",
+}
+
+ESPEJOS_DIRECTIVO_DOCENTE = [
+    {"tema": "Política o lineamientos de IA", "directivo": 3, "docente": 16},
+    {"tema": "Responsable y canal ante un dilema", "directivo": 5, "docente": 17},
+    {"tema": "Formación y conversación institucional", "directivo": 6, "docente": 18},
+    {"tema": "Decisiones basadas en evidencia", "directivo": 19, "docente": 29},
+]
+
+RUTA_TRANSFORMAR = {
+    "DOCENTE": {
+        "ACQUIRE": {"dimensiones": ["Gestión de riesgos y datos", "Pensamiento crítico"],
+                    "por_que": "Analizarás una herramienta real con la matriz ética UNESCO: transparencia, privacidad, sesgos, agencia y supervisión humana."},
+        "DEEPEN": {"dimensiones": ["Integración pedagógica", "Pensamiento crítico"],
+                   "por_que": "Rediseñarás una clase que ya diste para que la IA sea andamiaje y no sustituto del pensamiento de tus estudiantes."},
+        "CREATE": {"dimensiones": ["Gestión de riesgos y datos", "Visión y madurez"],
+                   "por_que": "Diseñarás una estrategia inclusiva que amplíe el acceso sin bajar la exigencia ni etiquetar a ningún estudiante."},
+    },
+    "DIRECTIVO": {
+        "ACQUIRE": {"dimensiones": ["Gestión de riesgos", "Visión estratégica"],
+                    "por_que": "Clasificarás un uso de IA según su nivel de riesgo y tomarás una decisión de gobernanza argumentada."},
+        "DEEPEN": {"dimensiones": ["Datos y cumplimiento", "Gobernanza y política"],
+                   "por_que": "Profundizarás en la protección de datos, la supervisión humana y los criterios institucionales de uso."},
+        "CREATE": {"dimensiones": ["Gestión de riesgos", "Gobernanza y política"],
+                   "por_que": "Gestionarás un incidente crítico causado por IA y diseñarás el protocolo institucional de respuesta."},
+    },
+}
+
+ESTANDARES_AUDITAR = {
+    "DOCENTE": [
+        {"marco": "UNESCO · Marco de competencias en IA para docentes (2024)", "componente": "Mentalidad centrada en el ser humano", "dimensiones": ["Pensamiento crítico", "Gobernanza institucional"]},
+        {"marco": "UNESCO · Marco de competencias en IA para docentes (2024)", "componente": "Ética de la IA", "dimensiones": ["Gestión de riesgos y datos"]},
+        {"marco": "UNESCO · Marco de competencias en IA para docentes (2024)", "componente": "Fundamentos y aplicaciones de la IA", "dimensiones": ["Pensamiento crítico"]},
+        {"marco": "UNESCO · Marco de competencias en IA para docentes (2024)", "componente": "Pedagogía de la IA", "dimensiones": ["Integración pedagógica"]},
+        {"marco": "UNESCO · Marco de competencias en IA para docentes (2024)", "componente": "IA para el desarrollo profesional", "dimensiones": ["Visión y madurez"]},
+        {"marco": "Ley 1581 de 2012 · Protección de datos personales (Colombia)", "componente": "Tratamiento de datos de estudiantes", "dimensiones": ["Gestión de riesgos y datos"]},
+    ],
+    "DIRECTIVO": [
+        {"marco": "UNESCO · Recomendación sobre la Ética de la IA (2021)", "componente": "Gobernanza y supervisión humana", "dimensiones": ["Gobernanza y política", "Visión estratégica"]},
+        {"marco": "OCDE · Principios de IA", "componente": "Rendición de cuentas y robustez", "dimensiones": ["Gobernanza y política", "Gestión de riesgos"]},
+        {"marco": "Reglamento de IA de la UE (AI Act)", "componente": "Enfoque basado en riesgo · usos de alto riesgo en educación", "dimensiones": ["Gestión de riesgos", "Visión estratégica"]},
+        {"marco": "Ley 1581 de 2012 · Protección de datos personales (Colombia)", "componente": "Datos de niñas, niños y adolescentes", "dimensiones": ["Datos y cumplimiento"]},
+    ],
+}
+
+TEMAS_TEXTO = {
+    "Privacidad y datos": ["dato", "privacidad", "personal", "confidencial", "anonim"],
+    "Autoría e integridad": ["plagio", "copi", "autoria", "trampa", "honest", "integridad"],
+    "Pensamiento crítico": ["critic", "verific", "contrast", "fuente", "reflexi"],
+    "Evaluación": ["evalua", "rubrica", "calific"],
+    "Sesgos y equidad": ["sesgo", "equidad", "desigual", "inclus", "brecha", "acceso"],
+    "Formación docente": ["formaci", "capacita", "taller", "acompan"],
+    "Lineamientos institucionales": ["politic", "lineamiento", "norma", "protocolo", "regla", "acuerdo", "comite"],
+    "Dependencia de la IA": ["dependen", "atajo", "facilis", "pereza"],
+    "Tiempo y carga de trabajo": ["tiempo", "carga", "rapid"],
+    "Familias y comunidad": ["famil", "padre", "acudiente", "comunidad"],
+}
+
+
+def _temas_en_texto(texto):
+    t = _norm(texto)
+    return [tema for tema, claves in TEMAS_TEXTO.items() if any(c in t for c in claves)][:4]
+
+
+def _filas_auditar_usuario(usuario_id):
+    return db.session.query(RespuestaFormulario, PreguntaFormulario).join(
+        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
+    ).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id == usuario_id,
+        Formulario.fase_atlas == "AUDITAR"
+    ).order_by(PreguntaFormulario.orden_pregunta).all()
+
+
+def _analizar_item(resp, preg, dim_por_orden, cfg):
+    orden = preg.orden_pregunta
+    tipo = preg.tipo_respuesta
+    ops = _opciones_de(preg)
+    valor = (resp.valor_respondido or "").strip()
+    obtenido = float(resp.puntos_ganados or 0)
+
+    item = {
+        "pregunta_id": preg.id, "orden": orden,
+        "pregunta": _texto_sin_etiqueta(preg.texto_pregunta),
+        "tipo": tipo, "dimension": dim_por_orden.get(orden),
+        "respuesta": valor, "clase": "info", "nivel": None,
+        "no_aplica": False, "siguiente": None, "brecha": 0.0,
+        "obtenido": obtenido, "maximo": 0.0,
+    }
+
+    if orden in cfg["contexto"]:
+        item["clase"] = "contexto"
+        return item
+    if tipo in ("PARRAFO", "ABIERTA"):
+        item["clase"] = "abierta"
+        return item
+    if tipo == "ORDEN":
+        item["clase"] = "orden"
+        return item
+
+    graduables = [o for o in ops if o["puntos"] is not None and not o["no_aplica"]]
+    if not graduables:
+        return item
+
+    item["clase"] = "graduada"
+    maximo = sum(o["puntos"] for o in graduables) if tipo == "CHECKBOX" \
+        else max(o["puntos"] for o in graduables)
+    item["maximo"] = maximo
+
+    elegido_idx = next((i for i, o in enumerate(ops) if _norm(o["texto"]) == _norm(valor)), None)
+    if elegido_idx is not None and ops[elegido_idx]["no_aplica"]:
+        item["no_aplica"] = True
+        item["nivel"] = "No aplica"
+    else:
+        pct = (obtenido / maximo * 100) if maximo else 0
+        item["nivel"] = _nivel_por_porcentaje(pct)
+
+    item["brecha"] = round(max(0.0, maximo - obtenido) / maximo, 3) if maximo else 0.0
+
+    if tipo != "CHECKBOX" and obtenido < maximo and not _es_no_uso(valor):
+        candidatos = [(i, o) for i, o in enumerate(ops)
+                      if o["puntos"] is not None and not o["no_aplica"] and o["puntos"] > obtenido]
+        despues = [c for c in candidatos if elegido_idx is None or c[0] > elegido_idx]
+        pool = despues or candidatos
+        if pool:
+            menor = min(c[1]["puntos"] for c in pool)
+            item["siguiente"] = next(c[1]["texto"] for c in pool if c[1]["puntos"] == menor)
+
+    return item
+
+
+def _pct_eje(items, dimensiones):
+    obt = sum(i["obtenido"] for i in items
+              if i["clase"] == "graduada" and not i["no_aplica"] and i["dimension"] in dimensiones)
+    mx = sum(i["maximo"] for i in items
+             if i["clase"] == "graduada" and not i["no_aplica"] and i["dimension"] in dimensiones)
+    return round(obt / mx * 100, 1) if mx else None
+
+
+def _matriz_posicion(items, cfg):
+    x = _pct_eje(items, cfg["eje_x"]["dimensiones"])
+    y = _pct_eje(items, cfg["eje_y"]["dimensiones"])
+    if x is None or y is None:
+        return None
+    clave = f"{'alto' if x >= 60 else 'bajo'}_{'alto' if y >= 60 else 'bajo'}"
+    nombre, descripcion = cfg["cuadrantes"][clave]
+    return {
+        "x": x, "y": y,
+        "eje_x": cfg["eje_x"]["nombre"], "eje_y": cfg["eje_y"]["nombre"],
+        "cuadrante": nombre, "clave": clave, "descripcion": descripcion,
+        "nombres": {k: v[0] for k, v in cfg["cuadrantes"].items()},
+    }
+
+
+def _nivel_relativo(ops, texto):
+    niveles = sorted({o["puntos"] for o in ops if o["puntos"] is not None and not o["no_aplica"]})
+    op = next((o for o in ops if _norm(o["texto"]) == _norm(texto)), None)
+    if not op or op["puntos"] is None or op["no_aplica"] or len(niveles) < 2:
+        return None
+    return niveles.index(op["puntos"]) / (len(niveles) - 1)
+
+
+def _brecha_directivo(u, filas_dir):
+    base = {"disponible": False, "minimo": MIN_DOCENTES_BRECHA, "docentes_participantes": 0, "temas": []}
+    if not u.empresa_id:
+        return base
+
+    docentes_ids = [d.id for d in Usuario.query.filter_by(empresa_id=u.empresa_id, rol="DOCENTE").all()]
+    if not docentes_ids:
+        return base
+
+    ordenes_doc = [e["docente"] for e in ESPEJOS_DIRECTIVO_DOCENTE]
+    filas_doc = db.session.query(RespuestaFormulario, PreguntaFormulario).join(
+        PreguntaFormulario, RespuestaFormulario.pregunta_id == PreguntaFormulario.id
+    ).join(
+        Formulario, RespuestaFormulario.formulario_id == Formulario.id
+    ).filter(
+        RespuestaFormulario.usuario_id.in_(docentes_ids),
+        Formulario.fase_atlas == "AUDITAR",
+        Formulario.rol_destino.in_(["DOCENTE", "TODOS"]),
+        PreguntaFormulario.orden_pregunta.in_(ordenes_doc),
+    ).all()
+
+    participantes = {r.usuario_id for r, _ in filas_doc}
+    base["docentes_participantes"] = len(participantes)
+    if len(participantes) < MIN_DOCENTES_BRECHA:
+        return base
+
+    por_orden_doc = {}
+    for r, p in filas_doc:
+        por_orden_doc.setdefault(p.orden_pregunta, []).append((r, p))
+    dir_por_orden = {p.orden_pregunta: (r, p) for r, p in filas_dir}
+
+    temas = []
+    for espejo in ESPEJOS_DIRECTIVO_DOCENTE:
+        par = dir_por_orden.get(espejo["directivo"])
+        lista = por_orden_doc.get(espejo["docente"], [])
+        if not par or not lista:
+            continue
+
+        r_dir, p_dir = par
+        nivel_dir = _nivel_relativo(_opciones_de(p_dir), r_dir.valor_respondido)
+        ops_doc = _opciones_de(lista[0][1])
+
+        conteo, niveles = {}, []
+        for r, _p in lista:
+            clave = _norm(r.valor_respondido)
+            conteo[clave] = conteo.get(clave, 0) + 1
+            nv = _nivel_relativo(ops_doc, r.valor_respondido)
+            if nv is not None:
+                niveles.append(nv)
+
+        distribucion = [{"opcion": o["texto"], "cantidad": conteo.get(_norm(o["texto"]), 0)} for o in ops_doc]
+        promedio_doc = (sum(niveles) / len(niveles)) if niveles else None
+
+        if nivel_dir is None or promedio_doc is None:
+            veredicto, texto = "sin_dato", "Sin datos comparables"
+        else:
+            dif = nivel_dir - promedio_doc
+            if abs(dif) < 0.25:
+                veredicto, texto = "alineados", "Tu lectura coincide con la de tus docentes"
+            elif dif > 0:
+                veredicto = "optimista_alta" if dif >= 0.5 else "optimista"
+                texto = "Tu lectura es más optimista que la de tus docentes"
+            else:
+                veredicto, texto = "docentes_mas", "Tus docentes perciben más avance del que reportas"
+
+        temas.append({
+            "tema": espejo["tema"],
+            "tu_respuesta": _limpiar_opcion(r_dir.valor_respondido),
+            "n": len(lista),
+            "distribucion": distribucion,
+            "veredicto": veredicto,
+            "veredicto_texto": texto,
+        })
+
+    base["disponible"] = len(temas) > 0
+    base["temas"] = temas
+    return base
+
+
+def _ruta_transformar(u, rol, perfil):
+    if not u.empresa_id:
+        return []
+    niveles = {d["dimension"]: d["nivel"] for d in perfil["dimensiones"]}
+    completados = {r.reto_plantilla_id for r in RetoTransformar.query.filter_by(
+        usuario_id=u.id, status_reto="COMPLETADO").all()}
+    mapa = RUTA_TRANSFORMAR.get(rol, {})
+
+    ruta = []
+    asigs = AsignacionReto.query.filter_by(empresa_id=u.empresa_id)\
+        .order_by(AsignacionReto.numero_orden).all()
+    for a in asigs:
+        rp = a.reto_plantilla
+        if not rp or not rp.is_active or rp.fase != "TRANSFORMAR":
+            continue
+        if rp.rol_destino not in (u.rol, "TODOS"):
+            continue
+        cfg = mapa.get((rp.nivel_unesco or "").upper(), {"dimensiones": [], "por_que": rp.descripcion or ""})
+        dims = [{"nombre": n, "nivel": niveles.get(n)} for n in cfg["dimensiones"] if n in niveles]
+        prioridad = any(d["nombre"] in perfil["oportunidades"] or d["nombre"] == perfil.get("foco") for d in dims)
+        ruta.append({
+            "id": rp.id, "nombre": rp.nombre, "nivel_unesco": rp.nivel_unesco,
+            "orden": a.numero_orden, "completado": rp.id in completados,
+            "dimensiones": dims, "por_que": cfg["por_que"], "prioridad": prioridad,
+        })
+    return ruta
+
+
+@api.route('/auditar/mi-informe', methods=['GET'])
+@jwt_required()
+def auditar_mi_informe():
+    """Informe cualitativo completo de AUDITAR para el usuario actual."""
+    u = get_usuario_actual()
+    rol = "DIRECTIVO" if u.rol == "DIRECTIVO" else "DOCENTE"
+    cfg = CONFIG_INFORME_AUDITAR[rol]
+
+    filas = _filas_auditar_usuario(u.id)
+    if not filas:
+        return jsonify({"disponible": False}), 200
+
+    perfil = _calcular_perfil(u.id, cfg["dimensiones"])
+    dim_por_orden = {o: nombre for nombre, c in cfg["dimensiones"].items() for o in c["ordenes"]}
+    items = [_analizar_item(r, p, dim_por_orden, cfg) for r, p in filas]
+    por_orden = {i["orden"]: i for i in items}
+
+    pcts = [d["porcentaje"] for d in perfil["dimensiones"]]
+    nivel_global = _nivel_por_porcentaje(sum(pcts) / len(pcts)) if pcts else "Exploración"
+
+    contexto = [{"etiqueta": cfg["contexto"][i["orden"]], "valor": i["respuesta"]}
+                for i in items if i["clase"] == "contexto" and i["respuesta"]]
+
+    n_no_aplica = sum(1 for i in items if i["no_aplica"])
+    if rol == "DIRECTIVO":
+        sin_uso = _norm(por_orden.get(2, {}).get("respuesta", "")).startswith("no")
+    else:
+        sin_uso = n_no_aplica >= 3 or _norm(por_orden.get(5, {}).get("respuesta", "")).startswith("aun no")
+
+    ruta = _ruta_transformar(u, rol, perfil)
+    reto_por_dim = {}
+    for r in ruta:
+        for d in r["dimensiones"]:
+            reto_por_dim.setdefault(d["nombre"], r["nombre"])
+    fuera = [{
+        "dimension": d["dimension"], "nivel": d["nivel"],
+        "donde": "Se profundiza en las fases Liderar y Asegurar.",
+    } for d in perfil["dimensiones"] if d["dimension"] not in reto_por_dim]
+
+    candidatos = sorted(
+        [i for i in items if i.get("siguiente")],
+        key=lambda i: (i["dimension"] not in perfil["oportunidades"], i["dimension"] != perfil.get("foco"), -i["brecha"]),
+    )
+    pasos, dims_usadas = [], set()
+    for c in candidatos:
+        if c["dimension"] in dims_usadas:
+            continue
+        pasos.append(c)
+        dims_usadas.add(c["dimension"])
+        if len(pasos) == 3:
+            break
+    for c in candidatos:
+        if len(pasos) == 3:
+            break
+        if c not in pasos:
+            pasos.append(c)
+    proximos_pasos = [{
+        "orden": p["orden"], "dimension": p["dimension"], "pregunta": p["pregunta"],
+        "respuesta": p["respuesta"], "nivel": p["nivel"], "siguiente": p["siguiente"],
+        "reto": reto_por_dim.get(p["dimension"]),
+    } for p in pasos]
+
+    voz = []
+    for orden, meta in cfg["abiertas"].items():
+        it = por_orden.get(orden)
+        if not it or not it["respuesta"]:
+            continue
+        voz.append({
+            "orden": orden, "titulo": meta["titulo"], "texto": it["respuesta"],
+            "temas": _temas_en_texto(it["respuesta"]), "puente": meta["puente"],
+        })
+
+    riesgos = None
+    if cfg.get("riesgos_orden"):
+        it_orden = por_orden.get(cfg["riesgos_orden"])
+        it_vistos = por_orden.get(cfg["riesgos_vistos"])
+        prioridad = []
+        if it_orden and it_orden["respuesta"]:
+            partes = re.split(r",\s*(?=\d+\.\s)", it_orden["respuesta"])
+            prioridad = [re.sub(r"^\d+\.\s*", "", p).strip().rstrip(".") for p in partes if p.strip()]
+        vistos = [v.strip() for v in (it_vistos["respuesta"].split(", ") if it_vistos and it_vistos["respuesta"] else []) if v.strip()]
+        riesgos = {"prioridad": prioridad, "vistos": vistos}
+
+    evidencias, brecha = None, None
+    if rol == "DIRECTIVO":
+        evidencias = []
+        for orden, nombre in EVIDENCIAS_DIRECTIVO.items():
+            it = por_orden.get(orden)
+            if not it or it["clase"] != "graduada":
+                continue
+            if it["no_aplica"]:
+                estado = "No aplica"
+            elif it["obtenido"] <= 0:
+                estado = "Sin evidencia"
+            elif it["obtenido"] >= it["maximo"]:
+                estado = "Formal"
+            else:
+                estado = "Parcial"
+            evidencias.append({"orden": orden, "nombre": nombre, "estado": estado, "respuesta": it["respuesta"]})
+        brecha = _brecha_directivo(u, filas)
+
+    niveles_dim = {d["dimension"]: d["porcentaje"] for d in perfil["dimensiones"]}
+    estandares = []
+    for est in ESTANDARES_AUDITAR[rol]:
+        vals = [niveles_dim[d] for d in est["dimensiones"] if d in niveles_dim]
+        if not vals:
+            continue
+        estandares.append({
+            "marco": est["marco"], "componente": est["componente"],
+            "dimensiones": est["dimensiones"],
+            "nivel": _nivel_por_porcentaje(sum(vals) / len(vals)),
+        })
+
+    items_publicos = [{
+        "pregunta_id": i["pregunta_id"], "orden": i["orden"], "pregunta": i["pregunta"],
+        "dimension": i["dimension"], "respuesta": i["respuesta"], "clase": i["clase"],
+        "nivel": i["nivel"], "no_aplica": i["no_aplica"],
+    } for i in items]
+
+    return jsonify({
+        "disponible": True,
+        "rol": rol,
+        "nivel_global": nivel_global,
+        "perfil": perfil,
+        "contexto": contexto,
+        "uso": {"sin_uso": sin_uso, "no_aplica": n_no_aplica},
+        "matriz": _matriz_posicion(items, cfg),
+        "items": items_publicos,
+        "proximos_pasos": proximos_pasos,
+        "voz": voz,
+        "riesgos": riesgos,
+        "evidencias": evidencias,
+        "brecha": brecha,
+        "ruta_transformar": ruta,
+        "fuera_de_transformar": fuera,
+        "estandares": estandares,
+    }), 200
 
 
 @api.route('/mi-empresa/formularios', methods=['GET'])

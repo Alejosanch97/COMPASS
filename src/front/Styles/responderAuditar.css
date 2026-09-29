@@ -1,0 +1,147 @@
+/* =========================================
+   COMPASS · RESPONDER DIAGNÓSTICO (prefijo rf-)
+   Complementa ejecutarReto.css: usa sus mismas variables
+   (--atlas-gold, --atlas-dark, --atlas-slate, --atlas-border)
+   ========================================= */
+
+/* Enunciado legible: número dorado + texto oscuro, sin mayúsculas sostenidas */
+.rf-pregunta .form-section-title {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--atlas-dark);
+    font-size: 1.12rem;
+    line-height: 1.45;
+    align-items: flex-start;
+}
+.rf-num {
+    color: var(--atlas-gold);
+    font-weight: 900;
+    flex-shrink: 0;
+}
+.rf-descripcion {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin: -14px 0 16px;
+    line-height: 1.5;
+}
+.rf-ayuda {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--atlas-gold);
+    margin: 0 0 6px;
+}
+
+/* Opciones en tarjetas horizontales (dos columnas cuando hay espacio) */
+.rf-opciones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+.rf-opciones-grid .check-label-row {
+    height: 100%;
+    box-sizing: border-box;
+    align-items: flex-start;
+    padding: 16px 20px;
+}
+.rf-opciones-grid .check-label-row:hover {
+    transform: translateY(-2px);
+}
+.rf-opciones-grid .check-label-row input[type="radio"],
+.rf-opciones-grid .check-label-row input[type="checkbox"] {
+    margin-top: 1px;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+.rf-opciones-grid .label-text { line-height: 1.45; }
+
+/* Ordenar por prioridad */
+.rf-orden-fila {
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+.rf-orden-fila.is-sel {
+    border-color: var(--atlas-gold);
+    background: #fffbeb;
+}
+.rf-orden-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--atlas-gold);
+    color: #fff;
+    font-weight: 900;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+.rf-link {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: #64748b;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 0;
+    font-family: inherit;
+}
+.rf-link:hover { color: var(--atlas-gold); }
+
+/* Escala 1-5 y slider */
+.rf-escala .pills-container { gap: 12px; }
+.rf-escala .pill-option {
+    min-width: 56px;
+    text-align: center;
+    font-size: 1.05rem;
+}
+.rf-escala-etiquetas {
+    display: flex;
+    justify-content: space-between;
+    max-width: 380px;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+.rf-slider input[type="range"] { max-width: 420px; }
+
+/* Texto abierto */
+.rf-contador {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: -8px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+/* Carga */
+.rf-cargando { text-align: center; color: #64748b; padding: 60px 20px; }
+.rf-cargando .atlas-nav-btn { margin: 16px auto 0; }
+.rf-spinner {
+    width: 38px;
+    height: 38px;
+    margin: 0 auto 14px;
+    border: 3px solid #f1f5f9;
+    border-top-color: var(--atlas-gold);
+    border-radius: 50%;
+    animation: rfGiro 0.8s linear infinite;
+}
+@keyframes rfGiro { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+    .rf-opciones-grid { grid-template-columns: 1fr; }
+    .rf-pregunta .form-section-title { font-size: 1rem; }
+    .rf-contador { flex-direction: column; gap: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rf-spinner { animation: none; }
+    .rf-opciones-grid .check-label-row:hover { transform: none; }
+}
