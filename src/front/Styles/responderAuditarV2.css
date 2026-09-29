@@ -15,7 +15,7 @@
 
 /* ── Cabecera: barra + pasos ── */
 .rq-top {
-    position: sticky; top: 12px; z-index: 30; margin-bottom: 36px; padding: 20px 26px 22px;
+    position: relative; margin-bottom: 36px; padding: 20px 26px 22px;
     border-radius: 22px; color: #fff;
     background: linear-gradient(135deg, var(--rq-navy), var(--rq-navy-2));
     border-bottom: 3px solid var(--rq-gold);
@@ -169,7 +169,7 @@
 
 /* Responsive */
 @media (max-width: 700px) {
-    .rq-top { padding: 16px 16px 18px; border-radius: 18px; top: 8px; }
+    .rq-top { padding: 16px 16px 18px; border-radius: 18px; }
     .rq-guardar { padding: 9px 11px; font-size: 0; gap: 0; }
     .rq-stepper-name { font-size: 1rem; }
     .rq-segs { gap: 4px; }

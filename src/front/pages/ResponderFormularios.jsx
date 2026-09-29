@@ -201,11 +201,20 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
         } catch (e) { /* sin almacenamiento */ }
     }, [respuestas, paso, borradorKey]);
 
-    // Subir al inicio en cada cambio de paso
+    // Subir al inicio en cada cambio de paso (sube todos los contenedores con scroll)
     useEffect(() => {
         const el = inicioRef.current;
         if (!el) return;
-        requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        requestAnimationFrame(() => {
+            let padre = el.parentElement;
+            while (padre) {
+                if (padre.scrollHeight > padre.clientHeight) {
+                    padre.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                padre = padre.parentElement;
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }, [paso]);
 
     const respondida = (q) => {
