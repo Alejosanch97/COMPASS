@@ -289,7 +289,7 @@
     .ia-matriz, .ia-riesgos, .ia-brecha-cuerpo { grid-template-columns: 1fr; }
     .ia-heat-fila { grid-template-columns: 1fr; gap: 6px; }
     .ia-paso-escalera { grid-template-columns: 1fr; }
-    .ia-paso-flecha { transform: rotate(90deg); justify-self: center; }
+    
 }
 
 /* PDF: ancho fijo A4 */
@@ -341,7 +341,7 @@
 .ia-pasos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .ia-paso { grid-template-columns: 1fr; gap: 12px; align-content: start; }
 .ia-paso-escalera { grid-template-columns: 1fr; gap: 8px; }
-.ia-paso-flecha { transform: rotate(90deg); justify-self: center; }
+
 
 /* Transformar: banner + 3 retos */
 .ia-transf { display: flex; flex-direction: column; gap: 18px; }
@@ -395,107 +395,98 @@
 }
 @media (max-width: 900px) { .ia-informe { padding: 8px 22px 32px; } .ia-duo { grid-template-columns: 1fr; } }
 
-/* PDF: una sola columna */
-.compass-infografia.pdf-mode .ia-duo,
-.compass-infografia.pdf-mode .ia-pasos,
-.compass-infografia.pdf-mode .ia-retos-grid,
-.compass-infografia.pdf-mode .ia-transf-banner,
+/* PDF: la interpretación va en una sola columna */
 .compass-infografia.pdf-mode .cmp-interpret { grid-template-columns: 1fr !important; }
-.compass-infografia.pdf-mode .ia-informe { padding: 8px 40px 30px; gap: 28px; }
 
 
 
+/* ══════════ V6 · Pares parejos (web) + PDF carta ══════════ */
 
-/* ══════════ V4 · Cards balanceadas (misma altura en cada fila) ══════════ */
-.ia-duo { align-items: stretch; }
-.ia-duo > .ia-seccion { height: 100%; }
-
-/* La card ocupa todo el alto disponible de su columna */
-.ia-duo .ia-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+/* ---------- WEB ---------- */
+.ia-duo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+    align-items: stretch;
 }
+.ia-duo > .ia-seccion { display: flex; flex-direction: column; gap: 14px; min-width: 0; height: auto; }
 
-/* El contenido se reparte para que la card no se vea vacía abajo */
+/* Reserva 2 líneas de subtítulo: las tarjetas arrancan a la misma altura */
+.ia-duo .ia-sub { line-height: 1.5; min-height: calc(2 * 1.5em); }
+
+/* La tarjeta se estira hasta el final de la fila */
+.ia-duo > .ia-seccion > .ia-card { flex: 1; display: flex; flex-direction: column; }
 .ia-duo .ia-dims,
-.ia-duo .ia-heat {
-    flex: 1;
-    justify-content: space-between;
-    gap: 14px;
+.ia-duo .ia-heat { flex: 1; justify-content: space-between; gap: 14px; }
+.ia-duo .ia-riesgos { gap: 20px; }
+
+/* Matriz más baja para que la fila no quede tan desigual */
+.ia-matriz-grafico svg { max-height: 330px; margin: 0 auto; }
+
+/* Flechas de próximos pasos: por defecto vertical (tarjetas en columna) */
+.ia-flecha-h { display: none; }
+.ia-flecha-v { display: block; }
+.ia-paso-flecha { align-self: center; justify-self: center; }
+
+@media (max-width: 900px) {
+    .ia-duo { grid-template-columns: 1fr; }
+    .ia-duo .ia-sub { min-height: 0; }
 }
 
-/* Títulos y cards alineados aunque un título tenga subtítulo y el otro no */
-@supports (grid-template-rows: subgrid) {
-    .ia-duo { grid-template-rows: auto 1fr; }
-    .ia-duo > .ia-seccion {
-        display: grid;
-        grid-row: span 2;
-        grid-template-rows: subgrid;
-        row-gap: 14px;
-        height: auto;
-    }
-}
+/* ---------- PDF (tamaño carta) ---------- */
+.compass-infografia.pdf-mode .ia-informe { padding: 4px 32px 20px; gap: 16px; margin: 0; }
+.compass-infografia.pdf-mode .ia-informe .ia-seccion { gap: 8px; }
+.compass-infografia.pdf-mode .ia-informe.ia-titulo { font-size: 1rem; }
+.compass-infografia.pdf-mode .ia-informe .ia-sub { font-size: 0.8rem; margin-top: 3px; min-height: 0; }
+.compass-infografia.pdf-mode .ia-informe .ia-card { padding: 14px 16px; border-radius: 14px; box-shadow: none; }
 
-/* PDF: una columna, sin estirar */
-.compass-infografia.pdf-mode .ia-duo > .ia-seccion { height: auto; }
-.compass-infografia.pdf-mode .ia-duo .ia-card { flex: none; }
+/* Título + tarjeta viajan juntos y no se parten */
+.compass-infografia.pdf-mode .ia-informe .ia-block,
+.compass-infografia.pdf-mode .ia-informe .ia-paso { break-inside: avoid; page-break-inside: avoid; }
+.compass-infografia.pdf-mode .ia-informe .ia-head { break-after: avoid; page-break-after: avoid; }
+
+/* Pares apilados, sin estirar alturas */
+.compass-infografia.pdf-mode .ia-informe .ia-duo { display: flex; flex-direction: column; gap: 16px; }
+.compass-infografia.pdf-mode .ia-informe .ia-duo > .ia-seccion > .ia-card { flex: none; }
+.compass-infografia.pdf-mode .ia-informe.ia-dims,
+.compass-infografia.pdf-mode .ia-informe .ia-heat { justify-content: flex-start; gap: 8px; }
+.compass-infografia.pdf-mode .ia-informe.ia-heat-fila { grid-template-columns: minmax(150px, 1fr) 3fr; gap: 14px; }
+.compass-infografia.pdf-mode .ia-informe .ia-heat-celda { min-width: 40px; height: 30px; }
+
+/* Matriz: gráfico a la izquierda, lectura a la derecha */
+.compass-infografia.pdf-mode .ia-informe .ia-matriz { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: center; }
+.compass-infografia.pdf-mode .ia-informe .ia-matriz-grafico svg { max-height: 300px; }
+.compass-infografia.pdf-mode .ia-informe.ia-matriz-texto { border-top: none; padding-top: 0; border-left: 1px dashed var(--ia-borde); padding-left: 18px; }
+.compass-infografia.pdf-mode .ia-informe.ia-matriz-texto h5 { font-size: 1.05rem; }
+.compass-infografia.pdf-mode .ia-informe.ia-matriz-texto p { font-size: 0.82rem; }
+.compass-infografia.pdf-mode .ia-informe .ia-ejes { grid-template-columns: 1fr; gap: 6px; }
+
+/* Riesgos en dos columnas */
+.compass-infografia.pdf-mode .ia-informe .ia-riesgos { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.compass-infografia.pdf-mode .ia-informe .ia-riesgos h5 { font-size: 0.85rem; margin-bottom: 8px; }
+.compass-infografia.pdf-mode .ia-informe .ia-podio li { padding: 7px 10px; font-size: 0.8rem; }
+
+/* Próximos pasos: una fila por paso, "Hoy → Siguiente escalón" en horizontal */
+.compass-infografia.pdf-mode .ia-informe .ia-pasos { display: flex; flex-direction: column; gap: 10px; }
+.compass-infografia.pdf-mode .ia-informe .ia-paso { grid-template-columns: 36px 1fr; gap: 12px; padding: 12px 14px; }
+.compass-infografia.pdf-mode .ia-informe.ia-paso-preg { font-size: 0.86rem; margin-bottom: 8px; }
+.compass-infografia.pdf-mode .ia-informe .ia-paso-escalera { grid-template-columns: 1fr auto 1fr; gap: 10px; }
+.compass-infografia.pdf-mode .ia-informe .ia-paso-hoy,
+.compass-infografia.pdf-mode .ia-informe .ia-paso-sig { font-size: 0.8rem; padding: 9px 12px; }
+.compass-infografia.pdf-mode .ia-informe.ia-flecha-v { display: none; }
+.compass-infografia.pdf-mode .ia-informe.ia-flecha-h { display: block; }
+
+/* Estándares */
+.compass-infografia.pdf-mode .ia-informe .ia-est-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.compass-infografia.pdf-mode .ia-informe .ia-est { padding: 14px 16px; }
+
+/* Títulos de FaseAuditar nunca quedan solos al final de una hoja */
+.compass-infografia.pdf-mode h3,
+.compass-infografia.pdf-mode h4 { break-after: avoid; page-break-after: avoid; }
+
+.compass-infografia.pdf-mode .cmp-camino-img { max-height: 280px; object-fit: cover; }
 
 
 
 
 
-
-/* ══════════ V5 · PDF tamaño carta (compacto y ordenado) ══════════ */
-
-/* Secciones que no se imprimen */
-.compass-infografia.pdf-mode .ia-pdf-oculto { display: none !important; }
-
-/* Ritmo general: menos aire, más contenido por hoja */
-.compass-infografia.pdf-mode .ia-informe { padding: 4px 32px 24px; gap: 18px; }
-.compass-infografia.pdf-mode .ia-titulo { font-size: 1rem; }
-.compass-infografia.pdf-mode .ia-sub { font-size: 0.8rem; margin-top: 3px; }
-.compass-infografia.pdf-mode .ia-card { padding: 16px 18px; border-radius: 14px; box-shadow: none; }
-
-/* Título + card viajan juntos: nunca queda un título huérfano al final de la hoja */
-.compass-infografia.pdf-mode .ia-seccion { gap: 8px; break-inside: avoid; page-break-inside: avoid; }
-.compass-infografia.pdf-mode .ia-block,
-.compass-infografia.pdf-mode .ia-card,
-.compass-infografia.pdf-mode .ia-paso { break-inside: avoid; page-break-inside: avoid; }
-
-/* Los pares dejan de ser grid: se apilan sin rellenar alturas */
-.compass-infografia.pdf-mode .ia-duo { display: flex; flex-direction: column; gap: 18px; }
-.compass-infografia.pdf-mode .ia-duo > .ia-seccion { display: flex; grid-row: auto; height: auto; }
-.compass-infografia.pdf-mode .ia-duo .ia-card { flex: none; }
-
-/* Matriz: gráfico a la izquierda, lectura a la derecha (ocupa la mitad de alto) */
-.compass-infografia.pdf-mode .ia-matriz {
-    display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: center;
-}
-.compass-infografia.pdf-mode .ia-matriz-texto {
-    border-top: none; padding-top: 0;
-    border-left: 1px dashed var(--ia-borde); padding-left: 18px;
-}
-.compass-infografia.pdf-mode .ia-matriz-texto h5 { font-size: 1.05rem; }
-.compass-infografia.pdf-mode .ia-matriz-texto p { font-size: 0.82rem; }
-.compass-infografia.pdf-mode .ia-ejes { grid-template-columns: 1fr; gap: 6px; }
-
-/* Mapa de respuestas y riesgos más compactos */
-.compass-infografia.pdf-mode .ia-heat { gap: 8px; }
-.compass-infografia.pdf-mode .ia-heat-celda { min-width: 40px; height: 30px; }
-.compass-infografia.pdf-mode .ia-riesgos { grid-template-columns: 1fr 1fr; gap: 20px; }
-.compass-infografia.pdf-mode .ia-podio li { padding: 7px 10px; font-size: 0.8rem; }
-.compass-infografia.pdf-mode .ia-riesgos h5 { font-size: 0.85rem; }
-
-/* Próximos pasos: una tarjeta por fila, "Hoy → Siguiente escalón" en horizontal */
-.compass-infografia.pdf-mode .ia-pasos { grid-template-columns: 1fr !important; gap: 10px; }
-.compass-infografia.pdf-mode .ia-paso { grid-template-columns: 36px 1fr; gap: 12px; padding: 12px 14px; }
-.compass-infografia.pdf-mode .ia-paso-escalera { grid-template-columns: 1fr auto 1fr; gap: 10px; }
-.compass-infografia.pdf-mode .ia-paso-flecha { transform: none; }
-.compass-infografia.pdf-mode .ia-paso-preg { font-size: 0.86rem; margin-bottom: 8px; }
-.compass-infografia.pdf-mode .ia-paso-hoy,
-.compass-infografia.pdf-mode .ia-paso-sig { font-size: 0.8rem; padding: 9px 12px; }
-
-/* Estándares: dos columnas y más chicos */
-.compass-infografia.pdf-mode .ia-est-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.compass-infografia.pdf-mode .ia-est { padding: 14px 16px; }

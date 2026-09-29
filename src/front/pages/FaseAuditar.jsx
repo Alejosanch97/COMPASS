@@ -514,6 +514,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             const clon = nodo.cloneNode(true);
             clon.classList.add("pdf-mode");
             clon.querySelectorAll(".cmp-no-print").forEach(el => el.remove());
+            // Secciones que no van en el PDF (madurez repetida, voz, retos de Transformar)
+            clon.querySelectorAll(".ia-pdf-oculto").forEach(el => el.remove());
 
             // (a) Partir el texto de interpretación en párrafos independientes,
             //     así el corte de página cae siempre entre párrafos.
@@ -555,6 +557,7 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                 ".cmp-next-step p",
                 ".cmp-footer-text",
                 ".cmp-brand-footer",
+                ".ia-seccion",
                 ".ia-block",
             ].join(", ")).forEach(el => el.classList.add("pdf-block"));
 
@@ -584,9 +587,8 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
             const todos = Array.from(clon.querySelectorAll(".pdf-block"));
             const bloques = todos.filter(b => !todos.some(o => o !== b && o.contains(b)));
 
-            let y = M;
-            let paginaVacia = true;
-
+            // 1) Renderizamos todos los bloques a imagen
+            const piezas = [];
             for (const bloque of bloques) {
                 let canvas;
                 try {
@@ -601,14 +603,30 @@ Es el punto de partida para construir una gobernanza sólida y responsable.`
                     continue;
                 }
                 if (!canvas || !canvas.width || !canvas.height) continue;
-
                 const escala = usableW / canvas.width;
-                const alturaPt = canvas.height * escala;
+                piezas.push({
+                    canvas,
+                    escala,
+                    alturaPt: canvas.height * escala,
+                    // los títulos sueltos deben ir pegados al bloque que sigue
+                    esTitulo: bloque.classList.contains("cmp-block-title") || bloque.classList.contains("ia-head"),
+                });
+            }
+
+            // 2) Los pegamos en las hojas, sin dejar títulos huérfanos
+            let y = M;
+            let paginaVacia = true;
+
+            for (let i = 0; i < piezas.length; i++) {
+                const { canvas, escala, alturaPt, esTitulo } = piezas[i];
                 const img = canvas.toDataURL("image/jpeg", 0.95);
 
                 if (alturaPt <= usableH) {
-                    // Cabe entero: si no cabe en lo que queda, salta de página
-                    if (!paginaVacia && y + alturaPt > PH - M) {
+                    const sig = esTitulo ? piezas[i + 1] : null;
+                    const necesita = alturaPt + (sig && sig.alturaPt <= usableH ? sig.alturaPt + 10 : 0);
+
+                    // Si el título + lo que sigue no caben en lo que queda, salta de página
+                    if (!paginaVacia && y + necesita > PH - M) {
                         pdf.addPage();
                         y = M;
                     }

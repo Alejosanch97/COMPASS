@@ -58,6 +58,13 @@ const Encabezado = ({ titulo, texto }) => (
     </header>
 );
 
+const Seccion = ({ titulo, texto, children, className = "" }) => (
+    <section className={`ia-seccion ia-block ${className}`}>
+        <Encabezado titulo={titulo} texto={texto} />
+        {children}
+    </section>
+);
+
 const Leyenda = ({ conNoAplica = false }) => (
     <div className="ia-leyenda">
         {ESCALA.map((e) => (
@@ -139,7 +146,11 @@ const MatrizPosicion = ({ matriz }) => {
     const ux = dx / (len || 1), uy = dy / (len || 1);
 
     const lx = Math.max(ML + 56, Math.min(ML + iw - 56, px));
-    const ly = py > MT + ih - 60 ? py - 34 : py + 34;
+    const bandaSup = MT + 50;          // debajo del rótulo del cuadrante
+    const bandaInf = MT + ih - 46;     // encima del rótulo inferior
+    let ly = py + 34;
+    if (ly > bandaInf) ly = py - 34;
+    if (ly < bandaSup) ly = bandaSup;
 
     return (
         <div className="ia-card ia-block ia-matriz">
@@ -266,7 +277,10 @@ const ProximosPasos = ({ pasos }) => (
                             <small>Hoy</small>
                             <span>{p.respuesta}</span>
                         </div>
-                        <svg className="ia-paso-flecha" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <svg className="ia-paso-flecha ia-flecha-v" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                            <path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <svg className="ia-paso-flecha ia-flecha-h" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
                             <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         <div className="ia-paso-sig">
@@ -499,119 +513,112 @@ const Estandares = ({ estandares }) => {
 // ══════════════════════════════════════════════════════════════════
 // Componente principal
 // ══════════════════════════════════════════════════════════════════
-export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
+export const InformeAuditar = ({ informe, esDirectivo, onNavigate, modoPdf = false }) => {
     if (!informe || !informe.disponible) return null;
     const {
         perfil, contexto = [], uso, matriz, items = [], proximos_pasos = [], voz = [],
         riesgos, evidencias, ruta_transformar = [], estandares = [],
     } = informe;
 
-    const hayDims = perfil?.dimensiones?.length > 0;
+    const hayDims = !modoPdf && perfil?.dimensiones?.length > 0;   // en PDF ya está el radar
     const hayMapaResp = items.some((i) => i.clase === "graduada");
     const hayRiesgos = !esDirectivo && riesgos && (riesgos.prioridad.length > 0 || riesgos.vistos.length > 0);
+    const hayVoz = !modoPdf && voz.length > 0;
 
     return (
-        <div className="ia-informe">
+        <div className={`ia-informe${modoPdf ? " ia-pdf" : ""}`}>
             {(contexto.length > 0 || uso?.sin_uso) && (
-                <section className="ia-seccion">
-                    <Encabezado titulo="Tu punto de partida" />
+                <Seccion titulo="Tu punto de partida">
                     <Contexto contexto={contexto} uso={uso} esDirectivo={esDirectivo} />
-                </section>
+                </Seccion>
             )}
 
             {(hayDims || matriz) && (
                 <div className="ia-duo">
                     {hayDims && (
-                        <section className="ia-seccion ia-pdf-oculto">
-                            <Encabezado
-                                titulo="Tu mapa de madurez"
-                                texto="Cada dimensión se ubica en uno de los cinco niveles de la escala COMPASS."
-                            />
+                        <Seccion
+                            className="ia-pdf-oculto"
+                            titulo="Tu mapa de madurez"
+                            texto="Cada dimensión se ubica en uno de los cinco niveles de la escala COMPASS."
+                        >
                             <MapaDimensiones dimensiones={perfil.dimensiones} />
-                        </section>
+                        </Seccion>
                     )}
                     {matriz && (
-                        <section className="ia-seccion">
-                            <Encabezado
-                                titulo={esDirectivo ? "Estructura y control de la gobernanza" : "Uso y criterio: dónde estás hoy"}
-                                texto={esDirectivo
-                                    ? "Cruza qué tan formalizada está la gobernanza con qué tan controlados están los riesgos y los datos."
-                                    : "Cruza cuánto integras la IA en tu aula con el criterio ético y crítico con el que la usas."}
-                            />
+                        <Seccion
+                            titulo={esDirectivo ? "Estructura y control de la gobernanza" : "Uso y criterio: dónde estás hoy"}
+                            texto={esDirectivo
+                                ? "Cruza qué tan formalizada está la gobernanza con qué tan controlados están los riesgos y los datos."
+                                : "Cruza cuánto integras la IA en tu aula con el criterio ético y crítico con el que la usas."}
+                        >
                             <MatrizPosicion matriz={matriz} />
-                        </section>
+                        </Seccion>
                     )}
                 </div>
             )}
 
             {esDirectivo && evidencias?.length > 0 && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Semáforo de evidencias institucionales"
-                        texto="Lo que la institución podría mostrar hoy si alguien lo solicitara."
-                    />
+                <Seccion
+                    titulo="Semáforo de evidencias institucionales"
+                    texto="Lo que la institución podría mostrar hoy si alguien lo solicitara."
+                >
                     <Evidencias evidencias={evidencias} />
-                </section>
+                </Seccion>
             )}
 
             {(hayMapaResp || hayRiesgos) && (
                 <div className="ia-duo">
                     {hayMapaResp && (
-                        <section className="ia-seccion">
-                            <Encabezado
-                                titulo="Mapa de tus respuestas"
-                                texto="Cada casilla es una pregunta, coloreada según el nivel que refleja tu respuesta."
-                            />
+                        <Seccion
+                            titulo="Mapa de tus respuestas"
+                            texto="Cada casilla es una pregunta, coloreada según el nivel que refleja tu respuesta."
+                        >
                             <MapaRespuestas items={items} dimensiones={perfil?.dimensiones || []} />
-                        </section>
+                        </Seccion>
                     )}
                     {hayRiesgos && (
-                        <section className="ia-seccion">
-                            <Encabezado titulo="Tu mapa de riesgos" />
+                        <Seccion
+                            titulo="Tu mapa de riesgos"
+                            texto="Lo que más te preocupa y lo que ya has visto en tu práctica."
+                        >
                             <Riesgos riesgos={riesgos} />
-                        </section>
+                        </Seccion>
                     )}
                 </div>
             )}
 
             {proximos_pasos.length > 0 && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Tus próximos pasos"
-                        texto="Tres prácticas concretas para subir un escalón, elegidas a partir de tus propias respuestas."
-                    />
+                <Seccion
+                    titulo="Tus próximos pasos"
+                    texto="Tres prácticas concretas para subir un escalón, elegidas a partir de tus propias respuestas."
+                >
                     <ProximosPasos pasos={proximos_pasos} />
-                </section>
+                </Seccion>
             )}
 
-            {voz.length > 0 && (
-                <section className="ia-seccion ia-pdf-oculto">
-                    <Encabezado titulo="Tu voz en el diagnóstico" texto="Lo que escribiste es parte de tu evidencia y orienta tu ruta." />
+            {hayVoz && (
+                <Seccion className="ia-pdf-oculto" titulo="Tu voz en el diagnóstico" texto="Lo que escribiste es parte de tu evidencia y orienta tu ruta.">
                     <Voz voz={voz} />
-                </section>
+                </Seccion>
             )}
 
-            <section className="ia-seccion ia-pdf-oculto">
-                <Encabezado
-                    titulo="Tus 3 retos en Transformar"
-                    texto="Lo que harás con este diagnóstico en la siguiente fase."
-                />
-                <RetosTransformar ruta={ruta_transformar} esDirectivo={esDirectivo} onNavigate={onNavigate} />
-            </section>
+            {!modoPdf && (
+                <Seccion className="ia-pdf-oculto" titulo="Tus 3 retos en Transformar" texto="Lo que harás con este diagnóstico en la siguiente fase.">
+                    <RetosTransformar ruta={ruta_transformar} esDirectivo={esDirectivo} onNavigate={onNavigate} />
+                </Seccion>
+            )}
 
             {estandares.length > 0 && (
-                <section className="ia-seccion">
-                    <Encabezado
-                        titulo="Alineación con marcos de referencia"
-                        texto="Cómo se conectan tus dimensiones con los estándares internacionales."
-                    />
+                <Seccion
+                    titulo="Alineación con marcos de referencia"
+                    texto="Cómo se conectan tus dimensiones con los estándares internacionales."
+                >
                     <Estandares estandares={estandares} />
-                </section>
+                </Seccion>
             )}
         </div>
     );
 };
-
 /**
  * Lista del modal "Ver respuestas": muestra el enunciado real y el nivel
  * cualitativo de cada respuesta en lugar de puntos.
