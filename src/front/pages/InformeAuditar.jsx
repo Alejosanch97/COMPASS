@@ -139,7 +139,7 @@ const MatrizPosicion = ({ matriz }) => {
     const ux = dx / (len || 1), uy = dy / (len || 1);
 
     const lx = Math.max(ML + 56, Math.min(ML + iw - 56, px));
-    const ly = py < MT + 50 ? py + 34 : py - 34;
+    const ly = py > MT + ih - 60 ? py - 34 : py + 34;
 
     return (
         <div className="ia-card ia-block ia-matriz">
@@ -522,7 +522,7 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
             {(hayDims || matriz) && (
                 <div className="ia-duo">
                     {hayDims && (
-                        <section className="ia-seccion">
+                        <section className="ia-seccion ia-pdf-oculto">
                             <Encabezado
                                 titulo="Tu mapa de madurez"
                                 texto="Cada dimensión se ubica en uno de los cinco niveles de la escala COMPASS."
@@ -585,13 +585,13 @@ export const InformeAuditar = ({ informe, esDirectivo, onNavigate }) => {
             )}
 
             {voz.length > 0 && (
-                <section className="ia-seccion">
+                <section className="ia-seccion ia-pdf-oculto">
                     <Encabezado titulo="Tu voz en el diagnóstico" texto="Lo que escribiste es parte de tu evidencia y orienta tu ruta." />
                     <Voz voz={voz} />
                 </section>
             )}
 
-            <section className="ia-seccion">
+            <section className="ia-seccion ia-pdf-oculto">
                 <Encabezado
                     titulo="Tus 3 retos en Transformar"
                     texto="Lo que harás con este diagnóstico en la siguiente fase."
