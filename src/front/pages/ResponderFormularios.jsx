@@ -367,9 +367,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
         );
     };
 
-    // ── Datos para el render ──
-    const ACENTOS = ["#2563eb", "#0ea5e9", "#6366f1", "#0891b2", "#3b82f6", "#4f46e5"];
-    const acento = ACENTOS[(pasoInfo.est ?? 0) % ACENTOS.length];
+       // ── Datos para el render ──
     const estacionCompleta = (e) => e.items.every(respondida);
     const siguientePaso = pasos[paso + 1];
     const textoSiguiente = paso === 0 ? "Comenzar"
@@ -378,9 +376,15 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
     const minutosEstacion = estacion
         ? Math.max(1, Math.round(estacion.items.reduce((a, q) => a + (TIEMPO_POR_TIPO[q.tipo_respuesta] ?? 0.6), 0)))
         : 0;
+    const nombreDe = (p) => p.id === "inicio" ? "Inicio"
+        : p.id === "envio" ? "Revisión y envío"
+            : estaciones[p.est].titulo;
+    const pasoHecho = (p) => p.id === "inicio" ? paso > 0
+        : p.id === "envio" ? false
+            : estacionCompleta(estaciones[p.est]);
 
     return (
-        <div className="rq-page" style={{ "--rq-acc": acento }} ref={inicioRef}>
+        <div className="rq-page" ref={inicioRef}>
             {aviso && (
                 <div className="rq-toast" key={aviso.id} role="status" aria-live="polite">
                     <span className="rq-toast-ico"><Icono nombre="check" size={15} /></span>
@@ -388,177 +392,156 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
                 </div>
             )}
 
-            {/* BARRA SUPERIOR MINIMAL */}
+            {/* CABECERA: barra + pasos */}
             <header className="rq-top">
-                <button className="rq-salir" onClick={onSalir}><Icono nombre="atras" size={16} /> Salir</button>
-                <div className="rq-top-title">
-                    <strong>{form.titulo}</strong>
-                    <span>{ultimoGuardado ? `Guardado a las ${ultimoGuardado}` : "Tu avance se guarda automáticamente"}</span>
+                <div className="rq-top-row">
+                    <button className="rq-salir" onClick={onSalir}><Icono nombre="atras" size={16} /> Salir</button>
+                    <div className="rq-top-title">
+                        <strong>{form.titulo}</strong>
+                        <span>{ultimoGuardado ? `Guardado a las ${ultimoGuardado}` : "Tu avance se guarda automáticamente"}</span>
+                    </div>
+                    <button className="rq-guardar" onClick={guardarAhora} aria-label="Guardar avance">
+                        <Icono nombre="guardar" size={16} /> Guardar
+                    </button>
                 </div>
-                <button className="rq-guardar" onClick={guardarAhora}><Icono nombre="guardar" size={16} /> Guardar</button>
-                <div className="rq-bar" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
-                    <span style={{ width: `${pct}%` }} />
+
+                <div className="rq-stepper">
+                    <div className="rq-stepper-info">
+                        <div>
+                            <span className="rq-stepper-kicker">Paso {paso + 1} de {pasos.length}</span>
+                            <strong className="rq-stepper-name">{nombreDe(pasoInfo)}</strong>
+                        </div>
+                        <div className="rq-stepper-pct">{pct}%<small>{totalRespondidas} de {preguntas.length} respuestas</small></div>
+                    </div>
+                    <ol className="rq-segs" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
+                        {pasos.map((p, i) => (
+                            <li key={p.id}>
+                                <button
+                                    type="button"
+                                    className={`rq-seg ${i === paso ? "is-cur" : ""} ${pasoHecho(p) ? "is-done" : ""}`}
+                                    onClick={() => irAPaso(i)}
+                                    title={nombreDe(p)}
+                                    aria-label={nombreDe(p)}
+                                    aria-current={i === paso ? "step" : undefined}
+                                />
+                            </li>
+                        ))}
+                    </ol>
                 </div>
             </header>
 
-            <div className="rq-layout">
-                {/* RIEL DE ESTACIONES */}
-                <aside className="rq-rail" aria-label="Estaciones del diagnóstico">
-                    <p className="rq-rail-kicker">Tu recorrido</p>
-                    <ol>
-                        <li>
-                            <button className={`rq-rail-item ${paso === 0 ? "is-cur" : ""} ${paso > 0 ? "is-done" : ""}`} onClick={() => irAPaso(0)}>
-                                <span className="rq-rail-dot">{paso > 0 ? <Icono nombre="check" size={11} /> : "•"}</span>
-                                <span className="rq-rail-name">Inicio</span>
-                            </button>
-                        </li>
-                        {estaciones.map((e, i) => {
-                            const cur = pasoInfo.est === i;
-                            const hechas = e.items.filter(respondida).length;
-                            const done = estacionCompleta(e);
-                            return (
-                                <li key={i}>
-                                    <button className={`rq-rail-item ${cur ? "is-cur" : ""} ${done ? "is-done" : ""}`} onClick={() => irAPaso(i + 1)}>
-                                        <span className="rq-rail-dot">{done ? <Icono nombre="check" size={11} /> : i + 1}</span>
-                                        <span className="rq-rail-name">{e.titulo}</span>
-                                        <small>{hechas}/{e.items.length}</small>
-                                    </button>
-                                </li>
-                            );
-                        })}
-                        <li>
-                            <button className={`rq-rail-item ${pasoInfo.id === "envio" ? "is-cur" : ""}`} onClick={() => irAPaso(pasos.length - 1)}>
-                                <span className="rq-rail-dot">•</span>
-                                <span className="rq-rail-name">Revisión y envío</span>
-                            </button>
-                        </li>
-                    </ol>
-                    <div className="rq-rail-pct"><strong>{pct}%</strong><span>{totalRespondidas} de {preguntas.length} respuestas</span></div>
-                </aside>
-
-                <main className="rq-main">
-                    {/* INICIO */}
-                    {pasoInfo.id === "inicio" && (
-                        <div className="rq-fade" key="inicio">
-                            <p className="rq-eyebrow">Diagnóstico COMPASS</p>
-                            <h1 className="rq-h1">Vamos a ver dónde estás hoy</h1>
-                            <p className="rq-lead">
-                                No es un examen: es una fotografía honesta de tu práctica. Con ella construimos tu informe y tu ruta.
-                            </p>
-                            <div className="rq-facts">
-                                <div><strong>{preguntas.length}</strong><span>preguntas</span></div>
-                                <div><strong>{estaciones.length}</strong><span>estaciones</span></div>
-                                <div><strong>~{minutosTotal}</strong><span>minutos</span></div>
+            <main className="rq-main">
+                {/* INICIO */}
+                {pasoInfo.id === "inicio" && (
+                    <div className="rq-fade" key="inicio">
+                        <p className="rq-eyebrow">Diagnóstico COMPASS</p>
+                        <h1 className="rq-h1">Vamos a ver dónde estás hoy</h1>
+                        <p className="rq-lead">
+                            No es un examen: es una fotografía honesta de tu práctica. Con ella construimos tu informe y tu ruta.
+                        </p>
+                        <div className="rq-facts">
+                            <div><strong>{preguntas.length}</strong><span>preguntas</span></div>
+                            <div><strong>{estaciones.length}</strong><span>estaciones</span></div>
+                            <div><strong>~{minutosTotal}</strong><span>minutos</span></div>
+                        </div>
+                        <div className="rq-info-grid">
+                            <div className="rq-info">
+                                <h3>Cómo responder</h3>
+                                <p>Responde según lo que haces hoy, no según lo que crees que deberías hacer. Cada opción describe una práctica real: no hay respuestas correctas o incorrectas.</p>
                             </div>
-                            <div className="rq-info-grid">
-                                <div className="rq-info">
-                                    <h3>Lo que recibirás</h3>
-                                    <ul>
-                                        <li>Tu nivel de madurez por dimensión</li>
-                                        <li>Tres próximos pasos concretos</li>
-                                        <li>Tus retos para la fase Transformar</li>
-                                    </ul>
-                                </div>
-                                <div className="rq-info">
-                                    <h3>Cómo responder</h3>
-                                    <p>Responde según lo que haces hoy, no según lo que crees que deberías hacer. Cada opción describe una práctica real: no hay respuestas correctas o incorrectas.</p>
-                                </div>
-                                <div className="rq-info">
-                                    <h3>Tus estaciones</h3>
-                                    <ol>
-                                        {estaciones.map((e, i) => <li key={i}>{e.titulo}</li>)}
-                                    </ol>
-                                </div>
+                            <div className="rq-info">
+                                <h3>Lo que recibirás</h3>
+                                <ul>
+                                    <li>Tu nivel de madurez por dimensión</li>
+                                    <li>Tres próximos pasos concretos</li>
+                                    <li>Tus retos para la fase Transformar</li>
+                                </ul>
                             </div>
                         </div>
-                    )}
-
-                    {/* ESTACIÓN */}
-                    {estacion && (
-                        <div className="rq-fade" key={pasoInfo.id}>
-                            <p className="rq-paso-mini">Estación {pasoInfo.est + 1} de {estaciones.length}</p>
-                            <div className="rq-station-head">
-                                <span className="rq-station-num">{String(pasoInfo.est + 1).padStart(2, "0")}</span>
-                                <div>
-                                    <h2>{estacion.titulo}</h2>
-                                    <p>
-                                        {estacion.eyebrow ? `${estacion.eyebrow} · ` : ""}
-                                        {estacion.items.length === 1 ? "1 pregunta" : `${estacion.items.length} preguntas`} · unos {minutosEstacion} min
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="rq-preguntas">
-                                {estacion.items.map(q => (
-                                    <section key={q.id} className={`rq-q ${respondida(q) ? "is-ok" : ""}`}>
-                                        <div className="rq-q-head">
-                                            <span className="rq-q-num">{numero[q.id]}</span>
-                                            <h3>{q._texto}</h3>
-                                        </div>
-                                        {q.descripcion_pregunta && <p className="rq-q-desc">{q.descripcion_pregunta}</p>}
-                                        <div className="rq-q-body">{renderRespuesta(q)}</div>
-                                    </section>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ENVÍO */}
-                    {pasoInfo.id === "envio" && (
-                        <div className="rq-fade" key="envio">
-                            <p className="rq-eyebrow">Último paso</p>
-                            <h1 className="rq-h1">Revisa y envía</h1>
-
-                            <div className="rq-resumen">
-                                {estaciones.map((e, i) => (
-                                    <button key={i} type="button" className={`rq-res-item ${estacionCompleta(e) ? "is-ok" : ""}`} onClick={() => irAPaso(i + 1)}>
-                                        <span>{e.titulo}</span>
-                                        <small>{e.items.filter(respondida).length}/{e.items.length}</small>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {pendientes.length > 0 ? (
-                                <div className="rq-pendientes">
-                                    <strong>{pendientes.length === 1 ? "Te falta 1 respuesta" : `Te faltan ${pendientes.length} respuestas`} antes de enviar</strong>
-                                    <div>
-                                        {pendientes.map(q => (
-                                            <button key={q.id} type="button" onClick={() => irAPaso(pasoDePregunta[q.id])}>Pregunta {numero[q.id]}</button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="rq-pendientes ok"><Icono nombre="check" size={18} /> Respondiste todo el diagnóstico.</div>
-                            )}
-
-                            <div className="rq-enviar">
-                                <div>
-                                    <h3>Enviar diagnóstico</h3>
-                                    <p>Al enviarlo se genera tu informe COMPASS con tu nivel por dimensión, tus próximos pasos y tus retos en Transformar.</p>
-                                </div>
-                                <button className="rq-btn-enviar" disabled={pendientes.length > 0 || enviando} onClick={() => onEnviar(respuestas)}>
-                                    {enviando ? "Enviando..." : "Enviar diagnóstico"}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* NAVEGACIÓN */}
-                    <div className="rq-nav">
-                        <button className="rq-nav-btn ghost" disabled={paso === 0} onClick={() => irAPaso(paso - 1)}>
-                            <Icono nombre="atras" size={18} /> Anterior
-                        </button>
-                        {paso === 0 && totalRespondidas > 0 && primerPasoPendiente > 0 && (
-                            <button className="rq-nav-btn ghost" onClick={() => irAPaso(primerPasoPendiente)}>Continuar donde quedé</button>
-                        )}
-                        {pasoInfo.id !== "envio" && (
-                            <button className="rq-nav-btn" onClick={() => irAPaso(paso + 1)}>
-                                {textoSiguiente} <Icono nombre="adelante" size={18} />
-                            </button>
-                        )}
                     </div>
-                </main>
-            </div>
+                )}
+
+                {/* ESTACIÓN */}
+                {estacion && (
+                    <div className="rq-fade" key={pasoInfo.id}>
+                        <div className="rq-station-head">
+                            <h2>{estacion.titulo}</h2>
+                            <p>
+                                {estacion.eyebrow ? `${estacion.eyebrow} · ` : ""}
+                                {estacion.items.length === 1 ? "1 pregunta" : `${estacion.items.length} preguntas`} · unos {minutosEstacion} min
+                            </p>
+                        </div>
+
+                        <div className="rq-preguntas">
+                            {estacion.items.map(q => (
+                                <section key={q.id} className={`rq-q ${respondida(q) ? "is-ok" : ""}`}>
+                                    <div className="rq-q-head">
+                                        <span className="rq-q-num">{numero[q.id]}</span>
+                                        <h3>{q._texto}</h3>
+                                    </div>
+                                    {q.descripcion_pregunta && <p className="rq-q-desc">{q.descripcion_pregunta}</p>}
+                                    <div className="rq-q-body">{renderRespuesta(q)}</div>
+                                </section>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ENVÍO */}
+                {pasoInfo.id === "envio" && (
+                    <div className="rq-fade" key="envio">
+                        <p className="rq-eyebrow">Último paso</p>
+                        <h1 className="rq-h1">Revisa y envía</h1>
+
+                        <div className="rq-resumen">
+                            {estaciones.map((e, i) => (
+                                <button key={i} type="button" className={`rq-res-item ${estacionCompleta(e) ? "is-ok" : ""}`} onClick={() => irAPaso(i + 1)}>
+                                    <span>{e.titulo}</span>
+                                    <small>{e.items.filter(respondida).length}/{e.items.length}</small>
+                                </button>
+                            ))}
+                        </div>
+
+                        {pendientes.length > 0 ? (
+                            <div className="rq-pendientes">
+                                <strong>{pendientes.length === 1 ? "Te falta 1 respuesta" : `Te faltan ${pendientes.length} respuestas`} antes de enviar</strong>
+                                <div>
+                                    {pendientes.map(q => (
+                                        <button key={q.id} type="button" onClick={() => irAPaso(pasoDePregunta[q.id])}>Pregunta {numero[q.id]}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rq-pendientes ok"><Icono nombre="check" size={18} /> Respondiste todo el diagnóstico.</div>
+                        )}
+
+                        <div className="rq-enviar">
+                            <div>
+                                <h3>Enviar diagnóstico</h3>
+                                <p>Al enviarlo se genera tu informe COMPASS con tu nivel por dimensión, tus próximos pasos y tus retos en Transformar.</p>
+                            </div>
+                            <button className="rq-btn-enviar" disabled={pendientes.length > 0 || enviando} onClick={() => onEnviar(respuestas)}>
+                                {enviando ? "Enviando..." : "Enviar diagnóstico"}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* NAVEGACIÓN */}
+                <div className="rq-nav">
+                    <button className="rq-nav-btn ghost" disabled={paso === 0} onClick={() => irAPaso(paso - 1)}>
+                        <Icono nombre="atras" size={18} /> Anterior
+                    </button>
+                    {paso === 0 && totalRespondidas > 0 && primerPasoPendiente > 0 && (
+                        <button className="rq-nav-btn ghost" onClick={() => irAPaso(primerPasoPendiente)}>Continuar donde quedé</button>
+                    )}
+                    {pasoInfo.id !== "envio" && (
+                        <button className="rq-nav-btn" onClick={() => irAPaso(paso + 1)}>
+                            {textoSiguiente} <Icono nombre="adelante" size={18} />
+                        </button>
+                    )}
+                </div>
+            </main>
         </div>
     );
 };
