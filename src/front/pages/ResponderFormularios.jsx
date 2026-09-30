@@ -16,7 +16,50 @@ import Swal from "sweetalert2";
  * - El cálculo de puntos y el envío al backend NO cambian.
  */
 
-const TIEMPO_POR_TIPO = { MULTIPLE: 0.4, SELECT: 0.4, CHECKBOX: 0.6, ORDEN: 1, PARRAFO: 2.5, ABIERTA: 1, ESCALA: 0.3, SLIDER: 0.3 };
+// ── Tiempo: el mismo rango en tarjeta, inicio y estaciones ──
+const TIEMPO_OBJETIVO = { min: 10, max: 12 };
+const TEXTO_TIEMPO = `${TIEMPO_OBJETIVO.min}–${TIEMPO_OBJETIVO.max} min`;
+const PESO_POR_TIPO = { MULTIPLE: 1, SELECT: 1, ESCALA: 0.8, SLIDER: 0.8, CHECKBOX: 1.5, ORDEN: 2.5, ABIERTA: 2.5, PARRAFO: 6 };
+const pesoPregunta = (q) => PESO_POR_TIPO[q.tipo_respuesta] ?? 1;
+const minutosDeEstacion = (items, pesoTotal) => {
+    const medio = (TIEMPO_OBJETIVO.min + TIEMPO_OBJETIVO.max) / 2;
+    const peso = items.reduce((a, q) => a + pesoPregunta(q), 0);
+    return Math.max(1, Math.round((peso / (pesoTotal || 1)) * medio));
+};
+const textoMinutos = (n) => (n <= 1 ? "cerca de 1 minuto" : `unos ${n} minutos`);
+
+// ── Aleatorio SOLO en pantalla: cada docente ve otro orden ──
+// Las opciones tipo "No aplica / Aún no / No uso IA / Ninguno" quedan siempre al final.
+// Las preguntas sin puntaje (nivel, área, años) conservan su orden natural.
+const RE_AL_FINAL = /^(no aplica|a[uú]n no|no uso ia|ningun)/i;
+const tienePuntos = (ops) => ops.some(o => /\(\s*-?\d+(?:[.,]\d+)?\s*\)$/.test(String(o).trim()));
+const hashTexto = (s) => {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+};
+const barajar = (lista, semilla) => {
+    const a = [...lista];
+    let s = semilla || 1;
+    const rnd = () => {
+        s = (s + 0x6D2B79F5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rnd() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+};
+const ordenarOpciones = (q, semillaBase) => {
+    const ops = splitOptions(q.opciones_seleccion);
+    if (q.tipo_respuesta !== "ORDEN" && !tienePuntos(ops)) return ops;
+    const fijas = ops.filter(o => RE_AL_FINAL.test(cleanOptionText(o)));
+    const movibles = ops.filter(o => !RE_AL_FINAL.test(cleanOptionText(o)));
+    return [...barajar(movibles, hashTexto(`${semillaBase}_${q.id}`)), ...fijas];
+};
 const RE_ETIQUETA = /^([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9 \-—–:]{2,}?)\.\s+([\s\S]*)$/;
 const RE_EXCLUSIVA = /^(ningun|no aplica|no identific|no se aplic|no lo he)/i;
 
@@ -105,7 +148,10 @@ const construirPayload = (preguntas, respuestas) => preguntas.map(q => {
         answerString = (rawValue || []).map((v, i) => `${i + 1}. ${cleanOptionText(v)}`).join(", ");
         totalPoints = parseFloat(q.puntaje_asociado || 0);
     } else if (Array.isArray(rawValue)) {
-        answerString = rawValue.map(v => cleanOptionText(v)).join(", ");
+        // Casillas: se guardan en el orden original de la base, no en el de pantalla
+        const originales = splitOptions(q.opciones_seleccion);
+        const enOrden = [...rawValue].sort((a, b) => originales.indexOf(a) - originales.indexOf(b));
+        answerString = enOrden.map(v => cleanOptionText(v)).join(", ");
         rawValue.forEach(v => {
             const match = String(v).match(/\(([^)]+)\)$/);
             if (match) totalPoints += parseFloat(match[1].replace(',', '.'));
@@ -130,6 +176,11 @@ const construirPayload = (preguntas, respuestas) => preguntas.map(q => {
 const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar }) => {
     const preguntas = useMemo(() => form.questions || [], [form.questions]);
     const estaciones = useMemo(() => construirEstaciones(preguntas), [preguntas]);
+    const opcionesPorPregunta = useMemo(() => {
+        const m = {};
+        preguntas.forEach(q => { m[q.id] = ordenarOpciones(q, borradorKey); });
+        return m;
+    }, [preguntas, borradorKey]);
 
     // Pasos: inicio → una estación por paso → envío
     const pasos = useMemo(() => [
@@ -228,7 +279,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
     const totalRespondidas = preguntas.filter(respondida).length;
     const pct = preguntas.length ? Math.round((totalRespondidas / preguntas.length) * 100) : 0;
     const pendientes = preguntas.filter(q => !respondida(q));
-    const minutosTotal = Math.max(1, Math.round(preguntas.reduce((a, q) => a + (TIEMPO_POR_TIPO[q.tipo_respuesta] ?? 0.6), 0)));
+    const pesoTotal = preguntas.reduce((a, q) => a + pesoPregunta(q), 0);
     const primerPasoPendiente = pendientes.length ? pasoDePregunta[pendientes[0].id] : -1;
 
     const pasoInfo = pasos[paso] || {};
@@ -278,7 +329,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
         } catch (e) { /* sin almacenamiento */ }
     };
 
-        // ── Render de cada tipo de respuesta ──
+    // ── Render de cada tipo de respuesta ──
     const opcion = (key, activa, onClick, tipo, texto, orden) => (
         <button key={key} type="button"
             role={tipo === "radio" ? "radio" : "checkbox"} aria-checked={activa}
@@ -291,7 +342,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
     );
 
     const renderRespuesta = (q) => {
-        const ops = splitOptions(q.opciones_seleccion);
+        const ops = opcionesPorPregunta[q.id] || splitOptions(q.opciones_seleccion);
         const valor = respuestas[q.id];
 
         if (q.tipo_respuesta === "ESCALA") {
@@ -347,7 +398,14 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
             const orden = valor || [];
             return (
                 <div className="rq-opciones">
-                    <p className="rq-ayuda">Toca las opciones en orden, empezando por la más importante para ti.</p>
+                    <p className="rq-ayuda">
+                        Toca las opciones en el orden que prefieras, empezando por la que más te preocupa.
+                        Cada una recibirá un número según el orden en que la elijas: la primera será la 1,
+                        la segunda la 2, y así hasta completar todas. Si quieres cambiar alguna, tócala de nuevo para quitarla.
+                    </p>
+                    <p className="rq-ayuda">
+                        {orden.length < ops.length ? `Llevas ${orden.length} de ${ops.length} opciones ordenadas.` : "¡Listo! Ya ordenaste todas las opciones."}
+                    </p>
                     {ops.map(opt => {
                         const lugar = orden.indexOf(opt);
                         return opcion(opt, lugar !== -1, () => alternarOrden(q, opt), "orden", cleanOptionText(opt), lugar + 1);
@@ -376,15 +434,13 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
         );
     };
 
-       // ── Datos para el render ──
+    // ── Datos para el render ──
     const estacionCompleta = (e) => e.items.every(respondida);
     const siguientePaso = pasos[paso + 1];
     const textoSiguiente = paso === 0 ? "Comenzar"
         : siguientePaso?.id === "envio" ? "Ir al envío"
             : "Siguiente";
-    const minutosEstacion = estacion
-        ? Math.max(1, Math.round(estacion.items.reduce((a, q) => a + (TIEMPO_POR_TIPO[q.tipo_respuesta] ?? 0.6), 0)))
-        : 0;
+    const minutosEstacion = estacion ? minutosDeEstacion(estacion.items, pesoTotal) : 0;
     const nombreDe = (p) => p.id === "inicio" ? "Inicio"
         : p.id === "envio" ? "Revisión y envío"
             : estaciones[p.est].titulo;
@@ -451,7 +507,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
                         <div className="rq-facts">
                             <div><strong>{preguntas.length}</strong><span>preguntas</span></div>
                             <div><strong>{estaciones.length}</strong><span>estaciones</span></div>
-                            <div><strong>~{minutosTotal}</strong><span>minutos</span></div>
+                            <div><strong>{TIEMPO_OBJETIVO.min}–{TIEMPO_OBJETIVO.max}</strong><span>minutos</span></div>
                         </div>
                         <div className="rq-info-grid">
                             <div className="rq-info">
@@ -477,7 +533,7 @@ const RecorridoFormulario = ({ form, borradorKey, enviando, onSalir, onEnviar })
                             <h2>{estacion.titulo}</h2>
                             <p>
                                 {estacion.eyebrow ? `${estacion.eyebrow} · ` : ""}
-                                {estacion.items.length === 1 ? "1 pregunta" : `${estacion.items.length} preguntas`} · unos {minutosEstacion} min
+                                {estacion.items.length === 1 ? "1 pregunta" : `${estacion.items.length} preguntas`} · {textoMinutos(minutosEstacion)}
                             </p>
                         </div>
 
@@ -761,7 +817,7 @@ export const ResponderFormularios = ({
                             <h3>{form.titulo}</h3>
                             <p>{form.descripcion}</p>
                             <div className="card-footer">
-                                <span className="pts-tag">⏱ 10-15 min</span>
+                                <span className="pts-tag">⏱ {TEXTO_TIEMPO}</span>
                                 {activeTab === 'pending' ? (
                                     <button className="btn-respond" onClick={() => handleOpenForm(form)}>Iniciar diagnóstico</button>
                                 ) : (
