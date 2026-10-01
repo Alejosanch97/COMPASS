@@ -488,51 +488,128 @@
 
 
 
-/* ══════════ V7 · Citación de marcos de referencia ══════════ */
-.ia-est li { align-items: flex-start; }
-.ia-est li .ia-chip { margin-top: 2px; }
-.ia-est-ref { font-size: 0.7rem; color: var(--ia-oro); font-weight: 800; margin-left: 4px; }
-
-.ia-est-cita {
-    margin-top: 8px;
-    padding: 8px 10px;
-    border-left: 2px solid #ecdcbc;
-    background: #fff;
-    border-radius: 0 8px 8px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+/* ══════════ V8 · Marcos de referencia estilo dashboard ══════════ */
+.ia-informe {
+    --nv-adquirir: #0ea5e9;
+    --nv-profundizar: #8b5cf6;
+    --nv-crear: #c5a059;
 }
-.ia-est-cita span { font-size: 0.74rem; line-height: 1.45; color: var(--ia-texto); }
-.ia-est-cita b { color: #8a6a2b; font-weight: 800; }
 
-.ia-fuentes {
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px dashed var(--ia-borde);
+/* Cabecera de cada marco */
+.ia-est { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.ia-est-head { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--ia-borde); }
+.ia-est-kicker { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; font-weight: 700; color: var(--ia-gris); text-transform: uppercase; letter-spacing: 0.8px; }
+.ia-est-marco { margin: 0; padding: 0; border: none; font-size: 1rem; font-weight: 800; color: var(--ia-tinta); line-height: 1.35; }
+.ia-est-link {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--ia-borde);
+    color: var(--ia-tinta); text-transform: none; letter-spacing: 0; font-size: 0.74rem; font-weight: 700;
+    text-decoration: none; transition: all .15s ease;
 }
-.ia-fuentes-titulo {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--ia-gris);
-    margin-bottom: 8px;
+.ia-est-link:hover { border-color: var(--ia-oro); color: #8a6a2b; }
+
+/* Sellos */
+.ia-sello {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 3px 8px; border-radius: 6px; font-size: 0.66rem; font-weight: 900; letter-spacing: 1px;
 }
-.ia-fuentes ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
-.ia-fuentes li { font-size: 0.76rem; color: var(--ia-texto); line-height: 1.45; }
-.ia-fuentes li span { display: block; font-weight: 600; color: var(--ia-tinta); }
-.ia-fuentes li small { display: block; color: var(--ia-gris); }
-.ia-fuentes li a { font-size: 0.72rem; color: #8a6a2b; word-break: break-all; }
-.ia-fuentes-nota { display: block; margin-top: 10px; font-size: 0.72rem; color: var(--ia-gris); font-style: italic; }
+.ia-sello.s-unesco { background: var(--ia-tinta); color: var(--ia-oro); }
+.ia-sello.s-ley1581 { background: var(--ia-oro); color: var(--ia-tinta); }
+.ia-sello-lg { width: 64px; height: 44px; border-radius: 12px; font-size: 0.72rem; flex-shrink: 0; }
 
-/* PDF: citación más compacta */
-.compass-infografia.pdf-mode .ia-informe .ia-est-cita { padding: 6px 8px; margin-top: 6px; }
-.compass-infografia.pdf-mode .ia-informe .ia-est-cita span { font-size: 0.68rem; }
-.compass-infografia.pdf-mode .ia-informe .ia-fuentes li { font-size: 0.68rem; }
+/* Mini tarjeta por componente */
+.ia-comp-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ia-est li.ia-comp {
+    display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+    background: #fff; border: 1px solid var(--ia-borde); border-radius: 14px; padding: 14px 16px;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.ia-est li.ia-comp:hover { border-color: #e7d3a8; }
+.ia-est li.ia-comp.is-open { border-color: #e7d3a8; box-shadow: 0 0 0 3px var(--ia-oro-suave); }
 
+.ia-comp-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ia-comp-nombre { font-size: 0.92rem; color: var(--ia-tinta); line-height: 1.3; }
 
+.ia-comp-dims { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ia-comp-dims small { font-size: 0.7rem; color: var(--ia-gris); margin-right: 2px; }
+.ia-comp-dim { font-size: 0.72rem; font-weight: 700; color: var(--ia-texto); background: var(--ia-fondo); border: 1px solid var(--ia-borde); padding: 2px 9px; border-radius: 999px; }
 
+/* Botón desplegable */
+.ia-comp-toggle {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-size: 0.76rem; font-weight: 800; color: #8a6a2b;
+}
+.ia-comp-toggle:hover { color: var(--ia-tinta); }
+.ia-comp-toggle:focus-visible { outline: 2px solid var(--ia-oro); outline-offset: 3px; border-radius: 4px; }
+.ia-comp-chev { display: inline-flex; transition: transform .2s ease; }
+.ia-comp.is-open .ia-comp-chev { transform: rotate(180deg); }
 
+/* Panel de trazabilidad */
+.ia-comp-traza { display: none; gap: 10px; padding-top: 12px; border-top: 1px dashed var(--ia-borde); }
+.ia-comp.is-open .ia-comp-traza { display: grid; animation: ia-aparecer .22s ease; }
+@keyframes ia-aparecer { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
+.ia-traza-fila { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; }
+.ia-traza-ico { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.ico-donde { background: #eef2ff; color: #4f46e5; }
+.ico-porque { background: var(--ia-oro-suave); color: #a17d33; }
+.ia-traza-cuerpo small { display: block; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ia-gris); margin-bottom: 6px; }
+.ia-traza-cuerpo p { margin: 0; font-size: 0.82rem; line-height: 1.5; color: var(--ia-texto); }
+.ia-traza-porque .ia-traza-cuerpo { background: var(--ia-oro-suave); border-radius: 10px; padding: 9px 12px; }
+.ia-traza-porque .ia-traza-cuerpo small { color: #8a6a2b; margin-bottom: 3px; }
+
+/* Pastillas de competencias / artículos */
+.ia-traza-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.ia-pill-comp {
+    --c: var(--ia-gris);
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px 3px 3px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; color: var(--ia-tinta);
+    background: color-mix(in srgb, var(--c) 9%, #fff);
+    border: 1px solid color-mix(in srgb, var(--c) 30%, #fff);
+}
+.ia-pill-comp b {
+    background: var(--c); color: #fff; font-size: 0.66rem; font-weight: 900;
+    padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
+.nv-adquirir { --c: var(--nv-adquirir); }
+.nv-profundizar { --c: var(--nv-profundizar); }
+.nv-crear { --c: var(--nv-crear); }
+.nv-ley { --c: var(--ia-tinta); }
+
+/* Footer de fuentes */
+.ia-fuentes { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--ia-borde); display: flex; flex-direction: column; gap: 12px; }
+.ia-fuentes-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ia-fuentes-titulo { font-size: 0.72rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ia-gris); }
+.ia-fuentes-leyenda { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ia-fuentes-leyenda small { font-size: 0.7rem; color: var(--ia-gris); margin-right: 2px; }
+.ia-pill-mini {
+    --c: var(--ia-gris);
+    font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 999px;
+    color: var(--c); background: color-mix(in srgb, var(--c) 10%, #fff);
+}
+
+.ia-fuentes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.ia-fuente {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 16px; background: var(--ia-fondo); border: 1px solid var(--ia-borde);
+    text-decoration: none; color: inherit; transition: all .18s ease;
+}
+.ia-fuente:hover { border-color: var(--ia-oro); background: #fff; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06); }
+.ia-fuente-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ia-fuente-txt strong { font-size: 0.88rem; color: var(--ia-tinta); }
+.ia-fuente-txt small { font-size: 0.74rem; color: var(--ia-gris); line-height: 1.4; }
+.ia-fuente-det { opacity: 0.85; }
+.ia-fuente-ir { color: var(--ia-gris); display: inline-flex; align-self: flex-start; }
+.ia-fuente:hover .ia-fuente-ir { color: #8a6a2b; }
+
+.ia-fuentes-nota { margin: 0; font-size: 0.74rem; color: var(--ia-gris); line-height: 1.5; }
+
+/* PDF: trazabilidad siempre visible y compacta */
+.compass-infografia.pdf-mode .ia-comp-traza { display: grid !important; animation: none; }
+.compass-infografia.pdf-mode .ia-est li.ia-comp { padding: 10px 12px; gap: 8px; box-shadow: none; }
+.compass-infografia.pdf-mode .ia-pill-comp { font-size: 0.64rem; }
+.compass-infografia.pdf-mode .ia-traza-cuerpo p { font-size: 0.72rem; }
+.compass-infografia.pdf-mode .ia-fuente { padding: 10px 12px; }
+.compass-infografia.pdf-mode .ia-fuentes-grid { grid-template-columns: 1fr 1fr; }
