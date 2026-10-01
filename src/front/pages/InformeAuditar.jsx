@@ -477,35 +477,132 @@ const RetosTransformar = ({ ruta, esDirectivo, onNavigate }) => {
     );
 };
 
-// ── 11. Estándares con trazabilidad (tarjetas por marco) ─────────────
+// ── Citación de marcos de referencia ─────────────────────────────────
+const norm = (s = "") => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+const FUENTES_MARCOS = [
+    {
+        id: "unesco",
+        match: (m) => /unesco/i.test(m),
+        corto: "UNESCO (2024)",
+        ref: "UNESCO (2024). AI competency framework for teachers. Miao, F. y Cukurova, M. París: UNESCO.",
+        detalle: "15 competencias en 5 aspectos y 3 niveles de progresión (Adquirir, Profundizar, Crear). Estructura del marco: cap. 3; especificaciones de cada competencia: cap. 4.",
+        url: "https://www.unesco.org/en/articles/ai-competency-framework-teachers",
+    },
+    {
+        id: "ley1581",
+        match: (m) => /1581/.test(m),
+        corto: "Ley 1581 de 2012",
+        ref: "Congreso de la República de Colombia. Ley Estatutaria 1581 de 2012, por la cual se dictan disposiciones generales para la protección de datos personales.",
+        detalle: "Reglamentada por el Decreto 1377 de 2013, hoy compilado en el Decreto 1074 de 2015 (art. 2.2.2.25.2.9 para datos de menores). Control de constitucionalidad: Sentencia C-748 de 2011.",
+        url: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1581_2012.html",
+    },
+];
+
+const fuenteDeMarco = (marco) => FUENTES_MARCOS.find((f) => f.match(marco));
+
+// Clave = nombre del componente tal como llega del backend (sin importar tildes/mayúsculas)
+const CITAS_COMPONENTES = {
+    [norm("Mentalidad centrada en el ser humano")]: {
+        donde: "Aspecto 1 · Competencias 1 (agencia humana), 6 (rendición de cuentas humana) y 11 (responsabilidad social).",
+        porque: "Evalúa si conservas el juicio y la decisión final frente a la IA; por eso se lee desde Pensamiento crítico y Gobernanza institucional.",
+    },
+    [norm("Ética de la IA")]: {
+        donde: "Aspecto 2 · Competencias 2 (principios éticos), 7 (uso seguro y responsable) y 12 (co-creación de normas éticas).",
+        porque: "UNESCO ubica aquí la privacidad de datos, el sesgo y el uso seguro: justo lo que mide Gestión de riesgos y datos.",
+    },
+    [norm("Fundamentos y aplicaciones de la IA")]: {
+        donde: "Aspecto 3 · Competencias 3 (técnicas y aplicaciones básicas de IA), 8 (habilidades de aplicación) y 13 (crear con IA).",
+        porque: "Entender cómo funciona la IA y sus límites es lo que permite evaluar críticamente sus resultados (Pensamiento crítico).",
+    },
+    [norm("Pedagogía de la IA")]: {
+        donde: "Aspecto 4 · Competencias 4 (enseñanza asistida por IA), 9 (integración IA-pedagogía) y 14 (transformación pedagógica con IA).",
+        porque: "Vincular la IA con objetivos curriculares y con la evaluación es lo que mide Integración pedagógica.",
+    },
+    [norm("IA para el desarrollo profesional")]: {
+        donde: "Aspecto 5 · Competencias 5 (IA para el aprendizaje profesional permanente), 10 (aprendizaje organizacional) y 15 (transformación profesional).",
+        porque: "Se refiere a usar la IA para crecer profesionalmente y aportar a la institución, lo que recoge Visión y madurez.",
+    },
+    [norm("Tratamiento de datos de estudiantes")]: {
+        donde: "Art. 7 (derechos de niños, niñas y adolescentes) · Art. 4 (principios de finalidad, seguridad y confidencialidad) · Art. 9 (autorización previa) · Decreto 1074 de 2015, art. 2.2.2.25.2.9.",
+        porque: "Tus estudiantes son menores de edad: todo tratamiento de sus datos debe responder a su interés superior. Ingresar datos de estudiantes en una herramienta de IA es un tratamiento; por eso se lee desde Gestión de riesgos y datos.",
+    },
+};
+
+const citaDe = (componente) => CITAS_COMPONENTES[norm(componente)];
+
+// ── 11. Estándares con trazabilidad (tarjetas por marco + citación) ──
 const Estandares = ({ estandares }) => {
     const grupos = estandares.reduce((acc, e) => {
         (acc[e.marco] = acc[e.marco] || []).push(e);
         return acc;
     }, {});
+
+    // Solo las fuentes de los marcos que aparecen en este informe
+    const fuentesUsadas = FUENTES_MARCOS.filter((f) => Object.keys(grupos).some((m) => f.match(m)));
+
     return (
         <div className="ia-card ia-block">
             <div className="ia-est-grid">
-                {Object.entries(grupos).map(([marco, lista]) => (
-                    <article key={marco} className="ia-est">
-                        <h5 className="ia-est-marco">{marco}</h5>
-                        <ul>
-                            {lista.map((e) => (
-                                <li key={`${e.marco}-${e.componente}`}>
-                                    <div>
-                                        <strong>{e.componente}</strong>
-                                        <small>{e.dimensiones.join(" y ")}</small>
-                                    </div>
-                                    <Chip nivel={e.nivel} />
-                                </li>
-                            ))}
-                        </ul>
-                    </article>
-                ))}
+                {Object.entries(grupos).map(([marco, lista]) => {
+                    const fuente = fuenteDeMarco(marco);
+                    const num = fuente ? fuentesUsadas.indexOf(fuente) + 1 : null;
+                    return (
+                        <article key={marco} className="ia-est">
+                            <h5 className="ia-est-marco">
+                                {marco}
+                                {num && <sup className="ia-est-ref">[{num}]</sup>}
+                            </h5>
+                            <ul>
+                                {lista.map((e) => {
+                                    const cita = citaDe(e.componente);
+                                    return (
+                                        <li key={`${e.marco}-${e.componente}`}>
+                                            <div>
+                                                <strong>{e.componente}</strong>
+                                                <small>{e.dimensiones.join(" y ")}</small>
+                                                {cita && (
+                                                    <div className="ia-est-cita">
+                                                        <span className="ia-est-donde">
+                                                            <b>Dónde:</b> {cita.donde}
+                                                        </span>
+                                                        <span className="ia-est-porque">
+                                                            <b>Por qué:</b> {cita.porque}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Chip nivel={e.nivel} />
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </article>
+                    );
+                })}
             </div>
+
             <p className="ia-mini">
                 Lectura orientativa calculada a partir de las dimensiones de tu diagnóstico. No es una certificación de cumplimiento normativo.
             </p>
+
+            {fuentesUsadas.length > 0 && (
+                <footer className="ia-fuentes">
+                    <span className="ia-fuentes-titulo">Fuentes</span>
+                    <ol>
+                        {fuentesUsadas.map((f) => (
+                            <li key={f.id}>
+                                <span>{f.ref}</span>
+                                <small>{f.detalle}</small>
+                                <a href={f.url} target="_blank" rel="noopener noreferrer">{f.url}</a>
+                            </li>
+                        ))}
+                    </ol>
+                    <small className="ia-fuentes-nota">
+                        Los cinco niveles COMPASS son una escala propia. UNESCO usa tres niveles (Adquirir, Profundizar, Crear), por lo que la correspondencia entre ambos es orientativa.
+                    </small>
+                </footer>
+            )}
         </div>
     );
 };

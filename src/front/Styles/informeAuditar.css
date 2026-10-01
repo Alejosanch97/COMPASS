@@ -488,5 +488,51 @@
 
 
 
+/* ══════════ V7 · Citación de marcos de referencia ══════════ */
+.ia-est li { align-items: flex-start; }
+.ia-est li .ia-chip { margin-top: 2px; }
+.ia-est-ref { font-size: 0.7rem; color: var(--ia-oro); font-weight: 800; margin-left: 4px; }
+
+.ia-est-cita {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-left: 2px solid #ecdcbc;
+    background: #fff;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.ia-est-cita span { font-size: 0.74rem; line-height: 1.45; color: var(--ia-texto); }
+.ia-est-cita b { color: #8a6a2b; font-weight: 800; }
+
+.ia-fuentes {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--ia-borde);
+}
+.ia-fuentes-titulo {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ia-gris);
+    margin-bottom: 8px;
+}
+.ia-fuentes ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.ia-fuentes li { font-size: 0.76rem; color: var(--ia-texto); line-height: 1.45; }
+.ia-fuentes li span { display: block; font-weight: 600; color: var(--ia-tinta); }
+.ia-fuentes li small { display: block; color: var(--ia-gris); }
+.ia-fuentes li a { font-size: 0.72rem; color: #8a6a2b; word-break: break-all; }
+.ia-fuentes-nota { display: block; margin-top: 10px; font-size: 0.72rem; color: var(--ia-gris); font-style: italic; }
+
+/* PDF: citación más compacta */
+.compass-infografia.pdf-mode .ia-informe .ia-est-cita { padding: 6px 8px; margin-top: 6px; }
+.compass-infografia.pdf-mode .ia-informe .ia-est-cita span { font-size: 0.68rem; }
+.compass-infografia.pdf-mode .ia-informe .ia-fuentes li { font-size: 0.68rem; }
+
+
+
 
 
