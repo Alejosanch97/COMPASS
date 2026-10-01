@@ -791,6 +791,16 @@ PESOS_FASE = {
     "SOSTENER": 15,
 }
 
+# Bono por completar el SEGUNDO diagnóstico AUDITAR (tabla AuditarDos).
+# Reconoce el esfuerzo de volver a medirse y ayuda a quien quedó cerca del umbral.
+BONO_AUDITAR_DOS = 5.0
+
+
+def _bono_auditar_dos(uid):
+    """Devuelve +5 si el usuario ya completó el segundo diagnóstico AUDITAR."""
+    hizo_segundo = AuditarDos.query.filter_by(usuario_id=uid).first() is not None
+    return BONO_AUDITAR_DOS if hizo_segundo else 0.0
+
 # ══════════════════════════════════════════════════════════════
 # COMPASS CUALITATIVO — Perfil por dimensiones (madurez, no puntaje)
 # ══════════════════════════════════════════════════════════════
@@ -3187,7 +3197,16 @@ def sostener_auditar_dos_guardar():
     db.session.commit()
 
     total = sum(r.get("puntos_ganados", 0) for r in respuestas)
-    return jsonify({"message": "Segundo diagnóstico guardado", "total_puntos": total}), 201
+
+    # El segundo diagnóstico suma +5 a la huella: si con eso llega a 80, se emite el certificado
+    cred = emitir_credencial_si_corresponde(u.id)
+
+    return jsonify({
+        "message": "Segundo diagnóstico guardado",
+        "total_puntos": total,
+        "bono_huella": BONO_AUDITAR_DOS,
+        "credencial_emitida": bool(cred),
+    }), 201
 
 
 @api.route('/sostener/auditar-dos/formulario', methods=['GET'])
@@ -3324,11 +3343,15 @@ def sostener_mi_huella_completa():
         "promedio_global": round(float(s.promedio_global), 2) if s else 0,
     }
 
-    huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    huella_base = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    bono = _bono_auditar_dos(u.id)
+    huella_total = round(min(huella_base + bono, 100.0), 1)
     fases_completas = sum(1 for d in detalle.values() if d["completa"])
 
     return jsonify({
-        "huella_total": huella_total,           # 0-100 ponderado
+        "huella_total": huella_total,           # 0-100 ponderado (incluye bono)
+        "huella_base": huella_base,             # sin bono
+        "bono_auditar_dos": bono,               # 0 o 5
         "fases_completas": fases_completas,      # 0-5
         "detalle": detalle,
     }), 200
@@ -3393,9 +3416,17 @@ def _calcular_huella_docente(uid):
     detalle["sostener"] = {"peso": PESOS_FASE["SOSTENER"],
                            "obtenido": round(PESOS_FASE["SOSTENER"] * frac_so, 1), "completa": bool(s)}
 
-    huella_total = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    huella_base = round(sum(d["obtenido"] for d in detalle.values()), 1)
+    bono = _bono_auditar_dos(uid)
+    huella_total = round(min(huella_base + bono, 100.0), 1)
     fases_completas = sum(1 for d in detalle.values() if d["completa"])
-    return {"huella_total": huella_total, "fases_completas": fases_completas, "detalle": detalle}
+    return {
+        "huella_total": huella_total,
+        "huella_base": huella_base,
+        "bono_auditar_dos": bono,
+        "fases_completas": fases_completas,
+        "detalle": detalle,
+    }
 
 
 def _docentes_de_mi_empresa(u):
