@@ -489,7 +489,7 @@ const FUENTES_MARCOS = [
         titulo: "AI Competency Framework for Teachers",
         meta: "UNESCO · Miao y Cukurova · París, 2024",
         detalle: "15 competencias · 5 aspectos · 3 niveles. Estructura en cap. 3, especificaciones en cap. 4.",
-        
+
     },
     {
         id: "ley1581",
@@ -653,7 +653,7 @@ const Estandares = ({ estandares }) => {
                                 <div className="ia-est-kicker">
                                     {fuente && <span className={`ia-sello s-${fuente.id}`}>{fuente.sigla}</span>}
                                     <span>{fuente?.tipo || "Marco de referencia"}</span>
-                                    
+
                                 </div>
                                 <h5 className="ia-est-marco">{marco}</h5>
                             </header>
@@ -681,15 +681,14 @@ const Estandares = ({ estandares }) => {
 
                     <div className="ia-fuentes-grid">
                         {fuentesUsadas.map((f) => (
-                            <a key={f.id} className="ia-fuente" href={f.url} target="_blank" rel="noopener noreferrer">
+                            <div key={f.id} className="ia-fuente">
                                 <span className={`ia-sello ia-sello-lg s-${f.id}`}>{f.sigla}</span>
                                 <div className="ia-fuente-txt">
                                     <strong>{f.titulo}</strong>
                                     <small>{f.meta}</small>
                                     <small className="ia-fuente-det">{f.detalle}</small>
                                 </div>
-                                <span className="ia-fuente-ir"><IcoExterno /></span>
-                            </a>
+                            </div>
                         ))}
                     </div>
 
