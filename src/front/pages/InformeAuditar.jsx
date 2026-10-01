@@ -489,7 +489,7 @@ const FUENTES_MARCOS = [
         titulo: "AI Competency Framework for Teachers",
         meta: "UNESCO · Miao y Cukurova · París, 2024",
         detalle: "15 competencias · 5 aspectos · 3 niveles. Estructura en cap. 3, especificaciones en cap. 4.",
-        url: "https://www.unesco.org/en/articles/ai-competency-framework-teachers",
+        
     },
     {
         id: "ley1581",
@@ -499,7 +499,6 @@ const FUENTES_MARCOS = [
         titulo: "Ley Estatutaria 1581 de 2012",
         meta: "Congreso de la República · Protección de datos personales",
         detalle: "Reglamentada por el Decreto 1377 de 2013 (hoy Decreto 1074 de 2015). Revisada en la Sentencia C-748 de 2011.",
-        url: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1581_2012.html",
     },
 ];
 const fuenteDeMarco = (marco) => FUENTES_MARCOS.find((f) => f.match(marco));
@@ -654,11 +653,7 @@ const Estandares = ({ estandares }) => {
                                 <div className="ia-est-kicker">
                                     {fuente && <span className={`ia-sello s-${fuente.id}`}>{fuente.sigla}</span>}
                                     <span>{fuente?.tipo || "Marco de referencia"}</span>
-                                    {fuente && (
-                                        <a className="ia-est-link cmp-no-print" href={fuente.url} target="_blank" rel="noopener noreferrer">
-                                            Ver fuente <IcoExterno />
-                                        </a>
-                                    )}
+                                    
                                 </div>
                                 <h5 className="ia-est-marco">{marco}</h5>
                             </header>
